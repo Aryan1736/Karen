@@ -66,6 +66,7 @@ Advisory intelligence emitted by Aryan's NLP pipeline.
 | `required_response` | `Array<ResponseNeed>` | **Yes** | No | Array of needed responder services. |
 | `entities` | `Array<EntityToken>` | **Yes** | No | Extracted named entities. |
 | `embedding_reference`| `string \| null` | No | **Yes** | Reference ID or pointer to dense vector. |
+| `embedding` | `Array<number>` | No | No | Normalized 384-dimensional dense vector (`all-MiniLM-L6-v2`) for cosine similarity. Optional internal ML $\to$ Backend field (distinguished from `embedding_reference` pointer). If absent, field is omitted rather than null. |
 | `processing_status` | `string` | **Yes** | No | Enum: `"SUCCESS"`, `"PARTIAL"`, `"FAILED"`, `"NEEDS_REVIEW"`. |
 | `warnings` | `Array<string>` | **Yes** | No | Array of fallback or diagnostic warnings. |
 
