@@ -1,0 +1,632 @@
+.tactical-map-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background-color: #07080D;
+  position: relative;
+  overflow: hidden;
+  border-right: 4px solid var(--color-void-dark);
+}
+
+/* Map HUD Strip */
+.map-hud-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 38px;
+  padding: 0 16px;
+  background-color: var(--color-surface-container-low);
+  border-bottom: 2px solid var(--color-void-dark);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.map-hud-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.map-hud-sector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-multiverse-cyan);
+  font-weight: 700;
+}
+
+.hud-radar-icon {
+  animation: radar-sweep 4s linear infinite;
+}
+
+@keyframes radar-sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.hud-divider {
+  color: var(--color-outline-variant);
+  opacity: 0.6;
+}
+
+.map-hud-grid {
+  color: var(--color-text-secondary);
+}
+
+.map-hud-sync {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-system-green);
+  font-weight: 700;
+}
+
+.radar-sweep-dot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--color-system-green);
+  border-radius: 50%;
+  animation: radar-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes radar-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.4); }
+}
+
+.map-hud-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.map-layer-tag {
+  background-color: var(--color-surface-dark);
+  border: 1px solid var(--color-void-dark);
+  color: var(--color-dispatch-yellow);
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.hud-btn-reset {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  background-color: var(--color-surface-container-high);
+  border: 1px solid var(--color-void-dark);
+  color: var(--color-newsprint-white);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-tactical);
+}
+
+.hud-btn-reset:hover {
+  background-color: var(--color-surface-container-highest);
+  color: var(--color-dispatch-yellow);
+}
+
+/* Map Canvas Container */
+.map-canvas-container {
+  flex: 1;
+  position: relative;
+  min-height: 480px;
+  background-color: #090A0F;
+  overflow: hidden;
+}
+
+.leaflet-map-host {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: 
+    radial-gradient(circle at 50% 50%, rgba(26, 26, 36, 0.4) 0%, rgba(8, 8, 12, 0.95) 100%),
+    linear-gradient(rgba(31, 39, 61, 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 39, 61, 0.25) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+}
+
+/* Custom Neo-Brutalist Leaflet DivIcon */
+.tactical-div-icon {
+  background: transparent;
+  border: none;
+}
+
+.tactical-marker-root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.marker-badge-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 3px 6px;
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 2px 2px 0 var(--color-void-dark);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  transition: transform 0.15s ease;
+  z-index: 10;
+}
+
+.tactical-marker-root:hover .marker-badge-box {
+  transform: scale(1.1);
+}
+
+.marker-label-tag {
+  background-color: var(--color-void-dark);
+  border: 1px solid var(--color-void-dark);
+  color: var(--color-newsprint-white);
+  padding: 1px 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+  margin-top: 2px;
+  box-shadow: 1px 1px 0 var(--color-void-dark);
+  z-index: 10;
+}
+
+/* Marker Priority Variants */
+.marker-prio-critical .marker-badge-box {
+  background-color: var(--color-p0-critical);
+  color: var(--color-newsprint-white);
+}
+
+.marker-prio-high .marker-badge-box {
+  background-color: var(--color-hazard-orange);
+  color: var(--color-void-dark);
+}
+
+.marker-prio-medium .marker-badge-box {
+  background-color: var(--color-dispatch-yellow);
+  color: var(--color-void-dark);
+}
+
+.marker-prio-low .marker-badge-box {
+  background-color: var(--color-surface-container-high);
+  color: var(--color-multiverse-cyan);
+  border-color: var(--color-multiverse-cyan);
+}
+
+.marker-prio-review .marker-badge-box {
+  background-color: var(--color-review-purple);
+  color: var(--color-newsprint-white);
+  border-color: var(--color-glitch-magenta);
+}
+
+/* Selected Marker Visual Highlights */
+.marker-selected .marker-badge-box {
+  border-width: 3px;
+  box-shadow: 0 0 0 2px var(--color-multiverse-cyan), 4px 4px 0 var(--color-void-dark);
+  transform: scale(1.15);
+}
+
+.marker-selected .marker-label-tag {
+  background-color: var(--color-multiverse-cyan);
+  color: var(--color-void-dark);
+  font-weight: 800;
+}
+
+.marker-radar-ping {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--color-multiverse-cyan);
+  animation: radar-ping 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+  pointer-events: none;
+  z-index: 5;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes radar-ping {
+  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+}
+
+.marker-beacon-pulse {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: rgba(230, 25, 55, 0.25);
+  animation: beacon-pulse 1.4s ease-out infinite;
+  pointer-events: none;
+  z-index: 4;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes beacon-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.3; }
+  50% { transform: translate(-50%, -50%) scale(1.4); opacity: 0.8; }
+}
+
+/* Tactical Mini-Compass / Coords Lock Widget */
+.tac-mini-widget {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 15;
+  background-color: rgba(17, 17, 22, 0.95);
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 3px 3px 0 var(--color-void-dark);
+  padding: 8px;
+  width: 140px;
+  font-family: var(--font-mono);
+}
+
+.tac-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.tac-widget-freq {
+  color: var(--color-multiverse-cyan);
+}
+
+.tac-widget-crosshair {
+  width: 100%;
+  height: 60px;
+  background-color: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-void-dark);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.crosshair-ring {
+  position: absolute;
+  border: 1px solid rgba(0, 240, 255, 0.18);
+  border-radius: 50%;
+}
+
+.crosshair-ring.r1 { width: 44px; height: 44px; }
+.crosshair-ring.r2 { width: 24px; height: 24px; }
+
+.crosshair-line {
+  position: absolute;
+  background-color: rgba(0, 240, 255, 0.15);
+}
+
+.crosshair-line.h { width: 100%; height: 1px; }
+.crosshair-line.v { height: 100%; width: 1px; }
+
+.crosshair-blip {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+}
+
+.blip-0 { background-color: var(--color-p0-critical); top: 30%; left: 45%; }
+.blip-1 { background-color: var(--color-dispatch-yellow); top: 60%; left: 65%; }
+.blip-2 { background-color: var(--color-multiverse-cyan); top: 40%; left: 70%; }
+
+.tac-widget-count {
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-multiverse-cyan);
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+}
+
+/* Top-Right Zoom Controls */
+.map-zoom-dock {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  background-color: var(--color-surface-dark);
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 3px 3px 0 var(--color-void-dark);
+  padding: 2px;
+}
+
+.zoom-btn {
+  width: 26px;
+  height: 26px;
+  background-color: var(--color-surface-container-high);
+  border: 1px solid var(--color-void-dark);
+  color: var(--color-newsprint-white);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-tactical);
+}
+
+.zoom-btn:hover {
+  background-color: var(--color-surface-container-highest);
+  color: var(--color-dispatch-yellow);
+}
+
+.zoom-readout {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  padding: 0 8px;
+}
+
+/* Bottom-Left: Strict Location Safety Drawer */
+.unmapped-drawer {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  z-index: 15;
+  width: 320px;
+  max-width: calc(100% - 28px);
+  background-color: var(--color-surface-container-lowest);
+  border: 3px solid var(--color-void-dark);
+  box-shadow: 4px 4px 0 var(--color-void-dark);
+  font-family: var(--font-mono);
+  transition: all var(--transition-tactical);
+}
+
+.unmapped-drawer-header {
+  background-color: #3b1218;
+  padding: 6px 10px;
+  border-bottom: 2px solid var(--color-void-dark);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+
+.unmapped-header-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--color-p0-critical);
+  letter-spacing: 0.04em;
+}
+
+.unmapped-header-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-newsprint-white);
+}
+
+.unmapped-held-pill {
+  background-color: var(--color-p0-critical);
+  color: var(--color-newsprint-white);
+  padding: 1px 5px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.unmapped-drawer-body {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  background-color: var(--color-surface-container-lowest);
+}
+
+.unmapped-empty-note {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 8px 4px;
+}
+
+.unmapped-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.unmapped-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  background-color: var(--color-surface-dark);
+  border: 1px solid var(--color-void-dark);
+  cursor: pointer;
+  transition: all var(--transition-tactical);
+}
+
+.unmapped-item-row:hover {
+  background-color: var(--color-surface-container-high);
+  transform: translate(-1px, -1px);
+}
+
+.unmapped-item-row.selected {
+  border-color: var(--color-multiverse-cyan);
+  box-shadow: 2px 2px 0 var(--color-multiverse-cyan);
+}
+
+.unmapped-item-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  font-size: 10px;
+}
+
+.unmapped-tag {
+  color: var(--color-glitch-magenta);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.unmapped-name {
+  color: var(--color-newsprint-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unmapped-id {
+  color: var(--color-text-muted);
+  font-size: 9px;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+.unmapped-safety-notice {
+  padding-top: 6px;
+  border-top: 1px dashed var(--color-void-dark);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-dispatch-yellow);
+  text-align: center;
+}
+
+/* Bottom-Right Tactical Map Legend */
+.map-legend-dock {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: rgba(17, 17, 22, 0.92);
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 3px 3px 0 var(--color-void-dark);
+  padding: 6px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-newsprint-white);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--color-void-dark);
+}
+
+.legend-swatch.prio-p0 { background-color: var(--color-p0-critical); }
+.legend-swatch.prio-p1 { background-color: var(--color-hazard-orange); }
+.legend-swatch.prio-p2 { background-color: var(--color-dispatch-yellow); }
+.legend-swatch.prio-review { background-color: var(--color-review-purple); }
+
+/* Map Sub-Bar: Live Operational Telemetry Readout */
+.map-telemetry-bar {
+  height: 34px;
+  background-color: var(--color-surface-container-lowest);
+  border-top: 2px solid var(--color-void-dark);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.map-telemetry-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.telemetry-synthesis-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-dispatch-yellow);
+  font-weight: 800;
+}
+
+.telemetry-pulse-dot {
+  width: 5px;
+  height: 5px;
+  background-color: var(--color-dispatch-yellow);
+}
+
+.telemetry-synthesis-val {
+  color: var(--color-newsprint-white);
+  font-weight: 600;
+}
+
+.telemetry-ws-val {
+  color: var(--color-multiverse-cyan);
+  font-weight: 700;
+}
+
+.map-telemetry-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+}
+
+.telemetry-ok-tag {
+  color: var(--color-system-green);
+  font-weight: 800;
+}
+
+@media (max-width: 1024px) {
+  .tactical-map-pane {
+    border-right: none;
+    border-bottom: 4px solid var(--color-void-dark);
+  }
+  .map-canvas-container {
+    min-height: 380px;
+  }
+  .unmapped-drawer {
+    width: 280px;
+  }
+}
+
+@media (max-width: 640px) {
+  .map-legend-dock {
+    display: none;
+  }
+  .tac-mini-widget {
+    display: none;
+  }
+}

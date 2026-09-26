@@ -1,0 +1,119 @@
+.tactical-command-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  background-color: var(--color-surface-dark);
+  border-top: 3px solid var(--color-void-dark);
+  gap: 16px;
+  flex-shrink: 0;
+  user-select: none;
+  font-family: var(--font-mono);
+}
+
+.command-bar-audio-segment {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.audio-segment-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.audio-channel-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-newsprint-white);
+  text-transform: uppercase;
+}
+
+.audio-visualizer-wrap {
+  display: flex;
+  align-items: center;
+  padding: 3px 8px;
+  background-color: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-void-dark);
+}
+
+.audio-freq-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-multiverse-cyan);
+}
+
+.audio-standby-pill {
+  color: var(--color-text-muted);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.command-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tac-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: var(--color-surface-container-high);
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 2px 2px 0 var(--color-void-dark);
+  color: var(--color-newsprint-white);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-tactical);
+}
+
+.tac-action-btn:hover:not(:disabled) {
+  background-color: var(--color-surface-container-highest);
+  color: var(--color-dispatch-yellow);
+  transform: translate(-1px, -1px);
+}
+
+.tac-action-btn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 0 0 0 var(--color-void-dark);
+}
+
+.tac-action-btn.btn-muted {
+  background-color: var(--color-p0-critical);
+  color: var(--color-newsprint-white);
+}
+
+.tac-action-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.command-bar-security-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-hazard-orange);
+  background-color: var(--color-surface-container-lowest);
+  padding: 3px 8px;
+  border: 1px solid var(--color-void-dark);
+}
+
+@media (max-width: 1024px) {
+  .tactical-command-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
