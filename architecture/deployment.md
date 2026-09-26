@@ -45,8 +45,10 @@
   ```
 * **Start Command:**
   ```bash
-  uvicorn src.main:app --host 0.0.0.0 --port $PORT
+  uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1
   ```
+* **Single Worker Deployment Invariant:**
+  The backend **MUST** run with exactly one worker (`--workers 1`). The real-time WebSocket `ConnectionManager` maintains connected clients in an in-memory process registry. Multiple Uvicorn workers would partition connected clients across isolated memory spaces, preventing cross-worker event broadcasting without an external message broker (such as Redis pub/sub).
 * **Hardware Tier Target:** Render Starter / Free tier (512MB - 2GB RAM).
 * **Statelessness Invariant:** The service has **zero** dependency on the local ephemeral disk for persistence. All incident data, predictions, and audit logs reside in PostgreSQL.
 
