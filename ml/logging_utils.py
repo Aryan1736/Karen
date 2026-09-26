@@ -43,13 +43,23 @@ RAW_TEXT_KEYS = frozenset({
 })
 
 
-def sanitize_context_value(key: str, value: Any) -> Any:
+def sanitize_context_value(key: str, value: Any, visited: set[int] | None = None) -> Any:
     """
     Sanitizes values passed to log records:
     - Redacts secrets and passwords.
     - Summarizes raw emergency text by length rather than logging full raw text.
     - Handles nested dictionaries and non-serializable objects.
+    - Protects against circular references.
     """
+    if visited is None:
+        visited = set()
+
+    obj_id = id(value)
+    if isinstance(value, (dict, list, tuple)):
+        if obj_id in visited:
+            return "[CIRCULAR_REFERENCE]"
+        visited.add(obj_id)
+
     normalized_key = key.lower().replace("-", "_")
 
     if any(secret in normalized_key for secret in SECRET_KEYS):
@@ -59,10 +69,14 @@ def sanitize_context_value(key: str, value: Any) -> Any:
         return f"[REDACTED_TEXT: length={len(value)}]"
 
     if isinstance(value, dict):
-        return {k: sanitize_context_value(k, v) for k, v in value.items()}
+        return {
+            k: sanitize_context_value(k, v, visited)
+            for k, v in value.items()
+            if k != "extra_context"
+        }
 
     if isinstance(value, (list, tuple)):
-        return [sanitize_context_value(key, v) for v in value]
+        return [sanitize_context_value(key, v, visited) for v in value]
 
     if isinstance(value, (str, int, float, bool)) or value is None:
         return value
@@ -95,7 +109,7 @@ class MLJsonFormatter(logging.Formatter):
         # Include any extra custom keys passed by the caller
         if hasattr(record, "extra_context") and isinstance(record.extra_context, dict):
             for k, v in record.extra_context.items():
-                if k not in payload:
+                if k != "extra_context" and k not in payload:
                     payload[k] = sanitize_context_value(k, v)
 
         if record.exc_info:
@@ -114,17 +128,17 @@ class MLLoggerAdapter(logging.LoggerAdapter):
         super().__init__(logger, extra or {})
 
     def process(self, msg: Any, kwargs: Any) -> tuple[Any, Any]:
-        extra = dict(self.extra)
+        extra = {k: v for k, v in self.extra.items() if k != "extra_context"}
         # Merge caller's extra kwargs if present
         passed_extra = kwargs.get("extra")
         if passed_extra and isinstance(passed_extra, dict):
-            extra.update(passed_extra)
+            extra.update({k: v for k, v in passed_extra.items() if k != "extra_context"})
 
         # Clean caller extras and save under extra_context
         sanitized = {k: sanitize_context_value(k, v) for k, v in extra.items()}
-        kwargs["extra"] = sanitized
+        kwargs["extra"] = dict(sanitized)
         # Also store explicitly for the formatter
-        kwargs["extra"]["extra_context"] = sanitized
+        kwargs["extra"]["extra_context"] = dict(sanitized)
 
         # Promote core fields directly to the record attributes
         for field in ("component", "model_version", "report_id", "processing_status"):

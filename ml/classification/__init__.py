@@ -7,4 +7,24 @@ categories (FLOOD_FLASH_FLOOD, FIRE_WILDFIRE_EXPLOSION, STRUCTURAL_COLLAPSE, etc
 with calibrated confidence metrics.
 """
 
-__all__: list[str] = []
+from ml.classification.incident_classifier import (
+    ClassificationResult,
+    IncidentClassifier,
+    classify_incident,
+)
+from ml.classification.taxonomy import (
+    CRISITEXT_SCENARIO_MAPPING,
+    HAZARD_PRECEDENCE_ORDER,
+    INCIDENT_TAXONOMY_CATALOG,
+    IncidentClassDefinition,
+)
+
+__all__ = [
+    "ClassificationResult",
+    "IncidentClassifier",
+    "classify_incident",
+    "INCIDENT_TAXONOMY_CATALOG",
+    "IncidentClassDefinition",
+    "CRISITEXT_SCENARIO_MAPPING",
+    "HAZARD_PRECEDENCE_ORDER",
+]
