@@ -64,6 +64,10 @@ from ml.preprocessing.text_cleaner import PreprocessedText, TextCleaner
 # Domain Vocabularies & Gazetteers
 # ==============================================================================
 
+TERM_RAILWAY_STATION = "railway station"
+TERM_BUS_STAND = "bus stand"
+TERM_BUS_TERMINAL = "bus terminal"
+
 DEFAULT_VEHICLES: frozenset[str] = frozenset({
     "bus", "buses", "truck", "trucks", "car", "cars", "van", "vans",
     "ambulance", "ambulances", "tanker", "tankers", "motorcycle", "motorcycles",
@@ -80,8 +84,8 @@ DEFAULT_INFRASTRUCTURE: frozenset[str] = frozenset({
 
 DEFAULT_FACILITIES: frozenset[str] = frozenset({
     "hospital", "hospitals", "school", "schools", "college", "colleges",
-    "shelter", "shelters", "station", "stations", "railway station", "railway stations",
-    "bus stand", "bus stands", "bus terminal", "airport", "airports",
+    "shelter", "shelters", "station", "stations", TERM_RAILWAY_STATION, "railway stations",
+    TERM_BUS_STAND, "bus stands", TERM_BUS_TERMINAL, "airport", "airports",
     "clinic", "clinics", "market", "markets", "campus", "campuses",
     "godown", "warehouse", "factory", "refinery", "fire station", "police station",
 })
@@ -121,7 +125,7 @@ STATE_PREDICATES: frozenset[str] = frozenset({
 COMPOUND_SUFFIXES: tuple[str, ...] = (
     "flyover", "square", "junction", "intersection", "circle", "crossing",
     "bridge", "underpass", "overpass", "tunnel",
-    "railway station", "bus stand", "bus stop", "bus terminal", "airport", "station",
+    TERM_RAILWAY_STATION, TERM_BUS_STAND, "bus stop", TERM_BUS_TERMINAL, "airport", "station",
     "hospital", "college", "school", "university", "institute", "clinic",
     "market", "temple", "stadium", "mall", "plaza", "complex", "building",
     "road", "street", "highway", "lane", "avenue", "bypass",
@@ -603,7 +607,7 @@ class LocationEntityExtractor:
                     etype = "INFRASTRUCTURE"
                 elif suffix_lower in (
                     "hospital", "college", "school", "university", "institute", "clinic",
-                    "railway station", "bus stand", "bus stop", "bus terminal", "airport", "station",
+                    TERM_RAILWAY_STATION, TERM_BUS_STAND, "bus stop", TERM_BUS_TERMINAL, "airport", "station",
                 ):
                     etype = "FACILITY"
                 elif suffix_lower in ("square", "junction", "intersection", "circle", "crossing", "temple", "stadium", "mall", "plaza"):
@@ -682,9 +686,9 @@ class LocationEntityExtractor:
 
         # Multi-word gazetteer items first
         multi_words = [
-            ("railway station", "FACILITY"),
-            ("bus stand", "FACILITY"),
-            ("bus terminal", "FACILITY"),
+            (TERM_RAILWAY_STATION, "FACILITY"),
+            (TERM_BUS_STAND, "FACILITY"),
+            (TERM_BUS_TERMINAL, "FACILITY"),
             ("power line", "INFRASTRUCTURE"),
             ("transmission line", "INFRASTRUCTURE"),
             ("saheed nagar", "LOCATION"),
@@ -829,7 +833,7 @@ class LocationEntityExtractor:
 
         # 1. Intersection pattern: "intersection of <A> and <B>"
         inter_match = re.search(
-            r"\b(?:at\s+the\s+)?intersection\s+of\s+([A-Za-z0-9\s]+?)\s+and\s+([A-Za-z0-9\s]+?)(?=[,\.]|\s+(?:is|was|are|blocking)|$)",
+            r"\b(?:at\s+the\s+)?intersection\s+of\s+([A-Za-z0-9\-]+(?:\s+[A-Za-z0-9\-]+)*)\s+and\s+([A-Za-z0-9\-]+(?:\s+[A-Za-z0-9\-]+)*)(?=[,.]|\s+(?:is|was|are|blocking)|$)",
             clean_text,
             re.IGNORECASE,
         )
@@ -843,7 +847,7 @@ class LocationEntityExtractor:
         # 2. Highway / Road + Area combo: "on NH16 near Patia"
         if not primary_location:
             combo_match = re.search(
-                r"\bon\s+(?:the\s+)?([A-Za-z0-9\-]+)\s+near\s+(?:the\s+)?([A-Za-z0-9\s\-]+?)(?=[,\.]|\s+(?:is|was|are)|$)",
+                r"\bon\s+(?:the\s+)?([A-Za-z0-9\-]+)\s+near\s+(?:the\s+)?([A-Za-z0-9\-]+(?:\s+[A-Za-z0-9\-]+)*)(?=[,.]|\s+(?:is|was|are)|$)",
                 clean_text,
                 re.IGNORECASE,
             )
@@ -857,7 +861,7 @@ class LocationEntityExtractor:
         # 3. Distance offset: "<N> km from <TARGET>"
         if not primary_location:
             dist_match = re.search(
-                r"\b(\d+(?:\.\d+)?\s*(?:km|kilometers?|kilometres?|miles?))\s+from\s+(?:the\s+)?([A-Za-z0-9\s\-]+?)(?=[,\.]|\s+(?:is|was|are)|$)",
+                r"\b(\d+(?:\.\d+)?\s*(?:km|kilometers?|kilometres?|miles?))\s+from\s+(?:the\s+)?([A-Za-z0-9\-]+(?:\s+[A-Za-z0-9\-]+)*)(?=[,.]|\s+(?:is|was|are)|$)",
                 clean_text,
                 re.IGNORECASE,
             )
@@ -871,7 +875,7 @@ class LocationEntityExtractor:
         # 4. Between two locations: "between <A> and <B>"
         if not primary_location:
             betw_match = re.search(
-                r"\bbetween\s+([A-Za-z0-9\s]+?)\s+and\s+([A-Za-z0-9\s]+?)(?=[,\.]|\s+(?:is|was|are)|$)",
+                r"\bbetween\s+([A-Za-z0-9\-]+(?:\s+[A-Za-z0-9\-]+)*)\s+and\s+([A-Za-z0-9\-]+(?:\s+[A-Za-z0-9\-]+)*)(?=[,.]|\s+(?:is|was|are)|$)",
                 clean_text,
                 re.IGNORECASE,
             )
@@ -886,7 +890,7 @@ class LocationEntityExtractor:
         # 5. Multi-location origin + spread: "Fire started near Patia and spread toward Rasulgarh"
         if not primary_location:
             spread_match = re.search(
-                r"\b(?:near|at)\s+(?:the\s+)?([A-Za-z0-9\s\-]+?)\s+(?:and\s+spread|spreading|heading)\s+toward(?:s)?\s+(?:the\s+)?([A-Za-z0-9\s\-]+?)(?=[,\.]|$)",
+                r"\b(?:near|at)\s+(?:the\s+)?([A-Za-z0-9\-]+(?:\s+[A-Za-z0-9\-]+)*)\s+(?:and\s+spread|spreading|heading)\s+toward(?:s)?\s+(?:the\s+)?([A-Za-z0-9\-]+(?:\s+[A-Za-z0-9\-]+)*)(?=[,.]|$)",
                 clean_text,
                 re.IGNORECASE,
             )
@@ -904,7 +908,7 @@ class LocationEntityExtractor:
                 # Exact markers
                 (
                     re.compile(
-                        r"\b(?:inside|within)\s+(?:the\s+)?([A-Za-z0-9\s\-]+?)(?=[,\.]|\s+(?:and\s+spread|spreading|is|was|are|with)|$)",
+                        r"\b(?:inside|within)\s+(?:the\s+)?([A-Za-z0-9\-]+(?:\s+[A-Za-z0-9\-]+)*)(?=[,.]|\s+(?:and\s+spread|spreading|is|was|are|with)|$)",
                         re.IGNORECASE,
                     ),
                     "exact",
@@ -912,7 +916,7 @@ class LocationEntityExtractor:
                 ),
                 (
                     re.compile(
-                        r"\bat\s+(?:the\s+)?([A-Za-z0-9\s\-]+?)(?=[,\.]|\s+(?:and\s+spread|spreading|is|was|are|with)|$)",
+                        r"\bat\s+(?:the\s+)?([A-Za-z0-9\-]+(?:\s+[A-Za-z0-9\-]+)*)(?=[,.]|\s+(?:and\s+spread|spreading|is|was|are|with)|$)",
                         re.IGNORECASE,
                     ),
                     "exact",
@@ -921,7 +925,7 @@ class LocationEntityExtractor:
                 # Approximate markers
                 (
                     re.compile(
-                        r"\b(?:near|around|somewhere\s+around|close\s+to|beside|behind|outside|across\s+from)\s+(?:the\s+)?([A-Za-z0-9\s\-]+?)(?=[,\.]|\s+(?:and\s+spread|spreading|is|was|are|with)|$)",
+                        r"\b(?:near|around|somewhere\s+around|close\s+to|beside|behind|outside|across\s+from)\s+(?:the\s+)?([A-Za-z0-9\-]+(?:\s+[A-Za-z0-9\-]+)*)(?=[,.]|\s+(?:and\s+spread|spreading|is|was|are|with)|$)",
                         re.IGNORECASE,
                     ),
                     "approximate",
@@ -929,7 +933,7 @@ class LocationEntityExtractor:
                 ),
                 (
                     re.compile(
-                        r"\b(?:on)\s+(?:the\s+)?([A-Za-z0-9\s\-]+?)(?=[,\.]|\s+(?:near|at|is|was|are)|$)",
+                        r"\b(?:on)\s+(?:the\s+)?([A-Za-z0-9\-]+(?:\s+[A-Za-z0-9\-]+)*)(?=[,.]|\s+(?:near|at|is|was|are)|$)",
                         re.IGNORECASE,
                     ),
                     "approximate",

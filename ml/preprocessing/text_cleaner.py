@@ -26,20 +26,20 @@ from ml.config import ComponentResult, MLConfig, get_ml_config
 from ml.exceptions import MLInferenceError, MLInputError
 from ml.logging_utils import get_ml_logger
 
-# Regular expression to match script and style tags including their contents
+# Regular expression to match script and style tags including their contents (unrolled loop, linear runtime)
 _SCRIPT_STYLE_RE = re.compile(
-    r"<(script|style)\b[^>]*>[\s\S]*?</\1>",
+    r"<(script|style)\b[^>]*>[^<]*(?:<(?!/\1>)[^<]*)*</\1>",
     flags=re.IGNORECASE,
 )
 _UNCLOSED_SCRIPT_STYLE_RE = re.compile(
-    r"<(script|style)\b[^>]*>[\s\S]*$",
+    r"<(script|style)\b[^>]*>[^<]*(?:<(?!/\1>)[^<]*)*$",
     flags=re.IGNORECASE,
 )
-# Regular expression to match HTML comments
-_HTML_COMMENT_RE = re.compile(r"<!--[\s\S]*?-->")
+# Regular expression to match HTML comments (unrolled loop, linear runtime)
+_HTML_COMMENT_RE = re.compile(r"<!--[^-]*(?:-(?!->)[^-]*)*-->")
 
-# Regular expression to match general HTML tags (starting with a letter)
-_HTML_TAG_RE = re.compile(r"</?[a-zA-Z][a-zA-Z0-9:-]*(?:\s+[^>]*)?/?>")
+# Regular expression to match general HTML tags without backtracking
+_HTML_TAG_RE = re.compile(r"</?[a-zA-Z][a-zA-Z0-9:-]*\b[^>]*>")
 
 # Regular expression for consecutive whitespace
 _WHITESPACE_RE = re.compile(r"\s+")

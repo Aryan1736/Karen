@@ -508,7 +508,7 @@ _COMPOUND_NUMBER_STR = (
     r"\d+(?:,\d{3})*|"
     r"(?:(?:one|two|three|four|five|six|seven|eight|nine|a)\s+)?hundred(?:\s+and)?(?:\s+(?:twenty|thirty|forty|fourty|fifty|sixty|seventy|eighty|ninety))?(?:[\s-]+(?:one|two|three|four|five|six|seven|eight|nine))?|"
     r"(?:twenty|thirty|forty|fourty|fifty|sixty|seventy|eighty|ninety)[\s-]+(?:one|two|three|four|five|six|seven|eight|nine)|"
-    r"[a-zA-Z]+"
+    r"(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fourty|fifty|sixty|seventy|eighty|ninety|hundred)"
     r")"
 )
 

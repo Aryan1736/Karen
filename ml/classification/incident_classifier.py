@@ -348,112 +348,26 @@ class IncidentClassifier:
             MLInferenceError: If an unexpected internal error occurs during execution.
         """
         start_time = time.time()
-
-        # Step 1: Input Normalization & Validation (Reuse Feature 2 Preprocessor)
-        if isinstance(text, PreprocessedText):
-            clean_text = text.normalized_text
-            input_warnings = list(text.warnings)
-        elif isinstance(text, str):
-            preprocessed = self._cleaner.clean(text, report_id=report_id)
-            clean_text = preprocessed.normalized_text
-            input_warnings = list(preprocessed.warnings)
-        else:
-            raise MLInputError(
-                f"Input to IncidentClassifier must be str or PreprocessedText, got {type(text).__name__}",
-                details={"type": type(text).__name__},
-            )
+        clean_text, input_warnings = self._normalize_input(text, report_id)
 
         try:
-            # Step 2: Compute Component Signals
-            kw_scores: dict[str, float] = {}
-            sem_scores: dict[str, float] = {}
-            raw_sims: dict[str, float] = {}
-            evidence_details: dict[str, Any] = {}
-
-            if self.mode in ("keyword", "hybrid"):
-                kw_scores, kw_evidence = self._compute_keyword_scores(clean_text)
-                evidence_details.update(kw_evidence)
-
-            if self.mode in ("semantic", "hybrid"):
-                sem_scores, raw_sims = self._compute_semantic_scores(clean_text)
-                evidence_details["raw_cosine_similarities"] = raw_sims
-                evidence_details["semantic_scores"] = sem_scores
-
-            # Step 3: Combine Signals into Composite Class Scores
-            composite_scores: dict[str, float] = {}
-            for label in CANONICAL_INCIDENT_TYPES:
-                if self.mode == "keyword":
-                    score = kw_scores.get(label, 0.0)
-                elif self.mode == "semantic":
-                    score = sem_scores.get(label, 0.0)
-                else:  # hybrid
-                    kw = kw_scores.get(label, 0.0)
-                    sem = sem_scores.get(label, 0.0)
-                    # If keyword matched strongly, let it boost semantic score
-                    score = (self.keyword_weight * kw) + (self.semantic_weight * sem)
-                composite_scores[label] = round(score, 4)
-
-            # Step 4: Rank Candidates & Resolve Conflicts
-            sorted_candidates = sorted(
-                composite_scores.items(),
-                key=lambda item: item[1],
-                reverse=True,
-            )
-            top_label, top_score = sorted_candidates[0]
-            second_label, second_score = sorted_candidates[1]
+            kw_scores, sem_scores, evidence_details = self._compute_component_signals(clean_text)
+            composite_scores = self._combine_class_scores(kw_scores, sem_scores)
 
             warnings = list(input_warnings)
-            conflict_detected = False
-            secondary_hazard: str | None = None
+            (
+                sorted_candidates,
+                top_label,
+                top_score,
+                second_label,
+                second_score,
+                conflict_detected,
+                secondary_hazard,
+            ) = self._rank_and_resolve_conflicts(composite_scores, warnings)
 
-            # Detect secondary hazard when two distinct crisis categories both have strong signals
-            if (
-                second_score >= 0.35
-                and second_score >= 0.70 * top_score
-                and second_label != "OTHER_GENERAL_INCIDENT"
-                and top_label != "OTHER_GENERAL_INCIDENT"
-            ):
-                conflict_detected = True
-                secondary_hazard = second_label
-                warnings.append(
-                    f"Conflicting secondary hazard detected: {second_label} "
-                    f"(score: {second_score:.2f}) alongside primary {top_label} ({top_score:.2f})"
-                )
-
-            # Deterministic Tie-Breaking via HAZARD_PRECEDENCE_ORDER if scores are essentially equal
-            if abs(top_score - second_score) < 0.03 and top_score > 0.10:
-                top_idx = HAZARD_PRECEDENCE_ORDER.index(top_label) if top_label in HAZARD_PRECEDENCE_ORDER else 99
-                sec_idx = HAZARD_PRECEDENCE_ORDER.index(second_label) if second_label in HAZARD_PRECEDENCE_ORDER else 99
-                if sec_idx < top_idx:
-                    # Second candidate has higher physical initiating precedence
-                    top_label, second_label = second_label, top_label
-                    top_score, second_score = second_score, top_score
-                    warnings.append(
-                        f"Resolved near-tie via hazard precedence: selected {top_label} over {second_label}"
-                    )
-
-            # Step 5: Fallback & Uncertainty Evaluation
-            # If top score is below minimum confidence threshold or text has no crisis evidence
-            if top_score < self.min_confidence_threshold:
-                selected_label = self.fallback_label
-                # Low confidence reflects ambiguity
-                confidence = round(max(0.20, min(0.48, top_score)), 2)
-                status = "NEEDS_REVIEW"
-                warnings.append(
-                    f"Max class score ({top_score:.2f}) below threshold ({self.min_confidence_threshold}); "
-                    f"defaulting to {self.fallback_label}"
-                )
-            elif top_label == "OTHER_GENERAL_INCIDENT":
-                selected_label = "OTHER_GENERAL_INCIDENT"
-                confidence = round(min(0.70, top_score), 2)
-                status = "NEEDS_REVIEW" if confidence < self.config.confidence_review_threshold else "SUCCESS"
-            else:
-                selected_label = top_label
-                # Margin separation bonus: clear winner gets slight confidence boost
-                margin = top_score - second_score
-                raw_conf = top_score + (0.05 * margin)
-                confidence = round(min(1.0, max(0.10, raw_conf)), 2)
-                status = "NEEDS_REVIEW" if confidence < self.config.confidence_review_threshold else "SUCCESS"
+            selected_label, confidence, status = self._resolve_label_and_confidence(
+                top_label, top_score, second_score, warnings
+            )
 
             latency_ms = round((time.time() - start_time) * 1000, 2)
 
@@ -506,6 +420,147 @@ class IncidentClassifier:
                 f"Unexpected failure during incident classification: {type(exc).__name__}: {exc}",
                 details={"error_type": type(exc).__name__},
             ) from exc
+
+    def _normalize_input(
+        self, text: str | PreprocessedText, report_id: str | None
+    ) -> tuple[str, list[str]]:
+        if isinstance(text, PreprocessedText):
+            return text.normalized_text, list(text.warnings)
+        if isinstance(text, str):
+            preprocessed = self._cleaner.clean(text, report_id=report_id)
+            return preprocessed.normalized_text, list(preprocessed.warnings)
+        raise MLInputError(
+            f"Input to IncidentClassifier must be str or PreprocessedText, got {type(text).__name__}",
+            details={"type": type(text).__name__},
+        )
+
+    def _compute_component_signals(
+        self, clean_text: str
+    ) -> tuple[dict[str, float], dict[str, float], dict[str, Any]]:
+        kw_scores: dict[str, float] = {}
+        sem_scores: dict[str, float] = {}
+        raw_sims: dict[str, float] = {}
+        evidence_details: dict[str, Any] = {}
+
+        if self.mode in ("keyword", "hybrid"):
+            kw_scores, kw_evidence = self._compute_keyword_scores(clean_text)
+            evidence_details.update(kw_evidence)
+
+        if self.mode in ("semantic", "hybrid"):
+            sem_scores, raw_sims = self._compute_semantic_scores(clean_text)
+            evidence_details["raw_cosine_similarities"] = raw_sims
+            evidence_details["semantic_scores"] = sem_scores
+
+        return kw_scores, sem_scores, evidence_details
+
+    def _combine_class_scores(
+        self, kw_scores: dict[str, float], sem_scores: dict[str, float]
+    ) -> dict[str, float]:
+        composite_scores: dict[str, float] = {}
+        for label in CANONICAL_INCIDENT_TYPES:
+            if self.mode == "keyword":
+                score = kw_scores.get(label, 0.0)
+            elif self.mode == "semantic":
+                score = sem_scores.get(label, 0.0)
+            else:  # hybrid
+                kw = kw_scores.get(label, 0.0)
+                sem = sem_scores.get(label, 0.0)
+                score = (self.keyword_weight * kw) + (self.semantic_weight * sem)
+            composite_scores[label] = round(score, 4)
+        return composite_scores
+
+    def _rank_and_resolve_conflicts(
+        self,
+        composite_scores: dict[str, float],
+        warnings: list[str],
+    ) -> tuple[list[tuple[str, float]], str, float, str, float, bool, str | None]:
+        sorted_candidates = sorted(
+            composite_scores.items(),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+        top_label, top_score = sorted_candidates[0]
+        second_label, second_score = sorted_candidates[1]
+
+        conflict_detected = False
+        secondary_hazard: str | None = None
+
+        if (
+            second_score >= 0.35
+            and second_score >= 0.70 * top_score
+            and second_label != "OTHER_GENERAL_INCIDENT"
+            and top_label != "OTHER_GENERAL_INCIDENT"
+        ):
+            conflict_detected = True
+            secondary_hazard = second_label
+            warnings.append(
+                f"Conflicting secondary hazard detected: {second_label} "
+                f"(score: {second_score:.2f}) alongside primary {top_label} ({top_score:.2f})"
+            )
+
+        if abs(top_score - second_score) < 0.03 and top_score > 0.10:
+            top_idx = (
+                HAZARD_PRECEDENCE_ORDER.index(top_label)
+                if top_label in HAZARD_PRECEDENCE_ORDER
+                else 99
+            )
+            sec_idx = (
+                HAZARD_PRECEDENCE_ORDER.index(second_label)
+                if second_label in HAZARD_PRECEDENCE_ORDER
+                else 99
+            )
+            if sec_idx < top_idx:
+                top_label, second_label = second_label, top_label
+                top_score, second_score = second_score, top_score
+                warnings.append(
+                    f"Resolved near-tie via hazard precedence: selected {top_label} over {second_label}"
+                )
+
+        return (
+            sorted_candidates,
+            top_label,
+            top_score,
+            second_label,
+            second_score,
+            conflict_detected,
+            secondary_hazard,
+        )
+
+    def _resolve_label_and_confidence(
+        self,
+        top_label: str,
+        top_score: float,
+        second_score: float,
+        warnings: list[str],
+    ) -> tuple[str, float, str]:
+        if top_score < self.min_confidence_threshold:
+            selected_label = self.fallback_label
+            confidence = round(max(0.20, min(0.48, top_score)), 2)
+            status = "NEEDS_REVIEW"
+            warnings.append(
+                f"Max class score ({top_score:.2f}) below threshold ({self.min_confidence_threshold}); "
+                f"defaulting to {self.fallback_label}"
+            )
+        elif top_label == "OTHER_GENERAL_INCIDENT":
+            selected_label = "OTHER_GENERAL_INCIDENT"
+            confidence = round(min(0.70, top_score), 2)
+            status = (
+                "NEEDS_REVIEW"
+                if confidence < self.config.confidence_review_threshold
+                else "SUCCESS"
+            )
+        else:
+            selected_label = top_label
+            margin = top_score - second_score
+            raw_conf = top_score + (0.05 * margin)
+            confidence = round(min(1.0, max(0.10, raw_conf)), 2)
+            status = (
+                "NEEDS_REVIEW"
+                if confidence < self.config.confidence_review_threshold
+                else "SUCCESS"
+            )
+
+        return selected_label, confidence, status
 
     def predict_batch(
         self,

@@ -194,7 +194,7 @@ class InferenceEngine:
         # ======================================================================
         # Step 0: Input Parsing & Validation (FAIL-FAST)
         # ======================================================================
-        raw_text, effective_report_id, effective_location_hint = self._parse_input(
+        raw_text, effective_report_id, _ = self._parse_input(
             report=report,
             report_id=report_id,
             location_hint=location_hint,
@@ -203,13 +203,146 @@ class InferenceEngine:
         # ======================================================================
         # Step 1: Preprocessing & Text Normalization (FAIL-FAST)
         # ======================================================================
+        clean_res, stage_latencies["preprocessing_ms"] = self._run_preprocessing(
+            raw_text=raw_text,
+            effective_report_id=effective_report_id,
+            all_warnings=all_warnings,
+        )
+
+        # ======================================================================
+        # Step 2: Incident Classification (FAIL-SOFT)
+        # ======================================================================
+        classifier_res, incident_type_dict, stage_latencies["classification_ms"] = self._run_classification(
+            clean_res=clean_res,
+            effective_report_id=effective_report_id,
+            all_warnings=all_warnings,
+        )
+
+        # ======================================================================
+        # Step 3: Entity Extraction (FAIL-SOFT)
+        # ======================================================================
+        (
+            loc_res,
+            location_dict,
+            people_res,
+            people_at_risk_dict,
+            canonical_entities,
+            stage_latencies["extraction_ms"],
+        ) = self._run_extraction(
+            clean_res=clean_res,
+            effective_report_id=effective_report_id,
+            all_warnings=all_warnings,
+        )
+
+        # ======================================================================
+        # Step 4: Required Response Mapping (FAIL-SOFT)
+        # ======================================================================
+        resp_res, required_response_list, stage_latencies["response_ms"] = self._run_response(
+            clean_res=clean_res,
+            effective_report_id=effective_report_id,
+            all_warnings=all_warnings,
+        )
+
+        # ======================================================================
+        # Step 5: Operational Urgency Engine (FAIL-SOFT)
+        # ======================================================================
+        urgency_res, urgency_dict, stage_latencies["urgency_ms"] = self._run_urgency(
+            clean_res=clean_res,
+            classifier_res=classifier_res,
+            people_res=people_res,
+            resp_res=resp_res,
+            loc_res=loc_res,
+            all_warnings=all_warnings,
+        )
+
+        # ======================================================================
+        # Step 6: Dense Semantic Embedding (FAIL-SOFT)
+        # ======================================================================
+        embedding_vec, embedding_reference, stage_latencies["embedding_ms"] = self._run_embedding(
+            clean_res=clean_res,
+            effective_report_id=effective_report_id,
+            all_warnings=all_warnings,
+        )
+
+        # ======================================================================
+        # Step 7: Confidence Calibration & Operational Status (FAIL-SOFT)
+        # ======================================================================
+        processing_status, stage_latencies["confidence_ms"] = self._run_confidence(
+            classifier_res=classifier_res,
+            urgency_res=urgency_res,
+            loc_res=loc_res,
+            people_res=people_res,
+            resp_res=resp_res,
+            embedding_vec=embedding_vec,
+            all_warnings=all_warnings,
+        )
+
+        # ======================================================================
+        # Step 8: Final Payload Assembly
+        # ======================================================================
+        deduped_warnings = _dedup_warnings(all_warnings)
+
+        payload: dict[str, Any] = {
+            "report_id": effective_report_id,
+            "model_version": self.config.model_version,
+            "incident_type": incident_type_dict,
+            "urgency": urgency_dict,
+            "location": location_dict,
+            "people_at_risk": people_at_risk_dict,
+            "required_response": required_response_list,
+            "entities": canonical_entities,
+            "embedding_reference": embedding_reference,
+            "processing_status": processing_status,
+            "warnings": deduped_warnings,
+        }
+
+        # Optional raw dense embedding vector for internal ML-to-backend payload
+        if include_embedding and embedding_vec is not None:
+            payload["embedding"] = embedding_vec
+
+        # ======================================================================
+        # Step 9: Final Schema Validation Gate (FAIL-FAST)
+        # ======================================================================
+        stage_latencies["validation_ms"] = self._run_validation(payload)
+
+        total_latency_ms = round((time.perf_counter() - t_pipeline_start) * 1000, 2)
+        stage_latencies["total_ms"] = total_latency_ms
+
+        # Record observability metadata
+        self.last_execution_metadata = {
+            "report_id": effective_report_id,
+            "processing_status": processing_status,
+            "stage_latencies_ms": dict(stage_latencies),
+            "total_latency_ms": total_latency_ms,
+            "warnings_count": len(deduped_warnings),
+        }
+
+        # Safe logging (Never log raw report text or embedding vectors)
+        self.logger.info(
+            "Unified inference pipeline execution completed",
+            extra={
+                "report_id": effective_report_id,
+                "processing_status": processing_status,
+                "model_version": self.config.model_version,
+                "total_latency_ms": total_latency_ms,
+                "warnings_count": len(deduped_warnings),
+            },
+        )
+
+        return payload
+
+    def _run_preprocessing(
+        self,
+        raw_text: str,
+        effective_report_id: str,
+        all_warnings: list[str],
+    ) -> tuple[PreprocessedText, float]:
         t0 = time.perf_counter()
         try:
             clean_res: PreprocessedText = self.text_cleaner.clean(
                 text=raw_text,
                 report_id=effective_report_id,
             )
-            clean_text = clean_res.normalized_text
             all_warnings.extend(clean_res.warnings)
         except MLInputError:
             raise
@@ -219,11 +352,14 @@ class InferenceEngine:
                 f"Preprocessing failed fatally on input text: {exc}",
                 details={"error_type": type(exc).__name__},
             ) from exc
-        stage_latencies["preprocessing_ms"] = round((time.perf_counter() - t0) * 1000, 2)
+        return clean_res, round((time.perf_counter() - t0) * 1000, 2)
 
-        # ======================================================================
-        # Step 2: Incident Classification (FAIL-SOFT)
-        # ======================================================================
+    def _run_classification(
+        self,
+        clean_res: PreprocessedText,
+        effective_report_id: str,
+        all_warnings: list[str],
+    ) -> tuple[ClassificationResult | None, dict[str, Any], float]:
         t0 = time.perf_counter()
         classifier_res: ClassificationResult | None = None
         incident_type_dict: dict[str, Any] = {"label": None, "confidence": None}
@@ -246,14 +382,21 @@ class InferenceEngine:
                 exc_info=True,
             )
             all_warnings.append(f"Component 'classification' failed: {type(exc).__name__}")
-        stage_latencies["classification_ms"] = round((time.perf_counter() - t0) * 1000, 2)
+        return classifier_res, incident_type_dict, round((time.perf_counter() - t0) * 1000, 2)
 
-        # ======================================================================
-        # Step 3: Entity Extraction (FAIL-SOFT)
-        #   3A. Location & named entities (Hard Invariant: Coordinates = None)
-        #   3B. People at risk
-        #   3C. Canonical entity token assembly
-        # ======================================================================
+    def _run_extraction(
+        self,
+        clean_res: PreprocessedText,
+        effective_report_id: str,
+        all_warnings: list[str],
+    ) -> tuple[
+        LocationEntityResult | None,
+        dict[str, Any],
+        PeopleRiskResult | None,
+        dict[str, Any],
+        list[dict[str, Any]],
+        float,
+    ]:
         t0 = time.perf_counter()
         loc_res: LocationEntityResult | None = None
         location_dict: dict[str, Any] = {
@@ -299,16 +442,25 @@ class InferenceEngine:
             )
             all_warnings.append(f"Component 'people_at_risk' failed: {type(exc).__name__}")
 
-        # Assemble and canonically sort entities (Step 21 determinism)
         canonical_entities = self._assemble_canonical_entities(
             loc_entities=loc_entities,
             people_entities=people_entities,
         )
-        stage_latencies["extraction_ms"] = round((time.perf_counter() - t0) * 1000, 2)
+        return (
+            loc_res,
+            location_dict,
+            people_res,
+            people_at_risk_dict,
+            canonical_entities,
+            round((time.perf_counter() - t0) * 1000, 2),
+        )
 
-        # ======================================================================
-        # Step 4: Required Response Mapping (FAIL-SOFT)
-        # ======================================================================
+    def _run_response(
+        self,
+        clean_res: PreprocessedText,
+        effective_report_id: str,
+        all_warnings: list[str],
+    ) -> tuple[ResponseExtractionResult | None, list[dict[str, Any]], float]:
         t0 = time.perf_counter()
         resp_res: ResponseExtractionResult | None = None
         required_response_list: list[dict[str, Any]] = []
@@ -332,11 +484,17 @@ class InferenceEngine:
                 else 999
             )
         )
-        stage_latencies["response_ms"] = round((time.perf_counter() - t0) * 1000, 2)
+        return resp_res, required_response_list, round((time.perf_counter() - t0) * 1000, 2)
 
-        # ======================================================================
-        # Step 5: Operational Urgency Engine (FAIL-SOFT)
-        # ======================================================================
+    def _run_urgency(
+        self,
+        clean_res: PreprocessedText,
+        classifier_res: ClassificationResult | None,
+        people_res: PeopleRiskResult | None,
+        resp_res: ResponseExtractionResult | None,
+        loc_res: LocationEntityResult | None,
+        all_warnings: list[str],
+    ) -> tuple[UrgencyResult | None, dict[str, Any], float]:
         t0 = time.perf_counter()
         urgency_res: UrgencyResult | None = None
         urgency_dict: dict[str, Any] = {"label": None, "confidence": None}
@@ -357,11 +515,14 @@ class InferenceEngine:
                 exc_info=True,
             )
             all_warnings.append(f"Component 'urgency' failed: {type(exc).__name__}")
-        stage_latencies["urgency_ms"] = round((time.perf_counter() - t0) * 1000, 2)
+        return urgency_res, urgency_dict, round((time.perf_counter() - t0) * 1000, 2)
 
-        # ======================================================================
-        # Step 6: Dense Semantic Embedding (FAIL-SOFT)
-        # ======================================================================
+    def _run_embedding(
+        self,
+        clean_res: PreprocessedText,
+        effective_report_id: str,
+        all_warnings: list[str],
+    ) -> tuple[list[float] | None, str | None, float]:
         t0 = time.perf_counter()
         embedding_vec: list[float] | None = None
         embedding_reference: str | None = None
@@ -370,7 +531,6 @@ class InferenceEngine:
                 text=clean_res,
                 report_id=effective_report_id,
             )
-            # Reference ID strictly matching contract convention (docs/api-contract.md)
             embedding_reference = f"emb-{effective_report_id}"
         except Exception as exc:
             self.logger.warning(
@@ -381,16 +541,21 @@ class InferenceEngine:
             embedding_vec = None
             embedding_reference = None
             all_warnings.append(f"Component 'embeddings' failed: {type(exc).__name__}")
-        stage_latencies["embedding_ms"] = round((time.perf_counter() - t0) * 1000, 2)
+        return embedding_vec, embedding_reference, round((time.perf_counter() - t0) * 1000, 2)
 
-        # ======================================================================
-        # Step 7: Confidence Calibration & Operational Status (FAIL-SOFT)
-        # ======================================================================
+    def _run_confidence(
+        self,
+        classifier_res: ClassificationResult | None,
+        urgency_res: UrgencyResult | None,
+        loc_res: LocationEntityResult | None,
+        people_res: PeopleRiskResult | None,
+        resp_res: ResponseExtractionResult | None,
+        embedding_vec: list[float] | None,
+        all_warnings: list[str],
+    ) -> tuple[str, float]:
         t0 = time.perf_counter()
         processing_status = "SUCCESS"
-
         try:
-            # Package component inputs for confidence engine, tracking component failures
             conf_input_classifier = (
                 classifier_res
                 if classifier_res is not None
@@ -434,7 +599,6 @@ class InferenceEngine:
                 exc_info=True,
             )
             all_warnings.append(f"Component 'confidence_engine' failed: {type(exc).__name__}")
-            # Determine fail-safe status without fake confidence
             active_successes = sum(
                 1 for c in (classifier_res, urgency_res, loc_res, people_res, resp_res) if c is not None
             )
@@ -442,35 +606,9 @@ class InferenceEngine:
                 processing_status = "FAILED"
             else:
                 processing_status = "NEEDS_REVIEW"
+        return processing_status, round((time.perf_counter() - t0) * 1000, 2)
 
-        stage_latencies["confidence_ms"] = round((time.perf_counter() - t0) * 1000, 2)
-
-        # ======================================================================
-        # Step 8: Final Payload Assembly
-        # ======================================================================
-        deduped_warnings = _dedup_warnings(all_warnings)
-
-        payload: dict[str, Any] = {
-            "report_id": effective_report_id,
-            "model_version": self.config.model_version,
-            "incident_type": incident_type_dict,
-            "urgency": urgency_dict,
-            "location": location_dict,
-            "people_at_risk": people_at_risk_dict,
-            "required_response": required_response_list,
-            "entities": canonical_entities,
-            "embedding_reference": embedding_reference,
-            "processing_status": processing_status,
-            "warnings": deduped_warnings,
-        }
-
-        # Optional raw dense embedding vector for internal ML-to-backend payload
-        if include_embedding and embedding_vec is not None:
-            payload["embedding"] = embedding_vec
-
-        # ======================================================================
-        # Step 9: Final Schema Validation Gate (FAIL-FAST)
-        # ======================================================================
+    def _run_validation(self, payload: dict[str, Any]) -> float:
         t0 = time.perf_counter()
         try:
             self.validator.validate(payload)
@@ -482,33 +620,7 @@ class InferenceEngine:
                 f"Schema validator error: {exc}",
                 details={"error_type": type(exc).__name__},
             ) from exc
-        stage_latencies["validation_ms"] = round((time.perf_counter() - t0) * 1000, 2)
-
-        total_latency_ms = round((time.perf_counter() - t_pipeline_start) * 1000, 2)
-        stage_latencies["total_ms"] = total_latency_ms
-
-        # Record observability metadata
-        self.last_execution_metadata = {
-            "report_id": effective_report_id,
-            "processing_status": processing_status,
-            "stage_latencies_ms": dict(stage_latencies),
-            "total_latency_ms": total_latency_ms,
-            "warnings_count": len(deduped_warnings),
-        }
-
-        # Safe logging (Never log raw report text or embedding vectors)
-        self.logger.info(
-            "Unified inference pipeline execution completed",
-            extra={
-                "report_id": effective_report_id,
-                "processing_status": processing_status,
-                "model_version": self.config.model_version,
-                "total_latency_ms": total_latency_ms,
-                "warnings_count": len(deduped_warnings),
-            },
-        )
-
-        return payload
+        return round((time.perf_counter() - t0) * 1000, 2)
 
     def _parse_input(
         self,

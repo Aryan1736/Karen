@@ -74,10 +74,14 @@ def main(argv: list[str] | None = None) -> int:
     if not args.quiet:
         print("[INFO] Running evaluation across classification, extraction, urgency, embeddings, and performance...")
 
-    report = harness.run_evaluation(
-        include_performance=not args.skip_performance,
-        save_path=output_path,
-    )
+    try:
+        report = harness.run_evaluation(
+            include_performance=not args.skip_performance,
+            save_path=output_path,
+        )
+    except ValueError as exc:
+        print(f"[ERROR] Path validation failed: {exc}", file=sys.stderr)
+        return 1
 
     if not args.quiet:
         print(f"[SUCCESS] Machine-readable report saved to: {output_path.resolve()}")

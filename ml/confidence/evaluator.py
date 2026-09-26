@@ -113,20 +113,20 @@ class ConfidenceEvaluator:
         # Case 1A: Equal weights: c=[0.6, 0.9], w=[1.0, 1.0]
         # H = 2 / (1/0.6 + 1/0.9) = 2 / (1.666667 + 1.111111) = 2 / 2.777778 = 0.7200
         h1 = self.engine.compute_weighted_harmonic_mean([("a", 0.6, 1.0), ("b", 0.9, 1.0)])
-        c1a_pass = h1 == 0.72
+        c1a_pass = h1 is not None and math.isclose(h1, 0.72, abs_tol=1e-4)
 
         # Case 1B: Unequal weights: c=[0.6, 0.9], w=[0.7, 0.3]
         # H = 1.0 / (0.7/0.6 + 0.3/0.9) = 1.0 / (1.166667 + 0.333333) = 1.0 / 1.5 = 0.6667
         h2 = self.engine.compute_weighted_harmonic_mean([("a", 0.6, 0.7), ("b", 0.9, 0.3)])
-        c1b_pass = h2 == 0.6667
+        c1b_pass = h2 is not None and math.isclose(h2, 0.6667, abs_tol=1e-4)
 
         # Case 1C: Single item: c=0.85, w=0.5 -> 0.85
         h3 = self.engine.compute_weighted_harmonic_mean([("a", 0.85, 0.5)])
-        c1c_pass = h3 == 0.85
+        c1c_pass = h3 is not None and math.isclose(h3, 0.85, abs_tol=1e-4)
 
         # Case 1D: All 1.0 -> 1.0
         h4 = self.engine.compute_weighted_harmonic_mean([("a", 1.0, 0.3), ("b", 1.0, 0.7)])
-        c1d_pass = h4 == 1.0
+        c1d_pass = h4 is not None and math.isclose(h4, 1.0, abs_tol=1e-4)
 
         formula_correctness = c1a_pass and c1b_pass and c1c_pass and c1d_pass
         latencies.append((time.perf_counter() - t0) * 1000.0)
@@ -143,8 +143,10 @@ class ConfidenceEvaluator:
         h_zero = self.engine.compute_weighted_harmonic_mean([("a", 0.9, 0.5), ("b", 0.0, 0.5)])
         res_zero = self.engine.calculate(incident_type=0.9, urgency=0.0)
         zero_collapse_passed = (
-            h_zero == 0.0
-            and res_zero.overall_confidence == 0.0
+            h_zero is not None
+            and math.isclose(h_zero, 0.0, abs_tol=1e-6)
+            and res_zero.overall_confidence is not None
+            and math.isclose(res_zero.overall_confidence, 0.0, abs_tol=1e-6)
             and res_zero.status == "NEEDS_REVIEW"
             and res_zero.needs_review is True
         )
@@ -341,10 +343,18 @@ class ConfidenceEvaluator:
             urgency=0.80,
         )
         embedding_exclusion_passed = (
-            res_with_emb.overall_confidence == res_without_emb.overall_confidence
+            res_with_emb.overall_confidence is not None
+            and res_without_emb.overall_confidence is not None
+            and math.isclose(
+                res_with_emb.overall_confidence,
+                res_without_emb.overall_confidence,
+                abs_tol=1e-6,
+            )
             and "embeddings" in res_with_emb.components
             and not res_with_emb.components["embeddings"].included
-            and res_with_emb.components["embeddings"].weight == 0.0
+            and math.isclose(
+                res_with_emb.components["embeddings"].weight, 0.0, abs_tol=1e-6
+            )
         )
         latencies.append((time.perf_counter() - t0) * 1000.0)
         checks_count += 2

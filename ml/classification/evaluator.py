@@ -103,7 +103,7 @@ class ClassifierEvaluator:
             label: ClassMetrics(label=label) for label in CANONICAL_INCIDENT_TYPES
         }
         confusion_matrix: dict[str, dict[str, int]] = {
-            true_lbl: {pred_lbl: 0 for pred_lbl in CANONICAL_INCIDENT_TYPES}
+            true_lbl: dict.fromkeys(CANONICAL_INCIDENT_TYPES, 0)
             for true_lbl in CANONICAL_INCIDENT_TYPES
         }
 

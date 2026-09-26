@@ -1,13 +1,13 @@
 {
   "evaluation_version": "1.0.0",
-  "timestamp_utc": "2026-09-26T17:29:16.542511+00:00",
+  "timestamp_utc": "2026-09-26T19:37:22.384122+00:00",
   "environment": {
     "python_version": "3.13.5",
     "platform": "Windows-11-10.0.26200-SP0",
     "operating_system": "Windows",
     "architecture": "AMD64",
     "processor": "Intel64 Family 6 Model 186 Stepping 3, GenuineIntel",
-    "process_pid": 22576,
+    "process_pid": 18288,
     "model_version": "all-MiniLM-L6-v2+heuristic-v1"
   },
   "classification": {
@@ -230,7 +230,7 @@
         "OTHER_GENERAL_INCIDENT": 7
       }
     },
-    "elapsed_seconds": 3.368,
+    "elapsed_seconds": 4.009,
     "misclassifications": [
       {
         "id": "flood_01",
@@ -280,13 +280,13 @@
     },
     "location_exact_metrics": {
       "matching_rule": "exact_normalized",
-      "tp": 17,
-      "fp": 3,
-      "fn": 3,
+      "tp": 18,
+      "fp": 2,
+      "fn": 2,
       "tn": 10,
-      "precision": 0.85,
-      "recall": 0.85,
-      "f1": 0.85,
+      "precision": 0.9,
+      "recall": 0.9,
+      "f1": 0.9,
       "support": 20
     },
     "location_span_metrics": {
@@ -434,7 +434,7 @@
         "support": 0
       }
     },
-    "elapsed_seconds": 2.39,
+    "elapsed_seconds": 1.786,
     "mismatches": []
   },
   "urgency": {
@@ -524,7 +524,7 @@
         "LOW": 10
       }
     },
-    "elapsed_seconds": 4.883,
+    "elapsed_seconds": 2.925,
     "notice": "Engineering reference benchmark evaluation only. CrisiText does NOT provide operational urgency labels.",
     "mismatches": [
       {
@@ -681,7 +681,7 @@
     "mean_positive_similarity": 0.8198,
     "mean_negative_similarity": 0.4574,
     "semantic_margin": 0.3624,
-    "elapsed_seconds": 2.756,
+    "elapsed_seconds": 1.964,
     "pair_details": [
       {
         "pair_id": "high_fire_01",
@@ -805,49 +805,49 @@
       "operating_system": "Windows",
       "architecture": "AMD64",
       "processor": "Intel64 Family 6 Model 186 Stepping 3, GenuineIntel",
-      "process_pid": 22576,
+      "process_pid": 18288,
       "model_version": "all-MiniLM-L6-v2+heuristic-v1"
     },
     "cold_start": {
       "methodology": "fresh subprocess first full inference",
       "definition": "Time from fresh subprocess execution immediately before ML initialization through completion of first full inference_engine.analyze(...) call.",
-      "latency_ms": 76932.74,
+      "latency_ms": 33912.0,
       "unit": "milliseconds",
       "memory": {
         "methodology": "Fresh subprocess Resident Set Size (RSS) and peak working set via psutil",
-        "initial_rss_mb": 17.66,
-        "post_inference_rss_mb": 665.9,
-        "rss_delta_mb": 648.24,
-        "peak_working_set_mb": 665.95,
+        "initial_rss_mb": 17.64,
+        "post_inference_rss_mb": 664.19,
+        "rss_delta_mb": 646.55,
+        "peak_working_set_mb": 666.83,
         "limitation_notice": "Process RSS reflects operating system virtual memory pages resident in RAM (Python runtime, PyTorch/ONNX runtime allocations, shared libraries). It represents process-level memory rather than isolated neural-network parameter weights."
       }
     },
-    "cold_start_latency_ms": 76932.74,
+    "cold_start_latency_ms": 33912.0,
     "warm_latency": {
       "unit": "milliseconds",
       "warmup_samples": 2,
       "timed_samples": 25,
-      "p50_ms": 42.86,
-      "p90_ms": 48.54,
-      "p95_ms": 48.93,
-      "p99_ms": 52.66,
-      "mean_ms": 43.97,
-      "min_ms": 40.66,
-      "max_ms": 53.84,
-      "std_ms": 3.07,
-      "throughput_items_per_sec": 22.74,
+      "p50_ms": 66.17,
+      "p90_ms": 75.92,
+      "p95_ms": 83.48,
+      "p99_ms": 153.71,
+      "mean_ms": 68.74,
+      "min_ms": 47.2,
+      "max_ms": 175.43,
+      "std_ms": 23.53,
+      "throughput_items_per_sec": 14.55,
       "sample_count": 25,
       "definition": "Latency of inference_engine.analyze(...) after model/runtime initialization and untimed warm-up have completed."
     },
     "memory": {
       "methodology": "Fresh subprocess Resident Set Size (RSS) and peak working set via psutil",
-      "initial_rss_mb": 17.66,
-      "post_inference_rss_mb": 665.9,
-      "rss_delta_mb": 648.24,
-      "peak_working_set_mb": 665.95,
+      "initial_rss_mb": 17.64,
+      "post_inference_rss_mb": 664.19,
+      "rss_delta_mb": 646.55,
+      "peak_working_set_mb": 666.83,
       "limitation_notice": "Process RSS reflects operating system virtual memory pages resident in RAM (Python runtime, PyTorch/ONNX runtime allocations, shared libraries). It represents process-level memory rather than isolated neural-network parameter weights."
     },
-    "elapsed_seconds": 137.91
+    "elapsed_seconds": 70.185
   },
   "findings": [
     {
@@ -878,7 +878,7 @@
     {
       "category": "engineering_observations",
       "title": "Cold-Start Subprocess Isolation",
-      "details": "Cold-start latency measured at 76932.74 ms in a dedicated fresh Python subprocess immediately before ML initialization, observing a process RSS delta of 648.24 MB without in-process model cache contamination."
+      "details": "Cold-start latency measured at 33912.0 ms in a dedicated fresh Python subprocess immediately before ML initialization, observing a process RSS delta of 646.55 MB without in-process model cache contamination."
     },
     {
       "category": "engineering_observations",

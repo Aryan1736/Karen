@@ -65,9 +65,12 @@ CANONICAL_PROCESSING_STATUSES: tuple[str, ...] = (
     "NEEDS_REVIEW",
 )
 
+# Canonical default dense embedding backbone
+DEFAULT_EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
+
 # Reference / candidate models noted in architecture
 CANDIDATE_EMBEDDING_MODELS: tuple[str, ...] = (
-    "sentence-transformers/all-MiniLM-L6-v2",
+    DEFAULT_EMBEDDING_MODEL_NAME,
     "crisistransformers/CT-M1-Complete-SE",
 )
 
@@ -142,7 +145,7 @@ class MLConfig:
 
     # Model and version identifiers
     model_version: str = "all-MiniLM-L6-v2+heuristic-v1"
-    embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_model_name: str = DEFAULT_EMBEDDING_MODEL_NAME
     embedding_dimension: int = 384
     device: str = "cpu"
 
@@ -262,7 +265,7 @@ class MLConfig:
             model_version=os.getenv("ML_MODEL_VERSION", "all-MiniLM-L6-v2+heuristic-v1").strip(),
             embedding_model_name=os.getenv(
                 "ML_MODEL_NAME",
-                os.getenv("EMBEDDING_MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2"),
+                os.getenv("EMBEDDING_MODEL_NAME", DEFAULT_EMBEDDING_MODEL_NAME),
             ).strip(),
             embedding_dimension=_get_int("EMBEDDING_DIMENSION", 384),
             device=os.getenv("ML_DEVICE", "cpu").strip().lower(),

@@ -50,7 +50,13 @@ from ml.evaluation.performance_evaluator import (
     MemoryUsageMetrics,
     PerformanceEvaluationResult,
 )
-from ml.evaluation.report import EvaluationReport, Finding
+from ml.evaluation.report import (
+    DEFAULT_REPORT_DIR,
+    DEFAULT_REPORT_FILE,
+    EvaluationReport,
+    Finding,
+    validate_report_path,
+)
 
 
 # ==============================================================================
@@ -387,3 +393,68 @@ def test_evaluation_report_schema_and_serialization(tmp_path: Path):
     assert "Urgency Engine Evaluation" in summary
     assert "Dense Semantic Embedding Evaluation" in summary
     assert "Performance & Resource Profiling" in summary
+
+
+# ==============================================================================
+# 13. Path Traversal & Output Path Validation Regression Tests
+# ==============================================================================
+def test_path_validation_normal_output_path():
+    """Validates that a normal relative path inside DEFAULT_REPORT_DIR is accepted."""
+    target = DEFAULT_REPORT_DIR / "ml_eval_normal.json"
+    resolved = validate_report_path(target)
+    assert resolved == target.resolve()
+    assert resolved.parent == DEFAULT_REPORT_DIR.resolve()
+
+
+def test_path_validation_nested_valid_output_path():
+    """Validates that nested valid paths inside DEFAULT_REPORT_DIR are accepted."""
+    target = DEFAULT_REPORT_DIR / "runs" / "batch_01" / "eval.json"
+    resolved = validate_report_path(target)
+    assert resolved == target.resolve()
+    assert DEFAULT_REPORT_DIR.resolve() in resolved.parents
+
+
+def test_path_validation_single_dotdot_traversal(tmp_path: Path):
+    """Validates that a single '../' traversal escaping the root is rejected with ValueError."""
+    sandbox = tmp_path / "allowed_root"
+    sandbox.mkdir()
+    unsafe_path = sandbox / ".." / "escaped.json"
+
+    with pytest.raises(ValueError, match="Unsafe output path detected"):
+        validate_report_path(unsafe_path, allowed_root=sandbox)
+
+
+def test_path_validation_double_dotdot_traversal(tmp_path: Path):
+    """Validates that multiple '../../' traversal escaping root is rejected with ValueError."""
+    sandbox = tmp_path / "allowed_root"
+    nested = sandbox / "sub"
+    nested.mkdir(parents=True)
+    unsafe_path = nested / ".." / ".." / "escaped.json"
+
+    with pytest.raises(ValueError, match="Unsafe output path detected"):
+        validate_report_path(unsafe_path, allowed_root=sandbox)
+
+
+def test_path_validation_absolute_path_outside_allowed_root(tmp_path: Path):
+    """Validates that an absolute path outside the allowed root is rejected with ValueError."""
+    allowed = tmp_path / "sandbox"
+    allowed.mkdir()
+    outside = tmp_path / "forbidden_outside.json"
+
+    with pytest.raises(ValueError, match="Unsafe output path detected"):
+        validate_report_path(outside.resolve(), allowed_root=allowed)
+
+
+def test_path_validation_existing_valid_evaluation_output():
+    """Validates that default DEFAULT_REPORT_FILE is valid and resolves safely."""
+    resolved = validate_report_path(DEFAULT_REPORT_FILE)
+    assert resolved == DEFAULT_REPORT_FILE.resolve()
+    assert resolved.name == "ml_evaluation.json"
+
+
+def test_path_validation_path_inside_repo_outside_evaluation_results():
+    """Validates that a path inside repository but outside evaluation/results is rejected."""
+    outside_repo_path = "ml/output.json"
+    with pytest.raises(ValueError, match="Unsafe output path detected"):
+        validate_report_path(outside_repo_path)
+

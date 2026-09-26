@@ -17,6 +17,7 @@ It does NOT report accuracy against CrisiText ground truth (which does not exist
 
 from __future__ import annotations
 
+import math
 import statistics
 import time
 from dataclasses import dataclass, field
@@ -137,11 +138,15 @@ class UrgencyEvaluator:
 
             # Verify confidence != score / 100
             score_ratio = round(result.score / 100.0, 2)
-            if abs(result.confidence - score_ratio) < 0.0001 and result.score not in (70.0, 0.0):
+            if math.isclose(result.confidence, score_ratio, abs_tol=1e-4) and not any(
+                math.isclose(result.score, v, abs_tol=1e-6) for v in (70.0, 0.0)
+            ):
                 # Only flagging if artificial coupling is suspected
                 pass
             # Explicit proof: at least 90% of samples must have confidence != score / 100
-            if result.confidence == score_ratio and result.score != 70.0:
+            if math.isclose(result.confidence, score_ratio, abs_tol=1e-6) and not math.isclose(
+                result.score, 70.0, abs_tol=1e-6
+            ):
                 # If they happen to match numerically by rare coincidence (e.g. score=70, conf=0.70)
                 pass
 

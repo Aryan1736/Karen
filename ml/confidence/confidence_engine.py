@@ -45,6 +45,9 @@ from ml.logging_utils import get_ml_logger
 
 logger = get_ml_logger("ml.confidence")
 
+REASON_COMPONENT_FAILED = "component status is FAILED"
+REASON_CONFIDENCE_NOT_APPLICABLE = "confidence is null / not applicable"
+
 
 # ==============================================================================
 # Confidence Contract Validation Helpers
@@ -271,7 +274,7 @@ class ConfidenceEngine:
             return None
 
         # Exact mathematical limit check: any zero confidence collapses harmonic mean to 0.0
-        if any(conf == 0.0 for _, conf, _ in items):
+        if any(math.isclose(conf, 0.0, abs_tol=1e-9) or conf <= 0.0 for _, conf, _ in items):
             return 0.0
 
         sum_weights = sum(w for _, _, w in items)
@@ -325,180 +328,204 @@ class ConfidenceEngine:
 
         # Standard ComponentResult container
         if isinstance(value, ComponentResult):
-            conf = validate_confidence_value(value.confidence, component_name=name)
-            status = value.status or "SUCCESS"
-            warnings = list(value.warnings)
-            raw_data = dict(value.data)
+            return self._extract_from_component_result(name, value, weight)
 
-            if status == "FAILED":
-                return ComponentConfidenceDetail(
-                    name=name,
-                    confidence=conf,
-                    weight=weight,
-                    status="FAILED",
-                    included=False,
-                    reason="component status is FAILED",
-                    warnings=warnings,
-                    raw_data=raw_data,
-                )
+        # Objects with to_component_result() method (e.g. ClassificationResult, UrgencyResult)
+        if hasattr(value, "to_component_result") and callable(value.to_component_result):
+            return self._extract_from_component_result(name, value.to_component_result(), weight)
 
-            if conf is None:
-                return ComponentConfidenceDetail(
-                    name=name,
-                    confidence=None,
-                    weight=weight,
-                    status=status,
-                    included=False,
-                    reason="confidence is null / not applicable",
-                    warnings=warnings,
-                    raw_data=raw_data,
-                )
+        # LocationEntityResult or objects with location child object
+        if hasattr(value, "location") and hasattr(value.location, "confidence"):
+            return self._extract_from_location_result(name, value, weight)
 
+        # Dictionary input (e.g. canonical schema fragments or custom test dicts)
+        if isinstance(value, dict):
+            return self._extract_from_dict(name, value, weight)
+
+        # Array of items (e.g., required_response list)
+        if isinstance(value, list):
+            return self._extract_from_list(name, value, weight)
+
+        # Direct confidence attribute on object
+        if hasattr(value, "confidence"):
+            return self._extract_from_generic_object(name, value, weight)
+
+        raise MLInputError(
+            f"Unsupported component value type for '{name}': {type(value).__name__}"
+        )
+
+    def _extract_from_component_result(
+        self, name: str, value: ComponentResult, weight: float
+    ) -> ComponentConfidenceDetail:
+        conf = validate_confidence_value(value.confidence, component_name=name)
+        status = value.status or "SUCCESS"
+        warnings = list(value.warnings)
+        raw_data = dict(value.data)
+
+        if status == "FAILED":
             return ComponentConfidenceDetail(
                 name=name,
                 confidence=conf,
                 weight=weight,
-                status=status,
-                included=True,
+                status="FAILED",
+                included=False,
+                reason=REASON_COMPONENT_FAILED,
                 warnings=warnings,
                 raw_data=raw_data,
             )
 
-        # Objects with to_component_result() method (e.g. ClassificationResult, UrgencyResult)
-        if hasattr(value, "to_component_result") and callable(value.to_component_result):
-            comp_res = value.to_component_result()
-            return self._extract_component_info(name, comp_res, weight)
+        if conf is None:
+            return ComponentConfidenceDetail(
+                name=name,
+                confidence=None,
+                weight=weight,
+                status=status,
+                included=False,
+                reason=REASON_CONFIDENCE_NOT_APPLICABLE,
+                warnings=warnings,
+                raw_data=raw_data,
+            )
 
-        # LocationEntityResult or objects with location child object
-        if hasattr(value, "location") and hasattr(value.location, "confidence"):
-            status = getattr(value, "processing_status", "SUCCESS")
-            warnings = list(getattr(value, "warnings", []))
-            loc_conf = getattr(value.location, "confidence", None)
-            conf = validate_confidence_value(loc_conf, component_name=name)
+        return ComponentConfidenceDetail(
+            name=name,
+            confidence=conf,
+            weight=weight,
+            status=status,
+            included=True,
+            warnings=warnings,
+            raw_data=raw_data,
+        )
 
-            if status == "FAILED":
-                return ComponentConfidenceDetail(
-                    name=name,
-                    confidence=conf,
-                    weight=weight,
-                    status="FAILED",
-                    included=False,
-                    reason="component status is FAILED",
-                    warnings=warnings,
-                )
+    def _extract_from_location_result(
+        self, name: str, value: Any, weight: float
+    ) -> ComponentConfidenceDetail:
+        status = getattr(value, "processing_status", "SUCCESS")
+        warnings = list(getattr(value, "warnings", []))
+        loc_conf = getattr(value.location, "confidence", None)
+        conf = validate_confidence_value(loc_conf, component_name=name)
 
-            included = conf is not None
-            reason = None if included else "confidence is null / not applicable"
+        if status == "FAILED":
             return ComponentConfidenceDetail(
                 name=name,
                 confidence=conf,
                 weight=weight,
-                status=status,
-                included=included,
-                reason=reason,
+                status="FAILED",
+                included=False,
+                reason=REASON_COMPONENT_FAILED,
                 warnings=warnings,
             )
 
-        # Dictionary input (e.g. canonical schema fragments or custom test dicts)
-        if isinstance(value, dict):
-            status = value.get("processing_status", value.get("status", "SUCCESS"))
-            warnings = list(value.get("warnings", []))
-            raw_conf = value.get("confidence")
+        included = conf is not None
+        reason = None if included else REASON_CONFIDENCE_NOT_APPLICABLE
+        return ComponentConfidenceDetail(
+            name=name,
+            confidence=conf,
+            weight=weight,
+            status=status,
+            included=included,
+            reason=reason,
+            warnings=warnings,
+        )
 
-            # Check if this is an envelope containing the field (e.g., {"incident_type": {...}})
-            if raw_conf is None and name in value and isinstance(value[name], dict):
-                inner = value[name]
-                raw_conf = inner.get("confidence")
-                if "status" in inner or "processing_status" in inner:
-                    status = inner.get("processing_status", inner.get("status", status))
+    def _extract_from_dict(
+        self, name: str, value: dict[str, Any], weight: float
+    ) -> ComponentConfidenceDetail:
+        status = value.get("processing_status", value.get("status", "SUCCESS"))
+        warnings = list(value.get("warnings", []))
+        raw_conf = value.get("confidence")
 
-            conf = validate_confidence_value(raw_conf, component_name=name)
-            if status == "FAILED":
-                return ComponentConfidenceDetail(
-                    name=name,
-                    confidence=conf,
-                    weight=weight,
-                    status="FAILED",
-                    included=False,
-                    reason="component status is FAILED",
-                    warnings=warnings,
-                    raw_data=dict(value),
-                )
+        # Check if this is an envelope containing the field (e.g., {"incident_type": {...}})
+        if raw_conf is None and name in value and isinstance(value[name], dict):
+            inner = value[name]
+            raw_conf = inner.get("confidence")
+            if "status" in inner or "processing_status" in inner:
+                status = inner.get("processing_status", inner.get("status", status))
 
-            included = conf is not None
-            reason = None if included else "confidence is null / not applicable"
+        conf = validate_confidence_value(raw_conf, component_name=name)
+        if status == "FAILED":
             return ComponentConfidenceDetail(
                 name=name,
                 confidence=conf,
                 weight=weight,
-                status=status,
-                included=included,
-                reason=reason,
+                status="FAILED",
+                included=False,
+                reason=REASON_COMPONENT_FAILED,
                 warnings=warnings,
                 raw_data=dict(value),
             )
 
-        # Array of items (e.g., required_response list)
-        if isinstance(value, list):
-            confidences: list[float] = []
-            for idx, item in enumerate(value):
-                item_conf: Any = None
-                if isinstance(item, dict):
-                    item_conf = item.get("confidence")
-                elif hasattr(item, "confidence"):
-                    item_conf = getattr(item, "confidence")
+        included = conf is not None
+        reason = None if included else REASON_CONFIDENCE_NOT_APPLICABLE
+        return ComponentConfidenceDetail(
+            name=name,
+            confidence=conf,
+            weight=weight,
+            status=status,
+            included=included,
+            reason=reason,
+            warnings=warnings,
+            raw_data=dict(value),
+        )
 
-                if item_conf is not None:
-                    validated_item_conf = validate_confidence_value(
-                        item_conf, component_name=f"{name}[{idx}]"
-                    )
-                    if validated_item_conf is not None:
-                        confidences.append(validated_item_conf)
+    def _extract_from_list(
+        self, name: str, value: list[Any], weight: float
+    ) -> ComponentConfidenceDetail:
+        confidences: list[float] = []
+        for idx, item in enumerate(value):
+            item_conf: Any = None
+            if isinstance(item, dict):
+                item_conf = item.get("confidence")
+            elif hasattr(item, "confidence"):
+                item_conf = getattr(item, "confidence")
 
-            avg_conf = (
-                round(sum(confidences) / len(confidences), 4) if confidences else None
-            )
-            included = avg_conf is not None
-            reason = None if included else "confidence is null / no response items with confidence"
-            return ComponentConfidenceDetail(
-                name=name,
-                confidence=avg_conf,
-                weight=weight,
-                status="SUCCESS",
-                included=included,
-                reason=reason,
-                raw_data={"items": value},
-            )
-
-        # Direct confidence attribute on object
-        if hasattr(value, "confidence"):
-            status = getattr(value, "processing_status", getattr(value, "status", "SUCCESS"))
-            warnings = list(getattr(value, "warnings", []))
-            conf = validate_confidence_value(getattr(value, "confidence"), component_name=name)
-            if status == "FAILED":
-                return ComponentConfidenceDetail(
-                    name=name,
-                    confidence=conf,
-                    weight=weight,
-                    status="FAILED",
-                    included=False,
-                    reason="component status is FAILED",
-                    warnings=warnings,
+            if item_conf is not None:
+                validated_item_conf = validate_confidence_value(
+                    item_conf, component_name=f"{name}[{idx}]"
                 )
-            included = conf is not None
-            reason = None if included else "confidence is null / not applicable"
+                if validated_item_conf is not None:
+                    confidences.append(validated_item_conf)
+
+        avg_conf = (
+            round(sum(confidences) / len(confidences), 4) if confidences else None
+        )
+        included = avg_conf is not None
+        reason = None if included else "confidence is null / no response items with confidence"
+        return ComponentConfidenceDetail(
+            name=name,
+            confidence=avg_conf,
+            weight=weight,
+            status="SUCCESS",
+            included=included,
+            reason=reason,
+            raw_data={"items": value},
+        )
+
+    def _extract_from_generic_object(
+        self, name: str, value: Any, weight: float
+    ) -> ComponentConfidenceDetail:
+        status = getattr(value, "processing_status", getattr(value, "status", "SUCCESS"))
+        warnings = list(getattr(value, "warnings", []))
+        conf = validate_confidence_value(getattr(value, "confidence"), component_name=name)
+        if status == "FAILED":
             return ComponentConfidenceDetail(
                 name=name,
                 confidence=conf,
                 weight=weight,
-                status=status,
-                included=included,
-                reason=reason,
+                status="FAILED",
+                included=False,
+                reason=REASON_COMPONENT_FAILED,
                 warnings=warnings,
             )
-
-        raise MLInputError(
-            f"Unsupported component value type for '{name}': {type(value).__name__}"
+        included = conf is not None
+        reason = None if included else REASON_CONFIDENCE_NOT_APPLICABLE
+        return ComponentConfidenceDetail(
+            name=name,
+            confidence=conf,
+            weight=weight,
+            status=status,
+            included=included,
+            reason=reason,
+            warnings=warnings,
         )
 
     def _resolve_status(
@@ -686,9 +713,16 @@ class ConfidenceEngine:
                 harmonic_items.append((name, detail.confidence, detail.weight))
 
         # Check for zero confidence pull
-        zero_pull = any(conf == 0.0 for _, conf, _ in harmonic_items)
+        zero_pull = any(
+            math.isclose(conf, 0.0, abs_tol=1e-9) or conf <= 0.0
+            for _, conf, _ in harmonic_items
+        )
         if zero_pull:
-            zero_names = [name for name, conf, _ in harmonic_items if conf == 0.0]
+            zero_names = [
+                name
+                for name, conf, _ in harmonic_items
+                if math.isclose(conf, 0.0, abs_tol=1e-9) or conf <= 0.0
+            ]
             pipeline_warnings.append(
                 f"Zero confidence in component(s) {zero_names}; overall harmonic mean collapses to 0.0."
             )

@@ -30,6 +30,9 @@ from ml.tests.fixtures.ner_benchmark import (
     NERBenchmarkSample,
 )
 
+BERT_NER_MODEL_NAME = "dslim/bert-base-NER"
+SPACY_NER_MODEL_NAME = "spaCy en_core_web_sm"
+
 
 @dataclass
 class MetricSummary:
@@ -166,14 +169,14 @@ class NEREvaluator:
             mem_before = proc.memory_info().rss / (1024 * 1024)
 
             t0 = time.perf_counter()
-            pipe = pipeline("ner", model="dslim/bert-base-NER", aggregation_strategy="simple", device="cpu")
+            pipe = pipeline("ner", model=BERT_NER_MODEL_NAME, aggregation_strategy="simple", device="cpu")
             cold_ms = (time.perf_counter() - t0) * 1000
 
             mem_after = proc.memory_info().rss / (1024 * 1024)
             mem_delta = mem_after - mem_before
         except Exception as exc:
             return NEREvaluationReport(
-                approach_name="dslim/bert-base-NER",
+                approach_name=BERT_NER_MODEL_NAME,
                 is_available=False,
                 unavailable_reason=f"Failed to load: {exc}",
             )
@@ -238,7 +241,7 @@ class NEREvaluator:
         p95_lat = round(sorted_lats[int(len(sorted_lats) * 0.95)], 4) if sorted_lats else 0.0
 
         return NEREvaluationReport(
-            approach_name="dslim/bert-base-NER",
+            approach_name=BERT_NER_MODEL_NAME,
             is_available=True,
             total_samples=len(benchmark),
             location_metrics=loc_metrics,
@@ -260,13 +263,13 @@ class NEREvaluator:
             nlp = spacy.load("en_core_web_sm")
         except ImportError:
             return NEREvaluationReport(
-                approach_name="spaCy en_core_web_sm",
+                approach_name=SPACY_NER_MODEL_NAME,
                 is_available=False,
                 unavailable_reason="Not benchmarked — unavailable in current environment (spacy is not installed in Python environment).",
             )
         except Exception as exc:
             return NEREvaluationReport(
-                approach_name="spaCy en_core_web_sm",
+                approach_name=SPACY_NER_MODEL_NAME,
                 is_available=False,
                 unavailable_reason=f"Not benchmarked — model unavailable ({exc}).",
             )
@@ -300,8 +303,6 @@ class NEREvaluator:
             matched_expected: set[int] = set()
             for ent in doc.ents:
                 w = ent.text
-                lbl = ent.label_
-                mapped = "LOCATION" if lbl in ("GPE", "LOC", "FAC") else ("PERSON" if lbl == "PERSON" else ("ORGANIZATION" if lbl == "ORG" else "MISC"))
                 matched = False
                 for idx, exp in enumerate(sample.expected_entities):
                     if idx not in matched_expected:
@@ -320,7 +321,7 @@ class NEREvaluator:
         p95_lat = round(sorted_lats[int(len(sorted_lats) * 0.95)], 4)
 
         return NEREvaluationReport(
-            approach_name="spaCy en_core_web_sm",
+            approach_name=SPACY_NER_MODEL_NAME,
             is_available=True,
             total_samples=len(benchmark),
             location_metrics=loc_metrics,

@@ -24,6 +24,7 @@ CRITICAL ARCHITECTURAL PRINCIPLES:
 
 from __future__ import annotations
 
+import math
 import re
 import time
 from dataclasses import dataclass, field
@@ -296,7 +297,6 @@ class UrgencyEngine:
         # 8. Compute Independent ML Inference Confidence (Decoupled from Score)
         confidence = self._derive_confidence(
             clean_text=clean_text,
-            final_score=final_score,
             life_safety=life_safety,
             hazard_velocity=hazard_velocity,
             vulnerability=vulnerability,
@@ -522,7 +522,9 @@ class UrgencyEngine:
             evidence.extend(negation_evidence)
 
         # Component is considered fully negated only if signals were negated AND no active life safety base score remains
-        is_component_negated = bool(negated_signals and base_score == 0.0)
+        is_component_negated = bool(
+            negated_signals and (math.isclose(base_score, 0.0, abs_tol=1e-6) or base_score <= 0.0)
+        )
 
         return ComponentScore(
             name="life_safety",
@@ -791,7 +793,6 @@ class UrgencyEngine:
     def _derive_confidence(
         self,
         clean_text: str,
-        final_score: float,
         life_safety: ComponentScore,
         hazard_velocity: ComponentScore,
         vulnerability: ComponentScore,

@@ -92,7 +92,7 @@ RESPONSE_TAXONOMY_CATALOG: dict[str, ResponseCategoryDefinition] = {
             ),
             # People trapped / children trapped / driver trapped / person trapped
             re.compile(
-                r"\b(?:\w+\s+)?(?:people|persons?|residents?|passengers?|workers?|children|kids?|victims?|family|driver|someone|anyone|individuals?)\s+"
+                r"\b(?:\b(?:many|several|multiple|few|some|all|elderly|young|\d+)\s+)?(?:people|persons?|residents?|passengers?|workers?|children|kids?|victims?|family|driver|someone|anyone|individuals?)\s+"
                 r"(?:are\s+|is\s+|were\s+|being\s+)?(?:trapped|buried|pinned|stuck\s+inside)\b",
                 re.IGNORECASE,
             ),
@@ -108,7 +108,7 @@ RESPONSE_TAXONOMY_CATALOG: dict[str, ResponseCategoryDefinition] = {
                 re.IGNORECASE,
             ),
             re.compile(
-                r"\b(?:\w+\s+)?(?:people|persons?|residents?|passengers?|family|children|hikers?)\s+"
+                r"\b(?:\b(?:many|several|multiple|few|some|all|elderly|young|\d+)\s+)?(?:people|persons?|residents?|passengers?|family|children|hikers?)\s+"
                 r"(?:are\s+|is\s+|were\s+)?(?:stranded|marooned)\b",
                 re.IGNORECASE,
             ),
@@ -143,7 +143,7 @@ RESPONSE_TAXONOMY_CATALOG: dict[str, ResponseCategoryDefinition] = {
             ),
         ),
         supporting_patterns=(
-            re.compile(r"\b(?:trapped|stranded|buried|pinned|unaccounted|missing|stranded)\b", re.IGNORECASE),
+            re.compile(r"\b(?:trapped|stranded|buried|pinned|unaccounted|missing)\b", re.IGNORECASE),
             re.compile(r"\b(?:stuck\s+inside|cut\s+off\s+by\s+water|isolated\s+by\s+flood)\b", re.IGNORECASE),
             re.compile(r"\b(?:rescue|extricate|evacuate\s+victims)\b", re.IGNORECASE),
         ),
@@ -193,7 +193,7 @@ RESPONSE_TAXONOMY_CATALOG: dict[str, ResponseCategoryDefinition] = {
         strong_patterns=(
             # Bleeding heavily / people bleeding / three people bleeding
             re.compile(
-                r"\b(?:\w+\s+)?(?:people|persons?|passengers?|workers?|victims?|three|two|four|five|several|\d+)\s+"
+                r"\b(?:\b(?:many|several|multiple|few|some|all|elderly|young|\d+)\s+)?(?:people|persons?|passengers?|workers?|victims?|three|two|four|five|several|\d+)\s+"
                 r"(?:are\s+|were\s+)?bleeding(?:\s+heavily|\s+profusely|\s+severely)?\b",
                 re.IGNORECASE,
             ),
@@ -215,7 +215,7 @@ RESPONSE_TAXONOMY_CATALOG: dict[str, ResponseCategoryDefinition] = {
             ),
             # Explicit injury mention: injured passengers / three people injured / critically injured
             re.compile(
-                r"\b(?:\w+\s+)?(?:passengers?|workers?|people|persons?|victims?|civilians?|children|two|three|four|five|\d+)\s+"
+                r"\b(?:\b(?:many|several|multiple|few|some|all|elderly|young|\d+)\s+)?(?:passengers?|workers?|people|persons?|victims?|civilians?|children|two|three|four|five|\d+)\s+"
                 r"(?:are\s+|were\s+)?(?:injured|wounded|hurt|critically\s+injured|severely\s+injured)\b",
                 re.IGNORECASE,
             ),

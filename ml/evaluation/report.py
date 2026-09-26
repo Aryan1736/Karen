@@ -15,6 +15,7 @@ import json
 import os
 import platform
 import sys
+import tempfile
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -45,6 +46,64 @@ from ml.pipeline.inference_engine import InferenceEngine
 
 DEFAULT_REPORT_DIR = Path("evaluation/results")
 DEFAULT_REPORT_FILE = DEFAULT_REPORT_DIR / "ml_evaluation.json"
+
+
+def validate_report_path(
+    filepath: Path | str,
+    allowed_root: Path | str | None = None,
+) -> Path:
+    """
+    Validates and resolves a report output filepath, ensuring it does not escape
+    the allowed root directory via path traversal or outside absolute paths.
+
+    Args:
+        filepath: Target destination filepath (relative or absolute).
+        allowed_root: Allowed root directory (defaults to DEFAULT_REPORT_DIR, cwd, or tempdir).
+
+    Returns:
+        Resolved Path guaranteed to be inside an allowed root.
+
+    Raises:
+        ValueError: If filepath traverses or points outside allowed roots.
+    """
+    raw_str = str(filepath).strip()
+    if not raw_str:
+        raise ValueError("Report output filepath cannot be empty")
+
+    raw_path = Path(filepath)
+    resolved = raw_path.resolve()
+
+    if allowed_root is not None:
+        root = Path(allowed_root).resolve()
+        try:
+            resolved.relative_to(root)
+        except ValueError:
+            raise ValueError(
+                f"Unsafe output path detected: '{filepath}' escapes allowed root '{root}'"
+            ) from None
+        return resolved
+
+    # Default allowed roots: DEFAULT_REPORT_DIR or system temp dir (for isolated test execution)
+    allowed_roots = [
+        DEFAULT_REPORT_DIR.resolve(),
+        Path(tempfile.gettempdir()).resolve(),
+    ]
+
+    is_allowed = False
+    for candidate_root in allowed_roots:
+        try:
+            resolved.relative_to(candidate_root)
+            is_allowed = True
+            break
+        except ValueError:
+            continue
+
+    if not is_allowed:
+        raise ValueError(
+            f"Unsafe output path detected: '{filepath}' escapes allowed root directories"
+        )
+
+    return resolved
 
 
 @dataclass
@@ -94,9 +153,16 @@ class EvaluationReport:
             "findings": self.findings,
         }
 
-    def save(self, filepath: Path | str = DEFAULT_REPORT_FILE) -> Path:
-        """Saves the report to a formatted JSON file."""
-        path = Path(filepath)
+    def save(
+        self,
+        filepath: Path | str = DEFAULT_REPORT_FILE,
+        allowed_root: Path | str | None = None,
+    ) -> Path:
+        """
+        Saves the report to a formatted JSON file after strictly validating that
+        the target path does not escape the allowed root directory.
+        """
+        path = validate_report_path(filepath, allowed_root=allowed_root)
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             json.dump(self.to_dict(), f, indent=2)
@@ -110,11 +176,27 @@ class EvaluationReport:
             "# Karen's Ear — Machine Learning Evaluation Report",
             f"**Evaluation Version:** {self.evaluation_version} | **Timestamp:** {self.timestamp_utc}",
             "",
+        ]
+        lines.extend(self._format_environment_section())
+        lines.extend(self._format_classification_section())
+        lines.extend(self._format_entity_section())
+        lines.extend(self._format_urgency_section())
+        lines.extend(self._format_embedding_section())
+        lines.extend(self._format_performance_section())
+        lines.extend(self._format_findings_section())
+        return "\n".join(lines)
+
+    def _format_environment_section(self) -> list[str]:
+        return [
             "## 1. System Environment",
             f"- **Python:** {self.environment.get('python_version')} on {self.environment.get('platform')}",
             f"- **Architecture:** {self.environment.get('architecture')} ({self.environment.get('processor')})",
             f"- **Model Version:** {self.environment.get('model_version')}",
             "",
+        ]
+
+    def _format_classification_section(self) -> list[str]:
+        lines = [
             "## 2. Incident Classification Evaluation",
             f"- **Fixture:** {self.classification.get('fixture_name')} ({self.classification.get('sample_count')} samples across 9 canonical classes)",
             f"- **Accuracy:** {_fmt_num(self.classification.get('accuracy'))}",
@@ -123,16 +205,17 @@ class EvaluationReport:
             "| Incident Class | TP | FP | FN | Precision | Recall | F1 | Support |",
             "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
         ]
-
         per_class = self.classification.get("per_class", {})
         for label, m in per_class.items():
             lines.append(
                 f"| `{label}` | {m.get('tp', 0)} | {m.get('fp', 0)} | {m.get('fn', 0)} | "
                 f"{_fmt_num(m.get('precision'))} | {_fmt_num(m.get('recall'))} | {_fmt_num(m.get('f1'))} | {m.get('support', 0)} |"
             )
+        lines.append("")
+        return lines
 
-        lines.extend([
-            "",
+    def _format_entity_section(self) -> list[str]:
+        return [
             "## 3. Entity & Location Extraction Evaluation",
             f"- **Fixture:** {self.entity_extraction.get('fixture_name')} ({self.entity_extraction.get('sample_count')} samples: {self.entity_extraction.get('positive_samples')} pos, {self.entity_extraction.get('negative_samples')} neg)",
             "",
@@ -163,6 +246,10 @@ class EvaluationReport:
             f"**Recall:** {_fmt_num(self.entity_extraction.get('joint_entity_metrics', {}).get('recall'))} | "
             f"**F1:** {_fmt_num(self.entity_extraction.get('joint_entity_metrics', {}).get('f1'))}",
             "",
+        ]
+
+    def _format_urgency_section(self) -> list[str]:
+        lines = [
             "## 4. Urgency Engine Evaluation",
             f"- **Fixture:** {self.urgency.get('fixture_name')} ({self.urgency.get('sample_count')} samples)",
             f"- **Notice:** {self.urgency.get('notice')}",
@@ -175,17 +262,18 @@ class EvaluationReport:
             "",
             "| Urgency Tier | TP | FP | FN | Precision | Recall | F1 | Support |",
             "| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
-        ])
-
+        ]
         per_tier = self.urgency.get("per_tier", {})
         for tier, m in per_tier.items():
             lines.append(
                 f"| `{tier}` | {m.get('tp', 0)} | {m.get('fp', 0)} | {m.get('fn', 0)} | "
                 f"{_fmt_num(m.get('precision'))} | {_fmt_num(m.get('recall'))} | {_fmt_num(m.get('f1'))} | {m.get('support', 0)} |"
             )
+        lines.append("")
+        return lines
 
-        lines.extend([
-            "",
+    def _format_embedding_section(self) -> list[str]:
+        return [
             "## 5. Dense Semantic Embedding Evaluation",
             f"- **Model:** {self.embeddings.get('model_name')} (dim={self.embeddings.get('embedding_dimension')})",
             f"- **Fixture:** {self.embeddings.get('fixture_name')} ({self.embeddings.get('total_pairs_evaluated')} pairs: {self.embeddings.get('positive_pair_count')} pos, {self.embeddings.get('negative_pair_count')} neg)",
@@ -202,6 +290,10 @@ class EvaluationReport:
             f"**Mean Negative Similarity:** {_fmt_num(self.embeddings.get('mean_negative_similarity'))} | "
             f"**Margin:** {_fmt_num(self.embeddings.get('semantic_margin'))}",
             "",
+        ]
+
+    def _format_performance_section(self) -> list[str]:
+        return [
             "## 6. Performance & Resource Profiling",
             f"- **Cold-Start Methodology:** {self.performance.get('cold_start', {}).get('methodology', 'fresh subprocess first full inference')}",
             f"- **Cold-Start Latency:** {_fmt_num(self.performance.get('cold_start', {}).get('latency_ms', self.performance.get('cold_start_latency_ms')), 2)} ms",
@@ -220,10 +312,15 @@ class EvaluationReport:
             f"max={_fmt_num(self.performance.get('warm_latency', {}).get('max_ms'), 2)} ms",
             f"- **Warm Throughput:** {_fmt_num(self.performance.get('warm_latency', {}).get('throughput_items_per_sec'), 1)} reports/sec",
             "",
-            "## 7. Findings & Observations",
-        ])
+        ]
 
-        categories = {"measured_results": "Measured Results", "limitations": "Limitations", "engineering_observations": "Engineering Observations"}
+    def _format_findings_section(self) -> list[str]:
+        lines = ["## 7. Findings & Observations"]
+        categories = {
+            "measured_results": "Measured Results",
+            "limitations": "Limitations",
+            "engineering_observations": "Engineering Observations",
+        }
         for cat_key, cat_title in categories.items():
             cat_findings = [f for f in self.findings if f.get("category") == cat_key]
             if cat_findings:
@@ -231,8 +328,7 @@ class EvaluationReport:
                 for f in cat_findings:
                     lines.append(f"- **{f.get('title')}:** {f.get('details')}")
                 lines.append("")
-
-        return "\n".join(lines)
+        return lines
 
 
 class MLEvaluationHarness:
@@ -263,6 +359,7 @@ class MLEvaluationHarness:
         self,
         include_performance: bool = True,
         save_path: Path | str | None = DEFAULT_REPORT_FILE,
+        allowed_root: Path | str | None = None,
     ) -> EvaluationReport:
         """
         Executes complete end-to-end ML evaluation across all components.
@@ -382,6 +479,6 @@ class MLEvaluationHarness:
         )
 
         if save_path:
-            report.save(save_path)
+            report.save(save_path, allowed_root=allowed_root)
 
         return report

@@ -85,7 +85,7 @@ def compute_confusion_matrix(
     matrix[true_label][predicted_label] = count.
     """
     matrix: dict[str, dict[str, int]] = {
-        true_l: {pred_l: 0 for pred_l in labels}
+        true_l: dict.fromkeys(labels, 0)
         for true_l in labels
     }
     for t, p in zip(y_true, y_pred):
@@ -221,7 +221,7 @@ def calculate_roc_curve(
     sorted_true = np.array(y_true)[desc_indices]
 
     # Find distinct threshold points
-    distinct_value_indices = np.where(np.diff(sorted_scores))[0]
+    distinct_value_indices = np.nonzero(np.diff(sorted_scores))[0]
     threshold_idxs = np.r_[distinct_value_indices, len(sorted_true) - 1]
 
     tps = np.cumsum(sorted_true)[threshold_idxs]
@@ -276,7 +276,7 @@ def _compute_fractional_ranks(scores: Sequence[float]) -> list[float]:
     i = 0
     while i < n:
         j = i
-        while j < n - 1 and scores[sorted_indices[j]] == scores[sorted_indices[j + 1]]:
+        while j < n - 1 and math.isclose(scores[sorted_indices[j]], scores[sorted_indices[j + 1]], abs_tol=1e-9):
             j += 1
         avg_rank = (i + 1 + j + 1) / 2.0
         for k in range(i, j + 1):
