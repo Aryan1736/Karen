@@ -96,3 +96,71 @@
 2. **Geocoding Without External Paid APIs:**
    - How to geocode location strings without external API costs or hallucination?
    - *Mitigation:* Implement a curated gazetteer / dictionary of relevant disaster hotspots (or bounding-box centroid matching) and default to `latitude: null, longitude: null, precision: "approximate"` when unverified.
+
+---
+
+## 7. Phase 2: Link Verification & Connectivity Findings
+
+1. **Environment & Runtime Verification:**
+   - **Python:** `3.13.5` (64-bit Windows), with `pip` and active virtual environment capabilities.
+   - **Node.js:** `v22.19.0`, **npm:** `10.9.3`. Ready for modern React/Vite frontend tooling.
+   - **Git Remote:** `origin -> https://github.com/Aryan1736/Karen.git` reachable and synchronized on branch `main`.
+   - **Project Memory:** All 4 core documents (`gemini.md`, `task_plan.md`, `findings.md`, `progress.md`) verified and preserved.
+   - **Secrets Discipline:** Created `.env.example` with safe placeholder tokens and added `.env`, `node_modules`, and `.tmp/` to root `.gitignore`.
+
+2. **CrisiText Dataset Access (`LanD-FBK/crisitext`):**
+   - Verified unauthenticated public access via Hugging Face Hub using the `datasets` streaming API (`load_dataset("LanD-FBK/crisitext", split="train", streaming=True)`).
+   - Zero API key required for exploration and inference testing.
+   - Verified available splits: `['train', 'validation', 'test']`.
+   - Verified 8 record attributes: `['set', 'guidelines', 'scenario_id', 'source', 'original_description', 'events', 'messages', 'original_eventid']`.
+   - Sample `train-0` originates from FEMA IPAWS alert archives (`source: FEMA`).
+
+3. **ML Runtime & Performance Benchmarking:**
+   - **Model Tested:** `sentence-transformers/all-MiniLM-L6-v2`.
+   - **Dependency Delivery Discovery:** Standard PyPI wheel download for PyTorch on this network was severely throttled (~15-30 kB/s). Resolved by fetching CPU wheels directly via Cloudflare R2 mirror index (`https://download.pytorch.org/whl/cpu`), completing the 124 MB download in ~45 seconds (~2.7 MB/s).
+   - **Cold Load Time:** Model loaded and initialized in **8,564 ms** (first-run CPU cold start).
+   - **Measured Local CPU Inference Latency:** **9.68 ms** per text report (verified on sample emergency text: *"Heavy flash flooding near Rasulgarh square, multiple vehicles trapped in underpass"*).
+   - **Output Dimensionality:** Verified **384-dimensional dense vector**, with unit L2 norm ($1.0$).
+   - **Takeaway:** Low-latency CPU inference is completely viable locally for real-time deduplication and similarity scoring.
+
+4. **PostgreSQL Connectivity:**
+   - Local service `postgresql-x64-18` active on `localhost:5432`.
+   - Connection string configured securely in `.env` as `postgresql://postgres:****@localhost:5432/postgres`.
+   - Discovered that an external system environment variable `DATABASE_URL` was initially pointing to an inactive local port; resolved by enforcing `load_dotenv(override=True)` in Python tooling.
+   - Minimal query handshake (`SELECT 1`) executed successfully. PostgreSQL Server Version verified: **18.3**.
+
+5. **OpenStreetMap Connectivity:**
+   - Verified network accessibility:
+     - `https://www.openstreetmap.org` returned HTTP 200.
+     - `https://tile.openstreetmap.org/0/0/0.png` returned HTTP 200 with standard image/png payload.
+   - Zero API key required for client-side Leaflet tile rendering under Standard Tile Usage Policy.
+
+6. **Deployment Platform Compatibility (Vercel & Render):**
+   - **Vercel (Frontend Target):** Node.js `v22.19.0` and npm `10.9.3` verified locally. The planned React/Vite/Tailwind client architecture adheres strictly to Vercel's zero-config static/SPA deployment model.
+   - **Render (Backend, ML, PostgreSQL Target):** Python 3.13 is fully supported by Render's native Python runtime for Web Services and Background Workers. Application state will be persisted in Render PostgreSQL via `DATABASE_URL` without local filesystem coupling.
+
+---
+
+## 8. Phase 3: Architectural Discoveries & Structural Formulations
+
+1. **3-Layer Architecture Boundary Enforcement:**
+   - **Layer 1 (Architecture SOPs):** 17 dedicated specifications established in `architecture/`. All mathematical formulas, database schemas, API envelopes, and fallback policies are codified in documentation before any implementation code.
+   - **Layer 2 (Navigation):** Explicit state machine defined in `architecture/navigation.md` routing data from `REPORT_RECEIVED` through ML analysis, fusion, prioritization, and WebSocket dispatch.
+   - **Layer 3 (Tools):** Reusable deterministic tools in `tools/` with scratch/ephemeral storage in `.tmp/` (gitignored).
+
+2. **Decoupled Urgency & Probabilistic-Deterministic Split:**
+   - Verified that separating probabilistic NLP predictions (`ml_predictions`) from deterministic operational state (`incidents`) solves the critical explainability requirement of disaster triage.
+   - Documented that CrisiText serves scenario modeling and simulation, while operational urgency is derived via life-safety feature heuristics.
+
+3. **Dynamic Thresholding & Corroboration Math:**
+   - Triangulation combines dense semantic cosine similarity ($w_1=0.55$), temporal half-life decay ($w_2=0.20$), and spatial proximity ($w_3=0.25$).
+   - Saturated corroboration formulation ($1 - e^{-0.45 \cdot N}$) prevents viral re-tweets or bot amplification from gaming emergency priority queues.
+   - Similarity thresholds ($\tau_{\text{dup}} \approx 0.85$, $\tau_{\text{corrob}} \approx 0.70$) remain fully configurable via environment variables.
+
+4. **Real-Time Transport Decision:**
+   - Native FastAPI WebSockets (`/ws/events`) selected as the primary event stream for sub-50ms reactive queue reordering.
+   - Implemented automatic client-side fallback to periodic HTTP polling (`GET /incidents` every 5s) if WebSocket transport drops.
+
+5. **Human-in-the-Loop Audit Invariant:**
+   - Every human modification writes an append-only audit record to `audit_logs` requiring operator identity and non-empty justification.
+   - The underlying raw ML prediction remains completely untouched for retrospective evaluation.

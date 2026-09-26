@@ -1,0 +1,201 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "KarenEarMLOutput",
+  "description": "Canonical machine-readable JSON Schema for Karen's Ear ML/NLP pipeline analysis output contract.",
+  "type": "object",
+  "required": [
+    "report_id",
+    "model_version",
+    "incident_type",
+    "urgency",
+    "location",
+    "people_at_risk",
+    "required_response",
+    "entities",
+    "processing_status",
+    "warnings"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "report_id": {
+      "type": "string",
+      "description": "Identifier of the analyzed raw emergency report."
+    },
+    "model_version": {
+      "type": "string",
+      "description": "Version string of the ML model/pipeline combination used for inference."
+    },
+    "incident_type": {
+      "type": "object",
+      "description": "Classified hazard or crisis category with confidence.",
+      "required": ["label", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": ["string", "null"],
+          "enum": [
+            "FLOOD_FLASH_FLOOD",
+            "FIRE_WILDFIRE_EXPLOSION",
+            "STRUCTURAL_COLLAPSE",
+            "EARTHQUAKE_LANDSLIDE",
+            "SEVERE_WEATHER_STORM",
+            "MEDICAL_EMERGENCY",
+            "CIVIL_UNREST_ACTIVE_THREAT",
+            "UTILITY_INFRASTRUCTURE_FAILURE",
+            "OTHER_GENERAL_INCIDENT",
+            null
+          ],
+          "description": "Predicted incident hazard category or null if unclassifiable."
+        },
+        "confidence": {
+          "type": ["number", "null"],
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Model confidence score in range [0.0, 1.0]."
+        }
+      }
+    },
+    "urgency": {
+      "type": "object",
+      "description": "Feature-derived operational urgency tier with confidence.",
+      "required": ["label", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": ["string", "null"],
+          "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW", null],
+          "description": "Operational urgency tier derived from life-safety and hazard features."
+        },
+        "confidence": {
+          "type": ["number", "null"],
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Confidence score in range [0.0, 1.0]."
+        }
+      }
+    },
+    "location": {
+      "type": "object",
+      "description": "Extracted location text and optional verified coordinates (strictly null if unverified).",
+      "required": ["text", "latitude", "longitude", "precision", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": ["string", "null"],
+          "description": "Verbatim extracted location phrasing from report text."
+        },
+        "latitude": {
+          "type": ["number", "null"],
+          "minimum": -90.0,
+          "maximum": 90.0,
+          "description": "Geocoded latitude or null if unverified without hallucination."
+        },
+        "longitude": {
+          "type": ["number", "null"],
+          "minimum": -180.0,
+          "maximum": 180.0,
+          "description": "Geocoded longitude or null if unverified without hallucination."
+        },
+        "precision": {
+          "type": "string",
+          "enum": ["exact", "approximate", "unknown"],
+          "description": "Confidence level in geographic coordinates."
+        },
+        "confidence": {
+          "type": ["number", "null"],
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Extraction confidence in range [0.0, 1.0]."
+        }
+      }
+    },
+    "people_at_risk": {
+      "type": "object",
+      "description": "Detected trapped, injured, or at-risk person count.",
+      "required": ["count", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Estimated count of individuals at immediate life risk."
+        },
+        "confidence": {
+          "type": ["number", "null"],
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Confidence score in range [0.0, 1.0]."
+        }
+      }
+    },
+    "required_response": {
+      "type": "array",
+      "description": "Identified responder agencies or tactical capabilities required.",
+      "items": {
+        "type": "object",
+        "required": ["type", "confidence"],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "SEARCH_AND_RESCUE",
+              "MEDICAL_EMS",
+              "FIRE_HAZMAT",
+              "POLICE_SECURITY",
+              "PUBLIC_WORKS_UTILITY"
+            ],
+            "description": "Responder service type."
+          },
+          "confidence": {
+            "type": ["number", "null"],
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "Confidence score in range [0.0, 1.0]."
+          }
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "description": "Named entities extracted from report text.",
+      "items": {
+        "type": "object",
+        "required": ["text", "type", "confidence"],
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Extracted text segment."
+          },
+          "type": {
+            "type": "string",
+            "description": "Entity category (e.g. LOCATION, HAZARD, VICTIM, VEHICLE)."
+          },
+          "confidence": {
+            "type": ["number", "null"],
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "Confidence score in range [0.0, 1.0]."
+          }
+        }
+      }
+    },
+    "embedding_reference": {
+      "type": ["string", "null"],
+      "description": "Identifier or key referencing the 384-dimensional dense semantic embedding."
+    },
+    "processing_status": {
+      "type": "string",
+      "enum": ["SUCCESS", "PARTIAL", "FAILED", "NEEDS_REVIEW"],
+      "description": "Operational outcome status of the NLP pipeline run."
+    },
+    "warnings": {
+      "type": "array",
+      "description": "Non-fatal warnings, fallback alerts, or ambiguity diagnostics.",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

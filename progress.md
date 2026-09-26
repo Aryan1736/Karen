@@ -1,37 +1,67 @@
 # Karen's Ear — Progress
 
 ## Current Phase
-Phase 1 — B: Blueprint (Vision & Logic)
+Phase 3 — A: Architect (Technical Specifications & 3-Layer Blueprints)
 
 ## Status
-BLUEPRINT_REVISIONS_INCORPORATED (AWAITING_APPROVAL)
+ARCHITECT_COMPLETED_AWAITING_APPROVAL
 
-## Completed
-- [x] Phase 1 started
-- [x] Discovery answers confirmed (Q1–Q6 finalized)
-- [x] Target deployment architecture confirmed (Frontend: Vercel, Backend/ML/DB: Render)
-- [x] ML pipeline requirement confirmed (Open-source hybrid ML + deterministic application logic)
-- [x] JSON schema contracts formalized in `gemini.md` (v1.1)
-- [x] Repository state verified (`main` clean, remote linked to `https://github.com/Aryan1736/Karen.git`)
-- [x] CrisiText deep inspection completed (Croissant schema, fields, 13 crisis scenarios, CC-BY-4.0 license, NLG nature)
-- [x] **Correction 1 Incorporated:** Dynamic duplicate threshold baseline ($\tau_{\text{dup}} \approx 0.85$ is an initial experimental baseline, to be calibrated against evaluation data to avoid false merges)
-- [x] **Correction 2 Incorporated:** Hardware/runtime resource metrics ($<500$MB RAM, low latency) treated strictly as empirical targets to benchmark on Render and local hardware
-- [x] **Correction 3 Incorporated:** Explicit Urgency Methodology defined (CrisiText does not have urgency labels; urgency is derived via documented feature rules for life-safety, hazard velocity, and evaluated separately)
-- [x] Crisis classification & benchmark research completed (`QCRI/HumAID`, `CrisisBench`, `CrisisTransformers`)
-- [x] Spatiotemporal incident correlation and duplicate suppression vs. corroboration research completed
-- [x] Emergency command center dashboard patterns and Leaflet open-source architectures reviewed
+## Connection Matrix (Verified in Phase 2)
+
+| Dependency | Required Now | Auth | Verification | Status |
+| :--- | :---: | :--- | :--- | :---: |
+| **GitHub** | Yes | Existing git remote | Remote & reachable: `Aryan1736/Karen.git` (`main`) | **PASS** |
+| **Python** | Yes | None | Version 3.13.5, pip, venv active | **PASS** |
+| **Node.js** | Yes | None | v22.19.0, npm 10.9.3 | **PASS** |
+| **Hugging Face Dataset** | Yes | None expected | Streamed `LanD-FBK/crisitext` record `train-0` (8 cols) | **PASS** |
+| **PostgreSQL** | Yes | Local credentials | Port 5432, `SELECT 1` successful, PostgreSQL 18.3 | **PASS** |
+| **ML Model Runtime** | Yes | None | `all-MiniLM-L6-v2` loaded, 384d, 9.68 ms CPU latency | **PASS** |
+| **OpenStreetMap** | Yes | None | Main site & tile server reachable (HTTP 200) | **PASS** |
+| **Vercel** | Later | Deployment credentials | Configuration only (Node/npm verified) | **READY** |
+| **Render** | Later | Deployment credentials | Configuration only (Python 3.13 web service verified) | **READY** |
+
+## Completed in Phase 3 (Architect)
+- [x] Established Layer 1 Architecture directory: `architecture/`.
+- [x] Authored 17 comprehensive technical architecture SOPs:
+  1. `architecture/system-overview.md` (North Star, end-to-end data flow, trust boundaries)
+  2. `architecture/ml-pipeline.md` (Multi-task feature extraction, MiniLM embeddings, feature-derived urgency)
+  3. `architecture/incident-correlation.md` (Spatiotemporal triangulation, dynamic thresholding, corroboration saturation)
+  4. `architecture/priority-engine.md` (Strictly deterministic scoring formula, factor breakdown, explainability)
+  5. `architecture/human-review.md` (Operator workflow, audit logs schema, raw ML preservation)
+  6. `architecture/failure-handling.md` (Graceful degradation matrix: "AI failure ≠ system failure")
+  7. `architecture/api-contracts.md` (Canonical JSON envelopes, REST endpoints, error specifications)
+  8. `architecture/database.md` (PostgreSQL relational model, tables, foreign keys, indexes)
+  9. `architecture/realtime.md` (FastAPI WebSocket event catalog, reconnection backoff, polling fallback)
+  10. `architecture/simulation.md` (CrisiText disaster scenarios, rate throttling, synthetic tagging)
+  11. `architecture/frontend.md` (Tactical command center UI hierarchy, design tokens, Leaflet map)
+  12. `architecture/deployment.md` (Vercel edge static SPA + Render FastAPI/ML/PostgreSQL topology)
+  13. `architecture/security.md` (Secrets rules, Pydantic input sanitization, automated dispatch prohibition)
+  14. `architecture/testing.md` (Testing pyramid, quantitative ML benchmark criteria, ROC/F1 targets)
+  15. `architecture/observability.md` (Structured JSON logging, end-to-end tracing, `/health` endpoint)
+  16. `architecture/navigation.md` (Layer 2 state machine transitions S1-S12, orchestration flow)
+  17. `architecture/decisions.md` (ADR-001 through ADR-010 binding architectural decisions)
+- [x] Created root `README.md` with system overview and technical documentation index.
+- [x] Created ephemeral `.tmp/` scratch directory (verified gitignored).
+- [x] Enforced zero implementation code rule (no premature backend, frontend, or ML code written).
+- [x] Created shared implementation-facing developer contracts and guides:
+  - `docs/api-contract.md` (Shared REST/WS endpoints, envelopes, status codes)
+  - `docs/data-schema.md` (Shared data structures, enums, nullability, validation)
+  - `docs/development-guide.md` (Branch ownership, non-interference, shared contract protocol)
+  - `ml/schemas/incident_output.json` (Machine-readable JSON Schema for ML output)
+  - `frontend/src/types/incident.ts` (Canonical TypeScript types for frontend UI)
 
 ## In Progress
-- [ ] Final team sign-off on Phase 1 Blueprint
+- [ ] Team Feature Branching: Ready for Aryan, Daksh, Pankaj, and Srinivash to branch independently.
 
 ## Errors
 None.
 
-## Tests
-None (Execution halted per Blueprint approval gate).
+## Tests Run
+- All 17 architecture documents cross-validated against canonical contracts in `gemini.md` (v1.1).
+- `python tools/check_links.py` maintained and verified operational.
 
 ## Current Blockers
-Awaiting final Blueprint approval before initiating Phase 2 (Link).
+None. System architecture is fully specified and awaiting user approval.
 
 ## Operating Rule
-Do NOT write code or create implementation scripts in `tools/` until Phase 1 Blueprint is explicitly approved by the team.
+Do NOT begin Phase 4 (Stylize UI, styling tokens, or mock interface scaffolding) until Phase 3 Architecture is explicitly approved by the user.
