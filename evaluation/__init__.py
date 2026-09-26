@@ -34,7 +34,9 @@ from evaluation.evaluate_ml import (
     MLEvaluationReport,
     MLPredictionAdapter,
     NormalizedMLPrediction,
+    build_real_ml_predictor,
     evaluate_ml_predictions,
+    evaluate_real_ml,
 )
 from evaluation.evaluate_correlation import (
     AssertionResult,
@@ -69,6 +71,8 @@ __all__ = [
     "NormalizedMLPrediction",
     "PeopleAtRiskEvaluationReport",
     "UrgencyAlignmentReport",
+    "build_real_ml_predictor",
+    "evaluate_real_ml",
     "compute_classification_report",
     "compute_coverage_report",
     "compute_dual_critical_recall",

@@ -140,9 +140,17 @@ def generate_markdown_scorecard(
     md.append("| :--- | :---: | :---: | :---: |")
 
     if latency.is_measured and latency.sample_count > 0:
-        md.append(f"| **P50 Latency** | **{latency.p50_ms:.2f} ms** | $\\le$ 50.0 ms | `{'PASS' if latency.p50_ms <= 50.0 else 'WARN'}` |")
-        md.append(f"| **P95 Latency** | **{latency.p95_ms:.2f} ms** | $\\le$ 150.0 ms | `{'PASS' if latency.p95_ms <= 150.0 else 'WARN'}` |")
-        md.append(f"| **Mean Latency** | **{latency.mean_ms:.2f} ms** | $\\le$ 75.0 ms | `{'PASS' if latency.mean_ms <= 75.0 else 'WARN'}` |")
+        if ml_report.warm_latency_profile is not None and ml_report.cold_latency_ms is not None:
+            w = ml_report.warm_latency_profile
+            c = ml_report.cold_latency_ms
+            md.append(f"| **Cold-Start Latency (First Dispatch)** | **{c:.2f} ms** | - | `COLD START` |")
+            md.append(f"| **Warm P50 Latency** | **{w.p50_ms:.2f} ms** | $\\le$ 50.0 ms | `{'PASS' if w.p50_ms <= 50.0 else 'WARN'}` |")
+            md.append(f"| **Warm P95 Latency** | **{w.p95_ms:.2f} ms** | $\\le$ 150.0 ms | `{'PASS' if w.p95_ms <= 150.0 else 'WARN'}` |")
+            md.append(f"| **Warm Mean Latency** | **{w.mean_ms:.2f} ms** | $\\le$ 75.0 ms | `{'PASS' if w.mean_ms <= 75.0 else 'WARN'}` |")
+        else:
+            md.append(f"| **P50 Latency** | **{latency.p50_ms:.2f} ms** | $\\le$ 50.0 ms | `{'PASS' if latency.p50_ms <= 50.0 else 'WARN'}` |")
+            md.append(f"| **P95 Latency** | **{latency.p95_ms:.2f} ms** | $\\le$ 150.0 ms | `{'PASS' if latency.p95_ms <= 150.0 else 'WARN'}` |")
+            md.append(f"| **Mean Latency** | **{latency.mean_ms:.2f} ms** | $\\le$ 75.0 ms | `{'PASS' if latency.mean_ms <= 75.0 else 'WARN'}` |")
     else:
         md.append("| **P50 Latency** | *NOT MEASURED* | $\\le$ 50.0 ms | `NOT MEASURED (Offline Self-Test)` |")
         md.append("| **P95 Latency** | *NOT MEASURED* | $\\le$ 150.0 ms | `NOT MEASURED (Offline Self-Test)` |")
@@ -203,6 +211,7 @@ def run_full_benchmark(
     latency_results_file: Optional[str] = None,
     measured_latencies: Optional[Sequence[float]] = None,
     is_real_system_result: bool = False,
+    real_ml: bool = False,
 ) -> Dict[str, Any]:
     """Runs complete benchmark harness across all scenarios and saves reports."""
     events = load_all_golden_events()
@@ -240,11 +249,18 @@ def run_full_benchmark(
             elif isinstance(data, dict) and "latencies_ms" in data:
                 lat_list.extend(data["latencies_ms"])
 
+    real_predictor = None
+    if real_ml:
+        from evaluation.evaluate_ml import build_real_ml_predictor
+        real_predictor = build_real_ml_predictor(latency_collector=lat_list)
+        is_real_system_result = True
+
     # 1. Run ML Evaluation
     ml_report = evaluate_ml_predictions(
         events=events,
+        predict_fn=real_predictor,
         mock_predictions=mock_ml,
-        is_real_system_result=is_real_system_result if mock_ml is not None else None,
+        is_real_system_result=is_real_system_result if (mock_ml is not None or real_ml) else None,
     )
 
     # 2. Run Incident Correlation Evaluation
@@ -256,6 +272,12 @@ def run_full_benchmark(
 
     # 3. Latency Profile (Truthful: uses real measurements if provided, otherwise NOT MEASURED)
     latency = compute_latency_profile(lat_list)
+    if lat_list and ml_report.latency_profile is None:
+        ml_report.latency_profile = latency
+        ml_report.latencies_ms = lat_list
+        ml_report.cold_latency_ms = lat_list[0]
+        if len(lat_list) > 1:
+            ml_report.warm_latency_profile = compute_latency_profile(lat_list[1:])
 
     # 4. Generate Markdown Scorecard
     scorecard_md = generate_markdown_scorecard(
@@ -276,6 +298,8 @@ def run_full_benchmark(
         "ml_evaluation": ml_report.to_dict(),
         "correlation_evaluation": corr_report.to_dict(),
         "latency_profile": latency.to_dict(),
+        "cold_latency_ms": round(lat_list[0], 2) if lat_list else None,
+        "warm_latency_profile": compute_latency_profile(lat_list[1:]).to_dict() if len(lat_list) > 1 else None,
     }
 
     json_file = out_path / "evaluation_scorecard.json"
@@ -310,6 +334,7 @@ def main(args: Optional[List[str]] = None) -> int:
     parser.add_argument("--ml-predictions", help="Path to external ML predictions JSON file")
     parser.add_argument("--backend-results", help="Path to external correlation outputs JSON file")
     parser.add_argument("--latency-results", help="Path to external latency measurements JSON file")
+    parser.add_argument("--real-ml", action="store_true", help="Evaluate live Aryan ML pipeline directly")
     parsed = parser.parse_args(args)
 
     run_full_benchmark(
@@ -318,6 +343,7 @@ def main(args: Optional[List[str]] = None) -> int:
         ml_predictions_file=parsed.ml_predictions,
         backend_results_file=parsed.backend_results,
         latency_results_file=parsed.latency_results,
+        real_ml=parsed.real_ml,
     )
     return 0
 

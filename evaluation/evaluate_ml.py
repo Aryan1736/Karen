@@ -25,17 +25,20 @@ from enum import Enum
 import json
 import logging
 import math
+import time
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple
 
 from evaluation.metrics import (
     ClassificationReport,
     CoverageReport,
+    LatencyProfile,
     LocationEvaluationReport,
     MultilabelReport,
     PeopleAtRiskEvaluationReport,
     UrgencyAlignmentReport,
     compute_classification_report,
     compute_coverage_report,
+    compute_latency_profile,
     compute_location_metrics,
     compute_multilabel_response_metrics,
     compute_people_at_risk_metrics,
@@ -96,6 +99,8 @@ class NormalizedMLPrediction:
     people_at_risk: Optional[bool] = None
     is_valid: bool = True
     validation_error: Optional[str] = None
+    model_version: Optional[str] = None
+    processing_status: Optional[str] = None
 
 
 class MLPredictionAdapter:
@@ -370,6 +375,9 @@ class MLPredictionAdapter:
                 elif isinstance(item, str):
                     resp_types.append(item.upper())
 
+        model_version = str(data.get("model_version")) if data.get("model_version") is not None else None
+        proc_status = str(data.get("processing_status")) if data.get("processing_status") is not None else None
+
         return NormalizedMLPrediction(
             report_id=report_id,
             incident_type=str(inc_label).upper(),
@@ -384,6 +392,8 @@ class MLPredictionAdapter:
             required_response_types=resp_types,
             people_at_risk=people_at_risk_flag,
             is_valid=True,
+            model_version=model_version,
+            processing_status=proc_status,
         )
 
 
@@ -420,13 +430,19 @@ class MLEvaluationReport:
     evaluation_mode: EvaluationMode = EvaluationMode.HARNESS_SELF_TEST
     is_real_system_result: bool = False
     details: List[Dict[str, Any]] = field(default_factory=list)
+    latency_profile: Optional[LatencyProfile] = None
+    latencies_ms: List[float] = field(default_factory=list)
+    cold_latency_ms: Optional[float] = None
+    warm_latency_profile: Optional[LatencyProfile] = None
+    model_version: Optional[str] = None
+    status_counts: Dict[str, int] = field(default_factory=dict)
 
     @property
     def is_hermetic_mock(self) -> bool:
         return not self.is_real_system_result
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d = {
             "total_samples": self.total_samples,
             "coverage_rate": round(self.coverage.coverage_rate, 4),
             "valid_predictions": self.coverage.valid_predictions,
@@ -448,6 +464,17 @@ class MLEvaluationReport:
             "is_real_system_result": self.is_real_system_result,
             "is_hermetic_mock": self.is_hermetic_mock,
         }
+        if self.latency_profile is not None:
+            d["latency_profile"] = self.latency_profile.to_dict()
+        if self.cold_latency_ms is not None:
+            d["cold_latency_ms"] = round(self.cold_latency_ms, 2)
+        if self.warm_latency_profile is not None:
+            d["warm_latency_profile"] = self.warm_latency_profile.to_dict()
+        if self.model_version is not None:
+            d["model_version"] = self.model_version
+        if self.status_counts:
+            d["status_counts"] = dict(self.status_counts)
+        return d
 
 
 # =============================================================================
@@ -511,6 +538,8 @@ def evaluate_ml_predictions(
     hn_total = 0
     hn_rejected = 0
 
+    status_counts: Dict[str, int] = {}
+    detected_model_version: Optional[str] = None
     valid_predictions = 0
     invalid_predictions = 0
     invalid_reasons: List[str] = []
@@ -623,6 +652,12 @@ def evaluate_ml_predictions(
             if norm_pred.validation_error:
                 invalid_reasons.append(norm_pred.validation_error)
 
+        if norm_pred.processing_status:
+            st = norm_pred.processing_status.upper()
+            status_counts[st] = status_counts.get(st, 0) + 1
+        if norm_pred.model_version and detected_model_version is None:
+            detected_model_version = norm_pred.model_version
+
         true_hazard = gt.expected_incident_type.value if gt.expected_incident_type else "OTHER_GENERAL_INCIDENT"
         pred_hazard = norm_pred.incident_type
 
@@ -703,6 +738,7 @@ def evaluate_ml_predictions(
             "pred_urgency": pred_urgency,
             "is_critical": (true_urgency == "CRITICAL"),
             "is_valid": norm_pred.is_valid,
+            "processing_status": norm_pred.processing_status,
         })
 
     # Compute classification reports
@@ -747,4 +783,134 @@ def evaluate_ml_predictions(
         evaluation_mode=eval_mode,
         is_real_system_result=real_result,
         details=details,
+        model_version=detected_model_version,
+        status_counts=status_counts,
     )
+
+
+# =============================================================================
+# 4. Real ML Inference Adapter & Benchmark Runner
+# =============================================================================
+
+def build_real_ml_predictor(
+    include_embedding: bool = False,
+    latency_collector: Optional[List[float]] = None,
+) -> Callable[[str, Optional[str], Optional[Dict[str, Any]]], Dict[str, Any]]:
+    """
+    Builds a real ML predictor closure reusing a single process-wide InferenceEngine instance.
+    Calls get_inference_engine() exactly once upon creation.
+    Strictly forwards only legitimate public dispatch fields: report text, report_id, location_hint.
+    Zero ground truth is passed to the ML engine.
+    """
+    from ml.pipeline import get_inference_engine
+
+    engine = get_inference_engine()
+
+    def predict(
+        text: str,
+        report_id: Optional[str] = None,
+        location_hint: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        t0 = time.perf_counter()
+        result = engine.analyze(
+            report=text,
+            report_id=report_id,
+            location_hint=location_hint,
+            include_embedding=include_embedding,
+        )
+        t_elapsed_ms = (time.perf_counter() - t0) * 1000.0
+        if latency_collector is not None:
+            latency_collector.append(t_elapsed_ms)
+        return result
+
+    return predict
+
+
+def evaluate_real_ml(
+    events: Optional[Sequence[ScenarioEvent]] = None,
+    location_mode: LocationEvalMode = LocationEvalMode.HINT_ASSISTED,
+    include_embedding: bool = False,
+) -> MLEvaluationReport:
+    """
+    Executes the REAL_ML benchmark against Aryan's live inference engine.
+    Reuses a single process-level engine instance across all events.
+    Captures true inference latencies and produces an MLEvaluationReport marked REAL_ML.
+    """
+    if events is None:
+        from simulator.scenarios import get_scenario, list_scenarios
+        events = []
+        for sid in list_scenarios():
+            events.extend(get_scenario(sid))
+
+    measured_latencies: List[float] = []
+    predictor = build_real_ml_predictor(
+        include_embedding=include_embedding,
+        latency_collector=measured_latencies,
+    )
+
+    report = evaluate_ml_predictions(
+        events=events,
+        predict_fn=predictor,
+        location_mode=location_mode,
+        is_real_system_result=True,
+    )
+
+    if measured_latencies:
+        report.latencies_ms = measured_latencies
+        report.latency_profile = compute_latency_profile(measured_latencies)
+        report.cold_latency_ms = measured_latencies[0]
+        if len(measured_latencies) > 1:
+            report.warm_latency_profile = compute_latency_profile(measured_latencies[1:])
+
+    return report
+
+
+def main(args: Optional[List[str]] = None) -> int:
+    import argparse
+    from pathlib import Path
+    import sys
+
+    parser = argparse.ArgumentParser(description="Karen's Ear ML/NLP Evaluation Runner")
+    parser.add_argument("--real-ml", action="store_true", help="Evaluate live Aryan ML pipeline")
+    parser.add_argument("--output", "-o", help="Optional output JSON path")
+    parser.add_argument("--location-mode", choices=["TEXT_EXTRACTION", "HINT_ASSISTED"], default="HINT_ASSISTED")
+    parser.add_argument("--include-embedding", action="store_true", help="Request embeddings from inference engine")
+    parser.add_argument("--scenarios", nargs="*", default=None, help="Specific scenario names to evaluate")
+    parsed = parser.parse_args(args)
+
+    loc_mode = LocationEvalMode(parsed.location_mode)
+    from simulator.scenarios import get_scenario, list_scenarios
+
+    scenario_names = parsed.scenarios or list_scenarios()
+    events: List[ScenarioEvent] = []
+    for sid in scenario_names:
+        events.extend(get_scenario(sid))
+
+    if parsed.real_ml:
+        report = evaluate_real_ml(
+            events=events,
+            location_mode=loc_mode,
+            include_embedding=parsed.include_embedding,
+        )
+    else:
+        report = evaluate_ml_predictions(
+            events=events,
+            location_mode=loc_mode,
+        )
+
+    rep_dict = report.to_dict()
+    print(json.dumps(rep_dict, indent=2))
+
+    if parsed.output:
+        out_p = Path(parsed.output)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_p, "w", encoding="utf-8") as f:
+            json.dump(rep_dict, f, indent=2)
+        print(f"\n[OK] ML evaluation report saved to {out_p}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())

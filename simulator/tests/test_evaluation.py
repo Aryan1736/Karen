@@ -15,8 +15,11 @@ from simulator.evaluation.evaluate_correlation import (
     evaluate_correlation_engine,
 )
 from simulator.evaluation.evaluate_ml import (
+    EvaluationMode,
     MLEvaluationReport,
+    build_real_ml_predictor,
     evaluate_ml_predictions,
+    evaluate_real_ml,
 )
 from simulator.evaluation.metrics import (
     ClassificationReport,
@@ -28,6 +31,7 @@ from simulator.evaluation.metrics import (
     compute_dual_critical_recall,
     compute_fusion_accuracy,
     compute_latency_profile,
+    compute_multilabel_response_metrics,
     compute_spearman_rho,
     compute_urgency_alignment,
 )
@@ -244,6 +248,92 @@ def test_latency_profile():
     assert empty.mean_ms == 0.0
 
 
+def test_latency_profile_invariants():
+    """Verify mathematical invariants: min <= mean <= max, min <= p50 <= max, min <= p95 <= max."""
+    test_cases = [
+        [15.5],
+        [10.0, 20.0, 30.0, 40.0],
+        [15329.55, 24.13, 22.69, 25.34, 24.41, 18.99, 42.47],
+        [50.0, 50.0, 50.0, 50.0],
+    ]
+    for case in test_cases:
+        prof = compute_latency_profile(case)
+        assert prof.min_ms <= prof.mean_ms <= prof.max_ms
+        assert prof.min_ms <= prof.p50_ms <= prof.max_ms
+        assert prof.min_ms <= prof.p90_ms <= prof.max_ms
+        assert prof.min_ms <= prof.p95_ms <= prof.max_ms
+        assert prof.min_ms <= prof.p99_ms <= prof.max_ms
+        assert prof.sample_count == len(case)
+
+
+def test_latency_profile_known_sample():
+    """Verify exact percentile index mapping on known [10, 20, 30, 40] list."""
+    lats = [10.0, 20.0, 30.0, 40.0]
+    prof = compute_latency_profile(lats)
+    assert prof.sample_count == 4
+    assert prof.min_ms == 10.0
+    assert prof.max_ms == 40.0
+    assert prof.mean_ms == 25.0
+    # idx for 0.50 is ceil(0.50*4)-1 = 1 -> 20.0
+    assert prof.p50_ms == 20.0
+    # idx for 0.90 is ceil(0.90*4)-1 = 3 -> 40.0
+    assert prof.p90_ms == 40.0
+    assert prof.p95_ms == 40.0
+    assert prof.p99_ms == 40.0
+
+
+def test_latency_cold_warm_separation():
+    """Verify cold-start separation: warm stats must be computed ONLY from warm samples."""
+    latencies = [1000.0, 10.0, 20.0, 30.0]
+    cold_latency = latencies[0]
+    assert cold_latency == 1000.0
+
+    warm_lats = latencies[1:]
+    warm_prof = compute_latency_profile(warm_lats)
+
+    assert warm_prof.sample_count == 3
+    assert warm_prof.min_ms == 10.0
+    assert warm_prof.max_ms == 30.0
+    assert warm_prof.mean_ms == 20.0
+    assert warm_prof.p50_ms == 20.0
+    assert warm_prof.min_ms <= warm_prof.mean_ms <= warm_prof.max_ms
+    assert warm_prof.min_ms <= warm_prof.p50_ms <= warm_prof.max_ms
+    assert warm_prof.min_ms <= warm_prof.p95_ms <= warm_prof.max_ms
+
+
+def test_response_metric_zero_denominator_policy():
+    """
+    Verify documented zero-denominator convention in compute_multilabel_response_metrics:
+    - If a label has zero ground-truth support (tp + fn == 0), the evaluator's policy
+      returns recall = 1.0 (via '1.0 if tp == 0 and fn == 0 else 0.0').
+    - If the model predicts it (fp > 0), precision = 0.0 and f1 = 0.0.
+    - If a label has positive support, standard recall = tp / (tp + fn).
+    """
+    true_tags = [["SEARCH_AND_RESCUE"], ["SEARCH_AND_RESCUE"], []]
+    pred_tags = [["SEARCH_AND_RESCUE"], ["FIRE_HAZMAT"], ["PUBLIC_WORKS_UTILITY"]]
+
+    rep = compute_multilabel_response_metrics(true_tags, pred_tags)
+
+    # SEARCH_AND_RESCUE: TP=1, FP=0, FN=1 -> P=1.0, R=0.5, F1=0.6667
+    sar = rep.per_tag["SEARCH_AND_RESCUE"]
+    assert sar["precision"] == 1.0
+    assert sar["recall"] == 0.5
+    assert sar["f1"] == 0.6667
+
+    # FIRE_HAZMAT: TP=0, FP=1, FN=0 -> Support=0 -> P=0.0, R=1.0 (zero-support rule), F1=0.0
+    fh = rep.per_tag["FIRE_HAZMAT"]
+    assert fh["precision"] == 0.0
+    assert fh["recall"] == 1.0
+    assert fh["f1"] == 0.0
+
+    # PUBLIC_WORKS_UTILITY: TP=0, FP=1, FN=0 -> Support=0 -> P=0.0, R=1.0 (zero-support rule), F1=0.0
+    pwu = rep.per_tag["PUBLIC_WORKS_UTILITY"]
+    assert pwu["precision"] == 0.0
+    assert pwu["recall"] == 1.0
+    assert pwu["f1"] == 0.0
+
+
+
 # =============================================================================
 # 7. ML & Correlation Evaluator Integration Tests
 # =============================================================================
@@ -296,3 +386,220 @@ def test_run_all_evals_master_runner(tmp_path):
     assert "Report-Level Critical Recall" in md_text
     assert "Incident-Level Critical Recall" in md_text
     assert "Scenario Rank #1 Escalation" in md_text
+
+
+# =============================================================================
+# 8. Real ML Evaluation & Ground Truth Firewall Tests
+# =============================================================================
+
+def test_real_ml_predictor_ground_truth_firewall(monkeypatch):
+    """
+    Verify that the Real ML predictor strictly enforces a zero-leakage firewall:
+    Only text, report_id, and location_hint are passed to Aryan's InferenceEngine.analyze().
+    No ground truth fields (expected_*, incident_group, relation_type, ground_truth, etc.)
+    may ever cross the public boundary into the ML inference pipeline.
+    """
+    intercepted_calls = []
+
+    class MockEngine:
+        def analyze(self, report, report_id=None, location_hint=None, include_embedding=False):
+            intercepted_calls.append({
+                "report": report,
+                "report_id": report_id,
+                "location_hint": location_hint,
+                "include_embedding": include_embedding,
+            })
+            return {
+                "report_id": report_id,
+                "incident_type": {"label": "FLOOD", "confidence": 0.95},
+                "urgency": {"label": "CRITICAL", "confidence": 0.90},
+                "people_at_risk": {"count": 2, "confidence": 0.85, "at_risk": True},
+                "location": {
+                    "text": location_hint.get("raw_text") if location_hint else None,
+                    "latitude": location_hint.get("latitude") if location_hint else None,
+                    "longitude": location_hint.get("longitude") if location_hint else None,
+                    "precision": "approximate",
+                    "confidence": 0.90,
+                },
+                "required_response": [{"type": "SEARCH_AND_RESCUE", "confidence": 0.95}],
+                "model_version": "test-v1",
+                "processing_status": "SUCCESS",
+            }
+
+    import ml.pipeline
+    monkeypatch.setattr(ml.pipeline, "get_inference_engine", lambda: MockEngine())
+
+    events = get_scenario("flood_rasulgarh")
+    report = evaluate_real_ml(events=events)
+
+    assert len(intercepted_calls) == len(events)
+    assert report.total_samples == len(events)
+    assert report.evaluation_mode == EvaluationMode.REAL_ML
+    assert report.is_real_system_result is True
+
+    forbidden_gt_keys = {
+        "expected_incident_type",
+        "expected_urgency",
+        "expected_people_at_risk",
+        "expected_people_count",
+        "expected_required_response",
+        "expected_actionable",
+        "incident_group",
+        "relation_type",
+        "ground_truth",
+        "is_hard_negative",
+        "duplicate_of",
+        "event_id",
+    }
+
+    for call in intercepted_calls:
+        # Verify valid call payload types
+        assert isinstance(call["report"], str)
+        assert len(call["report"]) > 0
+        assert isinstance(call["report_id"], str)
+        assert call["report_id"].startswith("rep-")
+        assert call["include_embedding"] is False
+
+        # If location_hint is passed, it must only contain public dispatch location fields
+        loc_hint = call["location_hint"]
+        if loc_hint is not None:
+            assert isinstance(loc_hint, dict)
+            allowed_loc_keys = {"raw_text", "latitude", "longitude", "precision"}
+            assert set(loc_hint.keys()).issubset(allowed_loc_keys)
+
+        # Explicitly verify zero GT leakage in any call argument
+        for k in forbidden_gt_keys:
+            assert k not in call
+            if isinstance(loc_hint, dict):
+                assert k not in loc_hint
+
+
+def test_real_ml_predictor_engine_reuse(monkeypatch):
+    """
+    Verify that get_inference_engine() is invoked exactly ONCE to instantiate a
+    process-wide singleton, and engine.analyze() is reused across all dispatches.
+    """
+    engine_init_count = 0
+    analyze_call_count = 0
+
+    class MockEngine:
+        def __init__(self):
+            nonlocal engine_init_count
+            engine_init_count += 1
+
+        def analyze(self, report, report_id=None, location_hint=None, include_embedding=False):
+            nonlocal analyze_call_count
+            analyze_call_count += 1
+            return {
+                "report_id": report_id,
+                "incident_type": {"label": "FLOOD", "confidence": 0.95},
+                "urgency": {"label": "CRITICAL", "confidence": 0.90},
+                "people_at_risk": {"count": 0, "confidence": 0.1, "at_risk": False},
+                "location": {"text": "Test", "latitude": 20.0, "longitude": 85.0, "precision": "approximate"},
+                "required_response": [],
+                "model_version": "test-v1",
+                "processing_status": "SUCCESS",
+            }
+
+    import ml.pipeline
+    monkeypatch.setattr(ml.pipeline, "get_inference_engine", lambda: MockEngine())
+
+    events = get_scenario("flood_rasulgarh")
+    report = evaluate_real_ml(events=events)
+
+    assert engine_init_count == 1
+    assert analyze_call_count == len(events)
+    assert report.total_samples == len(events)
+
+
+def test_real_ml_evaluation_provenance(monkeypatch):
+    """
+    Verify report provenance integrity:
+    - evaluate_real_ml produces evaluation_mode=REAL_ML, is_real_system_result=True,
+      captures latency_profile, cold_latency_ms, warm_latency_profile, and model_version.
+    - evaluate_ml_predictions produces evaluation_mode=HARNESS_SELF_TEST, is_real_system_result=False.
+    """
+    class MockEngine:
+        def analyze(self, report, report_id=None, location_hint=None, include_embedding=False):
+            return {
+                "report_id": report_id,
+                "incident_type": {"label": "FLOOD", "confidence": 0.95},
+                "urgency": {"label": "CRITICAL", "confidence": 0.90},
+                "people_at_risk": {"count": 1, "confidence": 0.9, "at_risk": True},
+                "location": {"text": "Bhubaneswar", "latitude": 20.29, "longitude": 85.86, "precision": "approximate"},
+                "required_response": [{"type": "FIRE", "confidence": 0.9}],
+                "model_version": "real-ml-pipeline-v1.0",
+                "processing_status": "SUCCESS",
+            }
+
+    import ml.pipeline
+    monkeypatch.setattr(ml.pipeline, "get_inference_engine", lambda: MockEngine())
+
+    events = get_scenario("flood_rasulgarh")[:3]
+
+    # 1. Real ML benchmark evaluation
+    real_report = evaluate_real_ml(events=events)
+    assert real_report.evaluation_mode == EvaluationMode.REAL_ML
+    assert real_report.is_real_system_result is True
+    assert real_report.is_hermetic_mock is False
+    assert real_report.model_version == "real-ml-pipeline-v1.0"
+    assert real_report.status_counts == {"SUCCESS": 3}
+    assert real_report.latency_profile is not None
+    assert real_report.latency_profile.sample_count == 3
+    assert len(real_report.latencies_ms) == 3
+    assert real_report.cold_latency_ms is not None
+    assert real_report.warm_latency_profile is not None
+    assert real_report.warm_latency_profile.sample_count == 2
+    assert real_report.warm_latency_profile.min_ms <= real_report.warm_latency_profile.mean_ms <= real_report.warm_latency_profile.max_ms
+
+    # 2. Hermetic self-test baseline evaluation
+    self_test_report = evaluate_ml_predictions(events=events)
+    assert self_test_report.evaluation_mode == EvaluationMode.HARNESS_SELF_TEST
+    assert self_test_report.is_real_system_result is False
+    assert self_test_report.is_hermetic_mock is True
+
+
+def test_real_ml_engine_failure_propagates_visibly(monkeypatch):
+    """
+    Verify that if get_inference_engine() fails (e.g. broken weights or missing runtime),
+    evaluate_real_ml() raises the error visibly rather than silently falling back to mock fixtures.
+    """
+    import ml.pipeline
+    def broken_engine():
+        raise RuntimeError("ML model failed to initialize in test environment")
+
+    monkeypatch.setattr(ml.pipeline, "get_inference_engine", broken_engine)
+
+    events = get_scenario("flood_rasulgarh")[:2]
+    with pytest.raises(RuntimeError, match="ML model failed to initialize"):
+        evaluate_real_ml(events=events)
+
+
+def test_real_ml_canonical_failed_status(monkeypatch):
+    """
+    Verify that if Aryan's pipeline returns processing_status="FAILED",
+    the evaluator scores it legitimately as real output without crashing or substituting GT.
+    """
+    class FailingEngine:
+        def analyze(self, report, report_id=None, location_hint=None, include_embedding=False):
+            return {
+                "report_id": report_id,
+                "incident_type": {"label": "OTHER_GENERAL_INCIDENT", "confidence": 0.0},
+                "urgency": {"label": "LOW", "confidence": 0.0},
+                "people_at_risk": {"count": None, "confidence": 0.0, "at_risk": False},
+                "location": {"text": None, "latitude": None, "longitude": None, "precision": "unknown"},
+                "required_response": [],
+                "model_version": "test-v1",
+                "processing_status": "FAILED",
+            }
+
+    import ml.pipeline
+    monkeypatch.setattr(ml.pipeline, "get_inference_engine", lambda: FailingEngine())
+
+    events = get_scenario("flood_rasulgarh")[:2]
+    report = evaluate_real_ml(events=events)
+
+    assert report.evaluation_mode == EvaluationMode.REAL_ML
+    assert report.is_real_system_result is True
+    assert report.status_counts.get("FAILED") == 2
+    assert report.total_samples == 2
