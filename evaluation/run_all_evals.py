@@ -212,6 +212,7 @@ def run_full_benchmark(
     measured_latencies: Optional[Sequence[float]] = None,
     is_real_system_result: bool = False,
     real_ml: bool = False,
+    real_correlation: bool = False,
 ) -> Dict[str, Any]:
     """Runs complete benchmark harness across all scenarios and saves reports."""
     events = load_all_golden_events()
@@ -264,11 +265,35 @@ def run_full_benchmark(
     )
 
     # 2. Run Incident Correlation Evaluation
+    corr_stream_fn = None
+    corr_latencies: List[float] = []
+    corr_embeddings: List[Any] = []
+    if real_correlation:
+        from evaluation.evaluate_correlation import build_real_correlation_stream_fn
+        corr_stream_fn = build_real_correlation_stream_fn(
+            latency_collector=corr_latencies,
+            embedding_collector=corr_embeddings,
+        )
+        is_real_system_result = True
+
     corr_report = evaluate_correlation_engine(
         events=events,
+        correlation_stream_fn=corr_stream_fn,
         mock_correlation_outputs=mock_corr,
-        is_real_system_result=is_real_system_result if mock_corr is not None else None,
+        is_real_system_result=is_real_system_result if (mock_corr is not None or real_correlation) else None,
     )
+    if real_correlation:
+        from evaluation.evaluate_correlation import CorrelationEvaluationMode, verify_embedding_contract
+        corr_report.evaluation_mode = CorrelationEvaluationMode.REAL_CORRELATION
+        corr_report.execution_scope = "IN_PROCESS_ENGINE_REPLAY"
+        if corr_embeddings:
+            corr_report.embedding_contract = verify_embedding_contract(corr_embeddings)
+        if corr_latencies:
+            corr_report.latencies_ms = corr_latencies
+            corr_report.latency_profile = compute_latency_profile(corr_latencies)
+            corr_report.cold_latency_ms = corr_latencies[0]
+            if len(corr_latencies) > 1:
+                corr_report.warm_latency_profile = compute_latency_profile(corr_latencies[1:])
 
     # 3. Latency Profile (Truthful: uses real measurements if provided, otherwise NOT MEASURED)
     latency = compute_latency_profile(lat_list)
@@ -335,6 +360,7 @@ def main(args: Optional[List[str]] = None) -> int:
     parser.add_argument("--backend-results", help="Path to external correlation outputs JSON file")
     parser.add_argument("--latency-results", help="Path to external latency measurements JSON file")
     parser.add_argument("--real-ml", action="store_true", help="Evaluate live Aryan ML pipeline directly")
+    parser.add_argument("--real-correlation", action="store_true", help="Evaluate live Daksh correlation and priority engine directly")
     parsed = parser.parse_args(args)
 
     run_full_benchmark(
@@ -344,6 +370,7 @@ def main(args: Optional[List[str]] = None) -> int:
         backend_results_file=parsed.backend_results,
         latency_results_file=parsed.latency_results,
         real_ml=parsed.real_ml,
+        real_correlation=parsed.real_correlation,
     )
     return 0
 

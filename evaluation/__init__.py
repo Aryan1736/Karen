@@ -40,8 +40,13 @@ from evaluation.evaluate_ml import (
 )
 from evaluation.evaluate_correlation import (
     AssertionResult,
+    CandidateIncident,
+    CorrelationEvaluationMode,
     CorrelationEvaluationReport,
+    build_real_correlation_stream_fn,
     evaluate_correlation_engine,
+    evaluate_real_correlation,
+    verify_embedding_contract,
 )
 from typing import Any
 
@@ -55,8 +60,10 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "AssertionResult",
+    "CandidateIncident",
     "ClassMetric",
     "ClassificationReport",
+    "CorrelationEvaluationMode",
     "CorrelationEvaluationReport",
     "CoverageReport",
     "DualCriticalRecall",
@@ -71,7 +78,9 @@ __all__ = [
     "NormalizedMLPrediction",
     "PeopleAtRiskEvaluationReport",
     "UrgencyAlignmentReport",
+    "build_real_correlation_stream_fn",
     "build_real_ml_predictor",
+    "evaluate_real_correlation",
     "evaluate_real_ml",
     "compute_classification_report",
     "compute_coverage_report",
@@ -87,4 +96,5 @@ __all__ = [
     "evaluate_ml_predictions",
     "generate_markdown_scorecard",
     "run_full_benchmark",
+    "verify_embedding_contract",
 ]

@@ -11,8 +11,12 @@ from pathlib import Path
 import pytest
 
 from simulator.evaluation.evaluate_correlation import (
+    CorrelationEvaluationMode,
     CorrelationEvaluationReport,
+    build_real_correlation_stream_fn,
     evaluate_correlation_engine,
+    evaluate_real_correlation,
+    verify_embedding_contract,
 )
 from simulator.evaluation.evaluate_ml import (
     EvaluationMode,
@@ -603,3 +607,539 @@ def test_real_ml_canonical_failed_status(monkeypatch):
     assert report.is_real_system_result is True
     assert report.status_counts.get("FAILED") == 2
     assert report.total_samples == 2
+
+
+# =============================================================================
+# 7. Phase 3 — Real Correlation & Priority Integration Tests
+# =============================================================================
+
+def test_real_correlation_calls_daksh_functions(monkeypatch):
+    """
+    Verify that build_real_correlation_stream_fn calls Daksh's correlate_report_to_incident
+    and calculate_priority with valid schema parameters and without falling back to ground truth.
+    """
+    import backend.app.engine.correlation as corr_mod
+    import backend.app.engine.priority as prio_mod
+
+    correlate_calls = []
+    orig_correlate = corr_mod.correlate_report_to_incident
+    def spy_correlate(*args, **kwargs):
+        correlate_calls.append((args, kwargs))
+        return orig_correlate(*args, **kwargs)
+    monkeypatch.setattr(corr_mod, "correlate_report_to_incident", spy_correlate)
+
+    priority_calls = []
+    orig_prio = prio_mod.calculate_priority
+    def spy_priority(*args, **kwargs):
+        priority_calls.append((args, kwargs))
+        return orig_prio(*args, **kwargs)
+    monkeypatch.setattr(prio_mod, "calculate_priority", spy_priority)
+
+    # Use a lightweight deterministic mock ML predictor so this unit test runs instantaneously
+    dummy_vec = [0.1] * 384
+    def dummy_ml(text, report_id=None, location_hint=None):
+        return {
+            "report_id": report_id,
+            "incident_type": {"label": "FLOOD_FLASH_FLOOD", "confidence": 0.9},
+            "urgency": {"label": "HIGH", "confidence": 0.85},
+            "people_at_risk": {"count": 2, "confidence": 0.8},
+            "location": {"text": "Rasulgarh", "latitude": 20.2961, "longitude": 85.8245, "precision": "approximate"},
+            "embedding": dummy_vec,
+            "overall_confidence": 0.85,
+        }
+
+    stream_fn = build_real_correlation_stream_fn(ml_predictor=dummy_ml)
+    events = get_scenario("flood_rasulgarh")[:3]
+
+    outputs = [stream_fn(ev.public_payload()) for ev in events]
+
+    assert len(outputs) == 3
+    for out in outputs:
+        assert "incident_id" in out
+        assert "relationship" in out
+        assert "priority_score" in out
+        assert "priority_level" in out
+        assert "explanation" in out
+        assert isinstance(out["priority_score"], float)
+
+    # First report spawns incident, second and third correlate against candidate
+    assert len(priority_calls) == 3
+    assert len(correlate_calls) >= 2
+
+
+def test_real_correlation_ground_truth_isolation(monkeypatch):
+    """
+    Verify that zero ground truth tokens or expected_* keys leak into
+    correlate_report_to_incident or calculate_priority.
+    """
+    import backend.app.engine.correlation as corr_mod
+
+    observed_inputs = []
+    orig_correlate = corr_mod.correlate_report_to_incident
+
+    def spy_correlate(*args, **kwargs):
+        observed_inputs.append(kwargs)
+        return orig_correlate(*args, **kwargs)
+
+    monkeypatch.setattr(corr_mod, "correlate_report_to_incident", spy_correlate)
+
+    def dummy_ml(text, report_id=None, location_hint=None):
+        return {
+            "report_id": report_id,
+            "incident_type": {"label": "FLOOD_FLASH_FLOOD", "confidence": 0.9},
+            "urgency": {"label": "HIGH", "confidence": 0.85},
+            "people_at_risk": {"count": 1, "confidence": 0.8},
+            "location": {"text": "Rasulgarh", "latitude": 20.2961, "longitude": 85.8245, "precision": "approximate"},
+            "embedding": [0.05] * 384,
+            "overall_confidence": 0.85,
+        }
+
+    stream_fn = build_real_correlation_stream_fn(ml_predictor=dummy_ml)
+    events = get_scenario("flood_rasulgarh")[:3]
+
+    for ev in events:
+        stream_fn(ev.public_payload())
+
+    forbidden_keys = {
+        "incident_group",
+        "relation_type",
+        "expected_incident_type",
+        "expected_urgency",
+        "expected_people_at_risk",
+        "expected_direction",
+        "ground_truth",
+        "gt",
+    }
+    for call_kw in observed_inputs:
+        for k in call_kw:
+            assert k not in forbidden_keys, f"Forbidden ground truth key '{k}' found in correlation call!"
+            val_str = str(call_kw[k])
+            assert "expected_" not in val_str.lower(), f"Ground truth token detected in correlation input: {val_str}"
+
+
+def test_real_correlation_missing_embedding_fallback():
+    """
+    Verify that when ML inference provides embedding=None,
+    correlation handles missing embedding gracefully via Daksh's reweighting logic
+    without crashing, hallucinating vectors, or raising exceptions.
+    """
+    def dummy_ml_no_emb(text, report_id=None, location_hint=None):
+        return {
+            "report_id": report_id,
+            "incident_type": {"label": "FLOOD_FLASH_FLOOD", "confidence": 0.8},
+            "urgency": {"label": "MEDIUM", "confidence": 0.75},
+            "people_at_risk": {"count": None, "confidence": None},
+            "location": {"text": "Rasulgarh", "latitude": 20.2961, "longitude": 85.8245, "precision": "approximate"},
+            "embedding": None,  # Missing dense vector
+            "overall_confidence": 0.75,
+        }
+
+    stream_fn = build_real_correlation_stream_fn(ml_predictor=dummy_ml_no_emb)
+    events = get_scenario("flood_rasulgarh")[:3]
+
+    outputs = [stream_fn(ev.public_payload()) for ev in events]
+    assert len(outputs) == 3
+    assert outputs[0]["relationship"] == "INITIAL"
+    assert outputs[1]["priority_score"] >= 0.0
+
+
+def test_real_correlation_provenance():
+    """
+    Verify that evaluate_real_correlation returns a report correctly tagged
+    with is_real_system_result=True and evaluation_mode=REAL_CORRELATION.
+    """
+    def dummy_ml(text, report_id=None, location_hint=None):
+        return {
+            "report_id": report_id,
+            "incident_type": {"label": "FLOOD_FLASH_FLOOD", "confidence": 0.9},
+            "urgency": {"label": "CRITICAL", "confidence": 0.95},
+            "people_at_risk": {"count": 4, "confidence": 0.9},
+            "location": {"text": "Rasulgarh", "latitude": 20.2961, "longitude": 85.8245, "precision": "approximate"},
+            "embedding": [0.05] * 384,
+            "overall_confidence": 0.9,
+        }
+
+    events = get_scenario("flood_rasulgarh")[:4]
+    report = evaluate_real_correlation(events=events, ml_predictor=dummy_ml)
+
+    assert report.is_real_system_result is True
+    assert report.evaluation_mode == CorrelationEvaluationMode.REAL_CORRELATION
+    assert report.total_reports_processed == 4
+    assert report.latencies_ms is not None
+    assert len(report.latencies_ms) == 4
+    assert report.cold_latency_ms is not None
+    assert report.warm_latency_profile is not None
+
+
+def test_real_correlation_corroboration_and_duplicate_dynamics():
+    """
+    Verify that independent reports increase corroboration score while duplicate
+    reports suppress priority score increases.
+    """
+    dummy_vec = [0.05] * 384
+    def dummy_ml(text, report_id=None, location_hint=None):
+        return {
+            "report_id": report_id,
+            "incident_type": {"label": "FLOOD_FLASH_FLOOD", "confidence": 0.9},
+            "urgency": {"label": "HIGH", "confidence": 0.85},
+            "people_at_risk": {"count": 2, "confidence": 0.8},
+            "location": {"text": "Rasulgarh underpass", "latitude": 20.2960, "longitude": 85.8245, "precision": "approximate"},
+            "embedding": dummy_vec,
+            "overall_confidence": 0.85,
+        }
+
+    stream_fn = build_real_correlation_stream_fn(ml_predictor=dummy_ml)
+
+    # Initial report
+    rep1 = {
+        "report_id": "rep-001",
+        "text": "Flood water underpass Rasulgarh trapped van",
+        "reported_at": "2026-09-26T18:00:00Z",
+        "location_hint": {"latitude": 20.2960, "longitude": 85.8245, "raw_text": "Rasulgarh underpass"},
+        "metadata": {"caller_id": "caller-alice"},
+    }
+    out1 = stream_fn(rep1)
+    assert out1["relationship"] == "INITIAL"
+    score1 = out1["priority_score"]
+
+    # Corroborating independent report (different caller, varied text)
+    rep2 = {
+        "report_id": "rep-002",
+        "text": "Water rising quickly at Rasulgarh bridge, vehicle stuck inside",
+        "reported_at": "2026-09-26T18:01:00Z",
+        "location_hint": {"latitude": 20.2960, "longitude": 85.8245, "raw_text": "Rasulgarh underpass"},
+        "metadata": {"caller_id": "caller-bob"},
+    }
+    out2 = stream_fn(rep2)
+    assert out2["relationship"] == "CORROBORATING"
+    score2 = out2["priority_score"]
+    assert score2 > score1, "Corroboration from independent witness must increase priority score"
+
+    # Duplicate verbatim report (same caller and verbatim text)
+    rep3 = {
+        "report_id": "rep-003",
+        "text": "Flood water underpass Rasulgarh trapped van",
+        "reported_at": "2026-09-26T18:02:00Z",
+        "location_hint": {"latitude": 20.2960, "longitude": 85.8245, "raw_text": "Rasulgarh underpass"},
+        "metadata": {"caller_id": "caller-alice"},
+    }
+    out3 = stream_fn(rep3)
+    assert out3["relationship"] == "DUPLICATE"
+    score3 = out3["priority_score"]
+    assert score3 == score2, "Duplicate report must not increase priority score"
+
+
+def test_predicted_cluster_labels_permutation_invariant():
+    """
+    Verify that arbitrary backend incident IDs are never compared directly as strings
+    to ground truth incident group IDs, and that arbitrary label permutations
+    yield identical pairwise precision, recall, F1, and Rand index.
+    """
+    true_groups = ["bbsr-flood-01", "bbsr-flood-01", "cuttack-fire-02", "cuttack-fire-02"]
+
+    # Evaluator assigns arbitrary internal cluster IDs
+    pred_groups_1 = ["inc-uuid-alpha", "inc-uuid-alpha", "inc-uuid-beta", "inc-uuid-beta"]
+    pred_groups_2 = ["inc-999-permuted", "inc-999-permuted", "inc-111-permuted", "inc-111-permuted"]
+    pred_groups_3 = ["totally-different-label", "totally-different-label", "another-arbitrary-id", "another-arbitrary-id"]
+
+    r1 = compute_fusion_accuracy(true_groups, pred_groups_1)
+    r2 = compute_fusion_accuracy(true_groups, pred_groups_2)
+    r3 = compute_fusion_accuracy(true_groups, pred_groups_3)
+
+    assert r1.pairwise_f1 == r2.pairwise_f1 == r3.pairwise_f1 == 1.0
+    assert r1.pairwise_precision == r2.pairwise_precision == r3.pairwise_precision == 1.0
+    assert r1.pairwise_recall == r2.pairwise_recall == r3.pairwise_recall == 1.0
+    assert r1.rand_index == r2.rand_index == r3.rand_index == 1.0
+    assert r1.true_positive_pairs == r2.true_positive_pairs == r3.true_positive_pairs == 2
+    assert r1.false_positive_pairs == r2.false_positive_pairs == r3.false_positive_pairs == 0
+
+
+def test_real_correlation_deterministic_repeatability():
+    """
+    Verify that executing the correlation stream twice on identical dispatches
+    produces identical relationship decisions and priority scores.
+    """
+    dummy_vec = [0.08] * 384
+    def dummy_ml(text, report_id=None, location_hint=None):
+        return {
+            "report_id": report_id,
+            "incident_type": {"label": "FLOOD_FLASH_FLOOD", "confidence": 0.9},
+            "urgency": {"label": "HIGH", "confidence": 0.85},
+            "people_at_risk": {"count": 3, "confidence": 0.8},
+            "location": {"text": "Rasulgarh underpass", "latitude": 20.2960, "longitude": 85.8245, "precision": "approximate"},
+            "embedding": dummy_vec,
+            "overall_confidence": 0.85,
+        }
+
+    events = get_scenario("flood_rasulgarh")[:5]
+
+    stream_1 = build_real_correlation_stream_fn(ml_predictor=dummy_ml)
+    outputs_1 = [stream_1(ev.public_payload()) for ev in events]
+
+    stream_2 = build_real_correlation_stream_fn(ml_predictor=dummy_ml)
+    outputs_2 = [stream_2(ev.public_payload()) for ev in events]
+
+    assert len(outputs_1) == len(outputs_2) == 5
+    for o1, o2 in zip(outputs_1, outputs_2):
+        assert o1["relationship"] == o2["relationship"]
+        assert o1["priority_score"] == o2["priority_score"]
+        assert o1["priority_level"] == o2["priority_level"]
+
+
+# =============================================================================
+# Phase 3.1 Correctness Verification & Audit Unit Tests
+# =============================================================================
+
+def test_critical_priority_threshold_semantics():
+    """
+    Verify that score 79.99 is strictly PriorityLevel.HIGH and NOT CRITICAL,
+    while score 80.0 is PriorityLevel.CRITICAL.
+    Evaluator incident_critical_recall must require score >= 80.0 (backend threshold).
+    """
+    from backend.app.engine.priority import map_priority_level
+    from backend.app.schemas.common import PriorityLevel
+
+    # Backend level mapping verification
+    assert map_priority_level(79.99) == PriorityLevel.HIGH
+    assert map_priority_level(80.0) == PriorityLevel.CRITICAL
+    assert map_priority_level(75.0) == PriorityLevel.HIGH
+    assert map_priority_level(85.0) == PriorityLevel.CRITICAL
+
+    # Use flood scenario event with expected_urgency = CRITICAL (evt-flood-004)
+    event_crit = get_scenario("flood_rasulgarh")[3]
+
+    # Sub-critical score 79.99: must NOT count as CRITICAL
+    mock_sub_crit = [{"event_id": event_crit.event_id, "priority_score": 79.99, "incident_id": "inc-001"}]
+    rep_sub = evaluate_correlation_engine(
+        events=[event_crit],
+        mock_correlation_outputs=mock_sub_crit,
+        critical_threshold=80.0,
+    )
+    assert rep_sub.incident_critical_recall == 0.0, "Score 79.99 must yield critical recall 0.0"
+    assert rep_sub.priority_score_ge_75_recall == 1.0, "Score 79.99 is >= 75.0"
+
+    # Critical score 80.0: must count as CRITICAL
+    mock_crit = [{"event_id": event_crit.event_id, "priority_score": 80.0, "incident_id": "inc-001"}]
+    rep_crit = evaluate_correlation_engine(
+        events=[event_crit],
+        mock_correlation_outputs=mock_crit,
+        critical_threshold=80.0,
+    )
+    assert rep_crit.incident_critical_recall == 1.0, "Score 80.0 must yield critical recall 1.0"
+    assert rep_crit.priority_score_ge_75_recall == 1.0
+
+
+def test_none_noise_groups_do_not_collapse_into_single_cluster():
+    """
+    Verify that reports with incident_group = None (NOISE / hard negatives)
+    are treated as distinct singletons and NEVER grouped together as a false positive pair.
+    Specifically: true groups [None, None, 'A', 'A'] must have exactly 1 true positive pair ('A'-'A'),
+    NOT 2 positive pairs.
+    """
+    evs = get_scenario("flood_rasulgarh")
+    # evs[13] and evs[14] have incident_group=None (NOISE)
+    # evs[0] and evs[1] have incident_group="bbsr-flood-rasulgarh-01"
+    events = [evs[13], evs[14], evs[0], evs[1]]
+
+    # Perfect prediction: noise events each get unique unclustered ID, emergency gets shared ID
+    mock_perfect = [
+        {"event_id": evs[13].event_id, "incident_id": "inc-unclustered-1"},
+        {"event_id": evs[14].event_id, "incident_id": "inc-unclustered-2"},
+        {"event_id": evs[0].event_id, "incident_id": "inc-fused-A"},
+        {"event_id": evs[1].event_id, "incident_id": "inc-fused-A"},
+    ]
+
+    rep = evaluate_correlation_engine(events=events, mock_correlation_outputs=mock_perfect)
+    fa = rep.fusion_accuracy
+
+    # Exactly 1 true positive pair (evs[0] with evs[1])
+    # Total pairs = 4 * 3 / 2 = 6
+    # Negative pairs = 6 - 1 = 5
+    assert fa.true_positive_pairs == 1, f"Expected 1 TP pair, got {fa.true_positive_pairs}"
+    assert fa.false_positive_pairs == 0
+    assert fa.false_negative_pairs == 0
+    assert fa.true_negative_pairs == 5
+    assert fa.pairwise_precision == 1.0
+    assert fa.pairwise_recall == 1.0
+    assert fa.pairwise_f1 == 1.0
+    assert fa.rand_index == 1.0
+
+
+def test_source_id_parity_with_backend_ingestion(monkeypatch):
+    """
+    Verify that build_real_correlation_stream_fn extracts report_source_id
+    with exact parity to Daksh's backend ingestion.py precedence:
+    caller_id -> source_id -> payload.source.
+
+    Explicitly verifies Cases A, B, C, D:
+    - Case A: caller_id takes precedence over source_id, reporter_id, phone, and source.
+    - Case B: source_id takes precedence over reporter_id, phone, and source when caller_id is absent.
+    - Case C: reporter_id and phone in metadata are strictly ignored; fallback is payload.source.
+    - Case D: empty metadata falls back to payload.source.
+    """
+    import backend.app.engine.correlation as corr_mod
+
+    observed_calls = []
+    orig_correlate = corr_mod.correlate_report_to_incident
+
+    def spy_correlate(*args, **kwargs):
+        observed_calls.append(kwargs)
+        return orig_correlate(*args, **kwargs)
+
+    monkeypatch.setattr(corr_mod, "correlate_report_to_incident", spy_correlate)
+
+    dummy_vec = [0.05] * 384
+    def dummy_ml(text, report_id=None, location_hint=None):
+        return {
+            "report_id": report_id,
+            "incident_type": {"label": "FLOOD_FLASH_FLOOD", "confidence": 0.8},
+            "urgency": {"label": "HIGH", "confidence": 0.8},
+            "people_at_risk": {"count": 1, "confidence": 0.8},
+            "location": {"text": "Test", "latitude": 20.0, "longitude": 85.0, "precision": "exact"},
+            "embedding": dummy_vec,
+            "overall_confidence": 0.8,
+        }
+
+    s = build_real_correlation_stream_fn(ml_predictor=dummy_ml)
+    # Seed initial candidate
+    s({
+        "report_id": "seed",
+        "text": "Initial seed report",
+        "source": "SEED_SRC",
+        "metadata": {"caller_id": "seed_caller"},
+    })
+
+    # Case A: caller_id takes precedence over source_id, reporter_id, phone, source
+    s({
+        "report_id": "case_a",
+        "text": "Case A report",
+        "source": "SIM_SOURCE",
+        "metadata": {
+            "caller_id": "caller_alpha",
+            "source_id": "source_beta",
+            "reporter_id": "reporter_gamma",
+            "phone": "+1234567890",
+        },
+    })
+    assert observed_calls[-1]["report_source_id"] == "caller_alpha"
+
+    # Case B: source_id takes precedence over reporter_id, phone, source when caller_id is absent
+    s({
+        "report_id": "case_b",
+        "text": "Case B report",
+        "source": "SIM_SOURCE",
+        "metadata": {
+            "source_id": "source_beta",
+            "reporter_id": "reporter_gamma",
+            "phone": "+1234567890",
+        },
+    })
+    assert observed_calls[-1]["report_source_id"] == "source_beta"
+
+    # Case C: reporter_id and phone in metadata are strictly ignored; fallback is payload.source
+    s({
+        "report_id": "case_c",
+        "text": "Case C report",
+        "source": "SIM_FALLBACK_SRC",
+        "metadata": {
+            "reporter_id": "reporter_gamma",
+            "phone": "+1234567890",
+        },
+    })
+    assert observed_calls[-1]["report_source_id"] == "SIM_FALLBACK_SRC"
+
+    # Case D: empty metadata falls back to payload.source
+    s({
+        "report_id": "case_d",
+        "text": "Case D report",
+        "source": "SIM_FALLBACK_SRC_2",
+        "metadata": {},
+    })
+    assert observed_calls[-1]["report_source_id"] == "SIM_FALLBACK_SRC_2"
+
+
+def test_embedding_contract_verification():
+    """
+    Verify embedding contract validation:
+    - 384-dimensional normalized vector passes with all_valid=True
+    - Missing / None is recorded in missing
+    - Wrong dimensions (e.g. 512, 100) recorded in wrong_dimension
+    - Non-finite (NaN, Inf) recorded in non_finite
+    """
+    import math
+
+    valid_norm_1 = [1.0 / math.sqrt(384)] * 384
+    valid_res = verify_embedding_contract([valid_norm_1, valid_norm_1])
+    assert valid_res["all_valid"] is True
+    assert valid_res["available"] == 2
+    assert valid_res["missing"] == 0
+    assert valid_res["wrong_dimension"] == 0
+    assert valid_res["non_finite"] == 0
+    assert 0.999 <= valid_res["norm_mean"] <= 1.001
+
+    mixed_embeddings = [
+        valid_norm_1,
+        None,                        # missing
+        [0.1] * 128,                 # wrong dimension
+        [float("nan")] + [0.1] * 383, # non-finite
+        [float("inf")] + [0.1] * 383, # non-finite
+    ]
+    mixed_res = verify_embedding_contract(mixed_embeddings)
+    assert mixed_res["all_valid"] is False
+    assert mixed_res["total"] == 5
+    assert mixed_res["available"] == 1
+    assert mixed_res["missing"] == 1
+    assert mixed_res["wrong_dimension"] == 1
+    assert mixed_res["non_finite"] == 2
+
+
+def test_execution_scope_provenance():
+    """
+    Verify execution scope provenance:
+    - REAL_CORRELATION has execution_scope = "IN_PROCESS_ENGINE_REPLAY"
+    - HARNESS_SELF_TEST has execution_scope = "HARNESS_SELF_TEST"
+    - is_real_system_result is correctly populated
+    """
+    dummy_vec = [0.05] * 384
+    def dummy_ml(text, report_id=None, location_hint=None):
+        return {
+            "report_id": report_id,
+            "incident_type": {"label": "FLOOD_FLASH_FLOOD", "confidence": 0.8},
+            "urgency": {"label": "HIGH", "confidence": 0.8},
+            "people_at_risk": {"count": 1, "confidence": 0.8},
+            "location": {"text": "Test", "latitude": 20.0, "longitude": 85.0, "precision": "exact"},
+            "embedding": dummy_vec,
+            "overall_confidence": 0.8,
+        }
+
+    events = get_scenario("flood_rasulgarh")[:3]
+
+    # Real correlation run
+    real_rep = evaluate_real_correlation(events=events, ml_predictor=dummy_ml)
+    assert real_rep.evaluation_mode == CorrelationEvaluationMode.REAL_CORRELATION
+    assert real_rep.execution_scope == "IN_PROCESS_ENGINE_REPLAY"
+    assert real_rep.is_real_system_result is True
+    assert real_rep.to_dict()["execution_scope"] == "IN_PROCESS_ENGINE_REPLAY"
+
+    # Self-test run
+    self_rep = evaluate_correlation_engine(events=events)
+    assert self_rep.evaluation_mode == CorrelationEvaluationMode.HARNESS_SELF_TEST
+    assert self_rep.execution_scope == "HARNESS_SELF_TEST"
+    assert self_rep.is_real_system_result is False
+
+
+def test_ranking_insufficient_sample_not_evaluated():
+    """
+    Verify that when the evaluation scenario has fewer than 2 distinct multi-report
+    incidents, ranking cannot be meaningfully evaluated.
+    meaningful_ranking_sample must be False, and spearman_rank_correlation must be None.
+    """
+    # Single incident with multiple reports
+    events = get_scenario("flood_rasulgarh")[:3]
+
+    rep = evaluate_correlation_engine(events=events)
+    assert rep.meaningful_ranking_sample is False
+    assert rep.spearman_rank_correlation is None
+    d = rep.to_dict()
+    assert d["meaningful_ranking_sample"] is False
+    assert d["spearman_rank_correlation"] is None
