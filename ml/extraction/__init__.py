@@ -8,4 +8,17 @@ Responsible for:
 - People-at-risk count extraction
 """
 
-__all__: list[str] = []
+from ml.extraction.people_risk_extractor import (
+    PeopleRiskExtractor,
+    PeopleRiskResult,
+    RiskEvidence,
+    extract_people_at_risk,
+)
+
+__all__: list[str] = [
+    "PeopleRiskExtractor",
+    "PeopleRiskResult",
+    "RiskEvidence",
+    "extract_people_at_risk",
+]
+

@@ -112,7 +112,8 @@ Return ML Output Payload
 
 ### 3.5 Step 2D: People-at-Risk Extraction
 * **Logic:** Pattern extraction for cardinal numbers and victim entity references (e.g., *"3 children"*, *"family of 5"*, *"at least 20 passengers"*).
-* If ambiguous (e.g., *"multiple people trapped"*), count is set to estimated baseline (e.g. `2`) with confidence penalty, or left `null` with risk flag set in metadata.
+* **Strict No-Hallucination Policy:** Qualitative quantities (e.g., *"multiple people trapped"*, *"several injured"*) MUST NEVER be converted to an estimated numeric baseline (such as 2). Count strictly remains `null` with `confidence = null`, preserving qualitative risk signals (e.g., `MULTIPLE_PEOPLE`, `TRAPPED`) separately.
+* Qualitative quantity != numeric quantity. Only explicit or contextually verified numeric counts are extracted into `count`.
 * **Output Contract:**
   ```json
   "people_at_risk": {
