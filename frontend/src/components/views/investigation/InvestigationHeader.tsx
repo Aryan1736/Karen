@@ -7,7 +7,9 @@ import {
   Radio, 
   Layers, 
   FileText,
-  X
+  X,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
 import { Badge, Button } from '../../ui';
 import { Incident } from '../../../types/incident';
@@ -152,6 +154,40 @@ export const InvestigationHeader: React.FC<InvestigationHeaderProps> = ({
 
         {/* Action Controls */}
         <div className="inv-header-actions">
+          {incident && (
+            <>
+              <Button
+                type="button"
+                variant="warning"
+                size="sm"
+                onClick={() => {
+                  const el = document.getElementById('operator-review-panel');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                title="Review incident status"
+                aria-label="Review incident status"
+              >
+                <ShieldCheck size={14} style={{ marginRight: 5 }} />
+                REVIEW
+              </Button>
+
+              <Button
+                type="button"
+                variant="hazard"
+                size="sm"
+                onClick={() => {
+                  const el = document.getElementById('incident-override-panel');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                title="Override incident field"
+                aria-label="Override incident field"
+              >
+                <Zap size={14} style={{ marginRight: 5 }} />
+                OVERRIDE
+              </Button>
+            </>
+          )}
+
           <Button
             type="button"
             variant="secondary"

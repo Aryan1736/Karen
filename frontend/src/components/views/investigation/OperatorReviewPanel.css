@@ -1,0 +1,367 @@
+/**
+ * OperatorReviewPanel.css
+ * Kinetic Neo-Brutalist Operator Status Review Console
+ */
+
+.operator-review-panel {
+  background: var(--color-surface-dark);
+  border: var(--border-ink);
+  box-shadow: 4px 4px 0 var(--color-void-dark);
+  margin-bottom: var(--space-4);
+  position: relative;
+}
+
+.op-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-dark-elevated);
+  border-bottom: var(--border-ink);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.op-header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.op-header-icon {
+  flex-shrink: 0;
+}
+
+.op-header-title {
+  font-size: var(--font-size-headline-sm);
+  color: var(--color-newsprint-white);
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.op-incident-target {
+  font-size: var(--font-size-label-sm);
+  background: var(--color-surface-container-high);
+  padding: 2px 8px;
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+}
+
+.op-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-label-sm);
+  color: var(--color-text-muted);
+}
+
+.op-panel-body {
+  padding: var(--space-4);
+}
+
+/* Notice Banners */
+.op-notice-box {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-ink);
+  margin-bottom: var(--space-4);
+  background: var(--color-surface-container-low);
+}
+
+.op-notice-terminal {
+  border-left: 6px solid var(--color-hazard-orange);
+  background: var(--color-high-bg);
+}
+
+.op-notice-offline {
+  border-left: 6px solid var(--color-p0-critical);
+  background: var(--color-critical-bg);
+}
+
+.op-notice-success {
+  border-left: 6px solid var(--color-system-green);
+  background: var(--color-success-bg);
+  position: relative;
+}
+
+.op-notice-error {
+  border-left: 6px solid var(--color-p0-critical);
+  background: var(--color-critical-bg);
+  position: relative;
+}
+
+.op-notice-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.op-notice-text {
+  flex: 1;
+}
+
+.op-error-details {
+  background: rgba(8, 8, 12, 0.8);
+  padding: var(--space-2);
+  border: 1px solid var(--color-p0-critical);
+  color: var(--color-newsprint-white);
+  overflow-x: auto;
+  max-height: 120px;
+}
+
+.op-success-dismiss,
+.op-error-dismiss {
+  background: transparent;
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-newsprint-white);
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: var(--font-size-label-sm);
+}
+
+.op-success-dismiss:hover,
+.op-error-dismiss:hover {
+  background: var(--color-surface-container-high);
+}
+
+/* Review Form */
+.op-review-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.op-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.op-form-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-body-md);
+  color: var(--color-newsprint-white);
+  letter-spacing: 0.03em;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.op-label-sub {
+  font-size: var(--font-size-label-sm);
+  color: var(--color-text-muted);
+}
+
+.op-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.op-char-counter {
+  font-size: var(--font-size-label-sm);
+}
+
+.op-char-counter.is-invalid {
+  color: var(--color-p0-critical);
+}
+
+.op-char-counter.is-valid {
+  color: var(--color-system-green);
+}
+
+/* Status Cards Grid */
+.op-status-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-2);
+}
+
+.op-status-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  background: var(--color-surface-container-low);
+  border: var(--border-ink);
+  padding: var(--space-3);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease;
+  position: relative;
+}
+
+.op-status-card:hover {
+  background: var(--color-surface-container);
+  border-color: var(--color-multiverse-cyan);
+}
+
+.op-status-card.is-selected {
+  background: var(--color-surface-container-high);
+  border: 2px solid var(--color-multiverse-cyan);
+  box-shadow: 2px 2px 0 var(--color-multiverse-cyan);
+}
+
+.op-status-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.op-status-radio-indicator {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--color-border-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-dark);
+  color: var(--color-multiverse-cyan);
+}
+
+.op-status-card.is-selected .op-status-radio-indicator {
+  border-color: var(--color-multiverse-cyan);
+}
+
+.op-status-desc {
+  font-size: var(--font-size-body-sm);
+  color: var(--color-newsprint-white);
+  margin-bottom: 4px;
+}
+
+.op-status-implication {
+  font-size: var(--font-size-label-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+/* Textarea */
+.op-textarea {
+  width: 100%;
+  background: var(--color-surface-container-low);
+  border: var(--border-ink);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-newsprint-white);
+  font-size: var(--font-size-body-md);
+  resize: vertical;
+  min-height: 72px;
+}
+
+.op-textarea:focus {
+  outline: none;
+  border-color: var(--color-multiverse-cyan);
+  box-shadow: 2px 2px 0 var(--color-multiverse-cyan);
+}
+
+.op-input-hint {
+  margin-top: 2px;
+}
+
+/* Action Bar */
+.op-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-subtle);
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.op-action-disclaimer {
+  max-width: 500px;
+}
+
+/* Confirmation Dialog / Card */
+.op-confirmation-card {
+  background: var(--color-surface-dark-elevated);
+  border: 2px solid var(--color-dispatch-yellow);
+  box-shadow: 4px 4px 0 var(--color-dispatch-yellow);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  animation: fadeIn 0.15s ease-out;
+}
+
+.op-confirm-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding-bottom: var(--space-2);
+}
+
+.op-confirm-header h3 {
+  margin: 0;
+  font-size: var(--font-size-headline-sm);
+  letter-spacing: 0.04em;
+}
+
+.op-confirm-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-surface-container-lowest);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.op-confirm-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.op-confirm-label {
+  width: 140px;
+  flex-shrink: 0;
+  font-size: var(--font-size-label-sm);
+  color: var(--color-text-muted);
+}
+
+.op-confirm-val {
+  flex: 1;
+  word-break: break-word;
+}
+
+.val-badge {
+  background: var(--color-surface-container-high);
+  padding: 2px 6px;
+  font-size: var(--font-size-label-sm);
+}
+
+.op-confirm-warning {
+  background: var(--color-high-bg);
+  border: 1px solid var(--color-hazard-orange);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-newsprint-white);
+}
+
+.op-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 768px) {
+  .op-status-options-grid {
+    grid-template-columns: 1fr;
+  }
+  .op-confirm-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .op-confirm-label {
+    width: auto;
+  }
+  .op-confirm-actions {
+    flex-direction: column;
+  }
+  .op-confirm-actions button {
+    width: 100%;
+  }
+}

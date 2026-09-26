@@ -215,11 +215,12 @@
   text-align: right;
 }
 
-/* Phase 7 Deferred Notice */
+/* Phase 7 Active Notice */
+.audit-active-notice,
 .audit-deferred-notice {
   background-color: var(--color-void-dark);
-  border: 1px solid var(--color-dispatch-yellow);
-  box-shadow: 2px 2px 0 var(--color-dispatch-yellow);
+  border: 1px solid var(--color-multiverse-cyan);
+  box-shadow: 2px 2px 0 var(--color-multiverse-cyan);
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
@@ -241,3 +242,4 @@
 .deferred-notice-text strong {
   color: var(--color-newsprint-white);
 }
+

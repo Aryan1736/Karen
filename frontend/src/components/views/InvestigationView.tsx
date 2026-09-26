@@ -17,7 +17,9 @@ import {
   IncidentFactPanel,
   EvidenceReportList,
   IncidentTimeline,
-  AuditTracePanel
+  AuditTracePanel,
+  OperatorReviewPanel,
+  IncidentOverridePanel
 } from './investigation';
 import './InvestigationView.css';
 
@@ -46,6 +48,11 @@ export const InvestigationView: React.FC = () => {
   const handleClearSelection = useCallback(() => {
     setSelectedIncidentId(null);
   }, [setSelectedIncidentId]);
+
+  const handleMutationSuccess = useCallback(async () => {
+    // Re-fetch incident detail from backend to synchronize incident, full audit trail, and priority recalculations
+    await refetch();
+  }, [refetch]);
 
   // STATE 1: No Incident Selected
   if (!selectedIncidentId) {
@@ -176,6 +183,33 @@ export const InvestigationView: React.FC = () => {
               <IncidentTimeline incidentId={selectedIncidentId} />
             </div>
           </div>
+
+          {/* OPERATOR COMMAND & SOVEREIGN CONTROL CONSOLE */}
+          <section id="operator-console" className="investigation-operator-console" aria-label="Operator Sovereign Command Console">
+            <div className="operator-console-header">
+              <div className="op-console-title-wrap">
+                <span className="op-console-ticker font-mono">HUMAN IN THE LOOP</span>
+                <span className="op-console-sep font-mono">//</span>
+                <h2 className="op-console-title font-headline">OPERATOR CONTROL & SOVEREIGN OVERRIDE CONSOLE</h2>
+              </div>
+              <div className="op-console-badge-wrap font-mono">
+                <span className="op-sovereign-tag">[ SOVEREIGN OPERATOR AUTHORITY ]</span>
+              </div>
+            </div>
+
+            <div className="investigation-operator-grid">
+              <OperatorReviewPanel
+                incident={incident}
+                onReviewSuccess={handleMutationSuccess}
+                isOnline={isOnline}
+              />
+              <IncidentOverridePanel
+                incident={incident}
+                onOverrideSuccess={handleMutationSuccess}
+                isOnline={isOnline}
+              />
+            </div>
+          </section>
 
           {/* Traceability & Immutable Audit Trail */}
           <AuditTracePanel

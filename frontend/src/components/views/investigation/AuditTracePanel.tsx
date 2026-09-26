@@ -2,8 +2,7 @@ import React from 'react';
 import { 
   ShieldCheck, 
   ShieldAlert, 
-  Clock, 
-  Lock
+  Clock
 } from 'lucide-react';
 import { Badge } from '../../ui';
 import { AuditLog, HumanOverrideBlock } from '../../../types/incident';
@@ -127,16 +126,16 @@ export const AuditTracePanel: React.FC<AuditTracePanelProps> = ({
           )}
         </div>
 
-        {/* Phase 7 Deferred Boundary Notice */}
-        <div className="audit-deferred-notice" role="region" aria-label="Phase 7 Scope Boundary">
+        {/* Phase 7 Active Sovereign Console Status */}
+        <div className="audit-active-notice" role="region" aria-label="Phase 7 Sovereign Console Active">
           <div className="deferred-notice-head">
-            <Lock size={14} className="text-dispatch-yellow" />
-            <span className="font-headline text-dispatch-yellow text-sm uppercase">
-              OPERATOR REVIEW & OVERRIDE MUTATIONS [PHASE 7 BOUNDARY]
+            <ShieldCheck size={14} className="text-cyan" />
+            <span className="font-headline text-cyan text-sm uppercase">
+              OPERATOR REVIEW & OVERRIDE MUTATIONS [PHASE 7 ACTIVE]
             </span>
           </div>
           <p className="deferred-notice-text font-body">
-            This workspace provides read-only traceability and observability. Interactive status review transitions (Verify, Escalate, Resolve, Flag False Alarm) and field overrides are strictly scoped to <strong>Phase 7 (Human Sovereign Review Console)</strong> and are not executable in Phase 6.
+            Sovereign status review transitions (Verify, Escalate, Resolve, Flag False Report) and field overrides are enabled in the <strong>Operator Control Console</strong> above. Every mutation requires explicit confirmation, records mandatory justification, and is committed to this immutable audit ledger.
           </p>
         </div>
       </div>
