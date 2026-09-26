@@ -4,41 +4,53 @@ import './AudioVisualizerBar.css';
 
 export interface AudioVisualizerBarProps extends React.HTMLAttributes<HTMLDivElement> {
   active?: boolean;
+  levels?: number[]; // Normalized [0.0, 1.0] amplitude levels from genuine audio source
 }
 
+const DEFAULT_BAR_COLORS = [
+  'green',
+  'green',
+  'cyan',
+  'cyan',
+  'yellow',
+  'orange',
+  'red',
+  'red',
+];
+
 export const AudioVisualizerBar: React.FC<AudioVisualizerBarProps> = ({
-  active = true,
+  active = false,
+  levels,
   className,
   ...props
 }) => {
-  const bars = [
-    { color: 'green', height: '6px', delay: '0s' },
-    { color: 'green', height: '12px', delay: '0.2s' },
-    { color: 'cyan', height: '8px', delay: '0.4s' },
-    { color: 'cyan', height: '16px', delay: '0.1s' },
-    { color: 'yellow', height: '10px', delay: '0.3s' },
-    { color: 'orange', height: '14px', delay: '0.5s' },
-    { color: 'red', height: '16px', delay: '0.15s' },
-    { color: 'red', height: '8px', delay: '0.35s' },
-  ];
-
   return (
-    <div className={clsx('tactical-audio-visualizer', className)} {...props}>
-      {bars.map((bar, idx) => (
-        <div
-          key={idx}
-          className={clsx(
-            'visualizer-bar',
-            `visualizer-${bar.color}`,
-            active && 'visualizer-animating'
-          )}
-          style={{
-            height: bar.height,
-            animationDelay: bar.delay,
-            transformOrigin: 'bottom',
-          }}
-        />
-      ))}
+    <div
+      className={clsx(
+        'tactical-audio-visualizer',
+        active ? 'visualizer-active' : 'visualizer-idle',
+        className
+      )}
+      title={active ? 'Audio channel active' : 'Audio channel standby / no signal'}
+      {...props}
+    >
+      {DEFAULT_BAR_COLORS.map((color, idx) => {
+        // If real levels provided and active, scale between 3px and 16px; otherwise resting at 3px
+        const heightPx = active && levels && typeof levels[idx] === 'number'
+          ? Math.max(3, Math.min(16, Math.round(levels[idx] * 16)))
+          : 3;
+
+        return (
+          <div
+            key={idx}
+            className={clsx('visualizer-bar', `visualizer-${color}`)}
+            style={{
+              height: `${heightPx}px`,
+              transformOrigin: 'bottom',
+            }}
+          />
+        );
+      })}
     </div>
   );
 };

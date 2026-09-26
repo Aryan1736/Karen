@@ -72,8 +72,8 @@ export const App: React.FC = () => {
         <div className="header-right">
           <div className="header-channel-monitor">
             <span className="channel-label">RF MONITOR:</span>
-            <AudioVisualizerBar />
-            <span className="channel-freq">470.8125 MHz</span>
+            <AudioVisualizerBar active={false} />
+            <span className="channel-freq">STANDBY</span>
           </div>
           <div className="operator-badge">
             OP: SRINIVASH

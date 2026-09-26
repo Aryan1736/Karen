@@ -5,22 +5,27 @@ import './ConfidenceGauge.css';
 export type GaugeColor = 'cyan' | 'green' | 'yellow' | 'orange' | 'red' | 'magenta';
 
 export interface ConfidenceGaugeProps extends React.HTMLAttributes<HTMLDivElement> {
-  value: number; // 0 to 100 or 0.0 to 1.0
+  value?: number | null; // Optional: when null or undefined, indicates no model prediction available
   label?: string;
   color?: GaugeColor;
   showText?: boolean;
 }
 
 export const ConfidenceGauge: React.FC<ConfidenceGaugeProps> = ({
-  value,
+  value = null,
   label = 'CONFIDENCE',
   color = 'cyan',
   showText = true,
   className,
   ...props
 }) => {
-  // Normalize value if passed as float [0.0, 1.0]
-  const percentage = value <= 1.0 && value >= 0 ? Math.round(value * 1000) / 10 : Math.min(100, Math.max(0, value));
+  // If value is null or undefined, render an empty/idle gauge without fabricating a score
+  const hasValue = typeof value === 'number' && !isNaN(value);
+  const percentage = hasValue
+    ? value <= 1.0 && value >= 0
+      ? Math.round(value * 1000) / 10
+      : Math.min(100, Math.max(0, value))
+    : 0;
   const remaining = Math.max(0, 100 - percentage);
 
   return (
@@ -29,18 +34,20 @@ export const ConfidenceGauge: React.FC<ConfidenceGaugeProps> = ({
         <div className="gauge-header">
           {label && <span className="gauge-label">{label}</span>}
           {showText && (
-            <span className={clsx('gauge-percentage', `gauge-percentage-${color}`)}>
-              {percentage.toFixed(1)}%
+            <span className={clsx('gauge-percentage', hasValue ? `gauge-percentage-${color}` : 'gauge-percentage-idle')}>
+              {hasValue ? `${percentage.toFixed(1)}%` : '--%'}
             </span>
           )}
         </div>
       )}
       <div className="gauge-track">
-        <div 
-          className={clsx('gauge-fill', `gauge-fill-${color}`)} 
-          style={{ width: `${percentage}%` }}
-        />
-        {remaining > 0 && <div className="gauge-empty" style={{ width: `${remaining}%` }} />}
+        {hasValue && percentage > 0 && (
+          <div 
+            className={clsx('gauge-fill', `gauge-fill-${color}`)} 
+            style={{ width: `${percentage}%` }}
+          />
+        )}
+        <div className="gauge-empty" style={{ width: `${hasValue ? remaining : 100}%` }} />
       </div>
     </div>
   );

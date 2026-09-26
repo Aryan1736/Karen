@@ -13,7 +13,7 @@
 .visualizer-bar {
   width: 4px;
   border-radius: var(--radius-none);
-  transition: height 150ms ease;
+  transition: height var(--transition-fast);
 }
 
 .visualizer-green {
@@ -32,12 +32,14 @@
   background-color: var(--color-spider-red-bright);
 }
 
-.visualizer-animating {
-  animation: bar-flicker 1.8s infinite ease-in-out;
+/* Idle / Standby State (Default: flat resting baseline, no animation) */
+.visualizer-idle .visualizer-bar {
+  height: 3px !important;
+  opacity: 0.4;
+  animation: none !important;
 }
 
-@keyframes bar-flicker {
-  0% { transform: scaleY(0.6); }
-  50% { transform: scaleY(1); }
-  100% { transform: scaleY(0.6); }
+/* Active State with real telemetry animation */
+.visualizer-active .visualizer-bar {
+  opacity: 1;
 }

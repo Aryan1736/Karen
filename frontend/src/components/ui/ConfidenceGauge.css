@@ -45,6 +45,9 @@
 .gauge-percentage-magenta {
   color: var(--color-glitch-magenta);
 }
+.gauge-percentage-idle {
+  color: var(--color-text-muted);
+}
 
 /* Track & Bar */
 .gauge-track {
