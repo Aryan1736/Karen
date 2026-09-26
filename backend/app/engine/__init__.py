@@ -2,6 +2,29 @@
 Karen's Ear — Deterministic Operational Engines
 Exports deterministic decision and calculation engines.
 """
+from backend.app.engine.correlation import (
+    CORRELATION_ENGINE_VERSION,
+    DEFAULT_CORROBORATION_THRESHOLD,
+    DEFAULT_DUPLICATE_THRESHOLD,
+    DEFAULT_SPATIAL_CLUSTER_RADIUS_KM,
+    DEFAULT_TEMPORAL_CUTOFF_HOURS,
+    DEFAULT_TEMPORAL_DECAY_HOURS,
+    DEFAULT_WEIGHT_SEMANTIC,
+    DEFAULT_WEIGHT_SPATIAL,
+    DEFAULT_WEIGHT_TEMPORAL,
+    CorrelationResult,
+    TriangulationScores,
+    calculate_composite_score,
+    calculate_corroboration_score,
+    calculate_cosine_similarity,
+    calculate_spatial_similarity,
+    calculate_temporal_similarity,
+    classify_relationship,
+    correlate_report_to_incident,
+    find_best_incident_match,
+    generate_corroboration_explanation,
+    haversine_distance_km,
+)
 from backend.app.engine.priority import (
     DEFAULT_HAZARD_SCORE,
     DEFAULT_WEIGHTS,
@@ -20,6 +43,7 @@ from backend.app.engine.priority import (
 )
 
 __all__ = [
+    # Priority Engine
     "calculate_priority",
     "map_priority_level",
     "normalize_urgency_factor",
@@ -34,4 +58,27 @@ __all__ = [
     "DEFAULT_HAZARD_SCORE",
     "STATUS_MODIFIERS",
     "LEVEL_THRESHOLDS",
+    # Correlation Engine
+    "CORRELATION_ENGINE_VERSION",
+    "DEFAULT_DUPLICATE_THRESHOLD",
+    "DEFAULT_CORROBORATION_THRESHOLD",
+    "DEFAULT_WEIGHT_SEMANTIC",
+    "DEFAULT_WEIGHT_TEMPORAL",
+    "DEFAULT_WEIGHT_SPATIAL",
+    "DEFAULT_TEMPORAL_DECAY_HOURS",
+    "DEFAULT_TEMPORAL_CUTOFF_HOURS",
+    "DEFAULT_SPATIAL_CLUSTER_RADIUS_KM",
+    "calculate_cosine_similarity",
+    "calculate_temporal_similarity",
+    "haversine_distance_km",
+    "calculate_spatial_similarity",
+    "calculate_composite_score",
+    "classify_relationship",
+    "calculate_corroboration_score",
+    "generate_corroboration_explanation",
+    "correlate_report_to_incident",
+    "find_best_incident_match",
+    "TriangulationScores",
+    "CorrelationResult",
 ]
+
