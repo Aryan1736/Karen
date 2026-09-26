@@ -21,6 +21,7 @@ from ml.config import (
     CANONICAL_RESPONSE_TYPES,
     CANONICAL_URGENCY_LEVELS,
     ComponentResult,
+    DEFAULT_CONFIDENCE_WEIGHTS,
     MLConfig,
     ModelMetadata,
     ProcessingContext,
@@ -55,6 +56,7 @@ __all__ = [
     "CANONICAL_PRECISION_LEVELS",
     "CANONICAL_RESPONSE_TYPES",
     "CANONICAL_PROCESSING_STATUSES",
+    "DEFAULT_CONFIDENCE_WEIGHTS",
     # Typed Contexts
     "ModelMetadata",
     "ProcessingContext",

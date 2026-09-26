@@ -71,6 +71,18 @@ CANDIDATE_EMBEDDING_MODELS: tuple[str, ...] = (
     "crisistransformers/CT-M1-Complete-SE",
 )
 
+# Default component confidence weights for weighted harmonic mean (Feature 9)
+# NOTE: The repository architecture specifies a weighted harmonic mean for overall
+# ML confidence, but component weights were not previously specified in repo architecture or ADRs.
+# The weights below represent a configurable provisional baseline subject to operational calibration.
+DEFAULT_CONFIDENCE_WEIGHTS: dict[str, float] = {
+    "incident_type": 0.30,
+    "urgency": 0.25,
+    "location": 0.20,
+    "people_at_risk": 0.15,
+    "required_response": 0.10,
+}
+
 
 # ==============================================================================
 # Lightweight Typed Structures for ML Pipeline
@@ -141,6 +153,25 @@ class MLConfig:
     # Confidence and quality thresholds (gemini.md Section 8 & architecture/ml-pipeline.md Section 4.3)
     confidence_review_threshold: float = 0.60
 
+    # Component confidence weights for weighted harmonic mean (Feature 9)
+    # Provisional baseline weights; fully externalized and configurable
+    confidence_weight_incident_type: float = 0.30
+    confidence_weight_urgency: float = 0.25
+    confidence_weight_location: float = 0.20
+    confidence_weight_people_at_risk: float = 0.15
+    confidence_weight_required_response: float = 0.10
+
+    @property
+    def confidence_weights(self) -> dict[str, float]:
+        """Returns the dictionary of configured component confidence weights."""
+        return {
+            "incident_type": self.confidence_weight_incident_type,
+            "urgency": self.confidence_weight_urgency,
+            "location": self.confidence_weight_location,
+            "people_at_risk": self.confidence_weight_people_at_risk,
+            "required_response": self.confidence_weight_required_response,
+        }
+
     # Dynamic similarity thresholds (gemini.md Section 9 & architecture/testing.md Section 3.1)
     duplicate_similarity_threshold: float = 0.85
     corroboration_similarity_threshold: float = 0.70
@@ -196,6 +227,11 @@ class MLConfig:
             raise MLConfigurationError(
                 f"embedding_dimension must be positive, got {self.embedding_dimension}"
             )
+        for comp_name, w in self.confidence_weights.items():
+            if w <= 0.0:
+                raise MLConfigurationError(
+                    f"Confidence weight for '{comp_name}' must be strictly positive (> 0.0), got {w}"
+                )
 
     @classmethod
     def from_env(cls) -> MLConfig:
@@ -241,6 +277,11 @@ class MLConfig:
             urgency_weight_life_safety=_get_float("URGENCY_WEIGHT_LIFE_SAFETY", 0.50),
             urgency_weight_hazard_velocity=_get_float("URGENCY_WEIGHT_HAZARD_VELOCITY", 0.30),
             urgency_weight_vulnerability=_get_float("URGENCY_WEIGHT_VULNERABILITY", 0.20),
+            confidence_weight_incident_type=_get_float("CONFIDENCE_WEIGHT_INCIDENT_TYPE", 0.30),
+            confidence_weight_urgency=_get_float("CONFIDENCE_WEIGHT_URGENCY", 0.25),
+            confidence_weight_location=_get_float("CONFIDENCE_WEIGHT_LOCATION", 0.20),
+            confidence_weight_people_at_risk=_get_float("CONFIDENCE_WEIGHT_PEOPLE_AT_RISK", 0.15),
+            confidence_weight_required_response=_get_float("CONFIDENCE_WEIGHT_REQUIRED_RESPONSE", 0.10),
             log_level=os.getenv("ML_LOG_LEVEL", os.getenv("LOG_LEVEL", "INFO")).strip().upper(),
             classification_model_name=os.getenv("CLASSIFICATION_MODEL_NAME"),
             ner_model_name=os.getenv("NER_MODEL_NAME"),

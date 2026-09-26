@@ -154,10 +154,34 @@ Return ML Output Payload
 ---
 
 ## 4. Confidence & Quality Calibration
-1. **Component-Level Confidence:** Every extracted field carries an individual confidence score in $[0.0, 1.0]$.
-2. **Overall Model Confidence:** Calculated as the weighted harmonic mean of component confidences.
-3. **Threshold for Review (`NEEDS_REVIEW`):** If overall confidence $< 0.60$ or if critical conflicts are detected (e.g., urgency reported `CRITICAL` but text contains joke tokens), `processing_status` is set to `NEEDS_REVIEW`.
-4. **Resilience Invariant:** The pipeline NEVER throws an uncaught exception that halts execution. If an extraction step fails, it emits `null` for that field, appends a descriptive item to `warnings`, and sets `processing_status = "PARTIAL"`.
+1. **Component-Level Confidence:** Every extracted field carries an individual proxy confidence score strictly bounded in $[0.0, 1.0]$. Unextracted, undetermined, or non-applicable fields emit `null`; the engine strictly prohibits fabricating default or fallback confidence scores.
+2. **Overall Model Confidence (Weighted Harmonic Mean):**
+   Overall ML confidence is aggregated across active confidence-bearing components $S$ via a weighted harmonic mean:
+   $$C_{\text{overall}} = \frac{\sum_{i \in S} w_i}{\sum_{i \in S} \frac{w_i}{c_i}}$$
+   where $c_i \in (0.0, 1.0]$ and $w_i > 0$.
+3. **Component Weights Specification & Provisional Policy:**
+   * **Architectural Gap Notice:** While earlier architecture specified a weighted harmonic mean for overall confidence, the exact component weights were *not* previously defined in repository ADRs, contracts, or schemas.
+   * **Provisional Baseline Policy (Feature 9):** To ensure deterministic, operational triage, the pipeline establishes a documented provisional baseline:
+     * `incident_type` ($w = 0.30$): Primary hazard category classification.
+     * `urgency` ($w = 0.25$): Operational life-safety criticality tier.
+     * `location` ($w = 0.20$): Physical spatial grounding.
+     * `people_at_risk` ($w = 0.15$): Direct human life-threat count certainty.
+     * `required_response` ($w = 0.10$): Tactical capability routing.
+   * **Configurability:** All weights are externalized in `MLConfig` and environment variables (`CONFIDENCE_WEIGHT_<COMPONENT>`) and can be overridden programmatically without altering engine logic.
+4. **Zero, Null, and Embedding Semantics:**
+   * **Zero Confidence ($c_i = 0.0$):** In accordance with the mathematical limit $\lim_{c_i \to 0^+} H = 0.0$, if any active component has confidence 0.0, overall confidence collapses strictly to `0.0` without division-by-zero error, and triggers `NEEDS_REVIEW`.
+   * **Null / Missing Components:** If a component is absent or not applicable (e.g. no location mentioned), it is cleanly excluded from $S$; it does not penalize overall confidence to 0.0, nor does it fabricate 1.0.
+   * **Embeddings (Feature 8):** Dense semantic vectors have no intrinsic confidence score. They are explicitly excluded from the harmonic mean aggregation.
+5. **Deterministic Status Resolution Precedence:**
+   * **1. `FAILED`:** All inference components failed or zero meaningful inferences occurred.
+   * **2. `NEEDS_REVIEW`:** Overall confidence $< 0.60$ (or explicit critical conflict flag, e.g., hoax tokens). Requires human dispatcher review.
+   * **3. `PARTIAL`:** One or more components failed extraction, but remaining evidence achieves overall confidence $\ge 0.60$. Usable intelligence is preserved.
+   * **4. `SUCCESS`:** All components executed without failure and overall confidence $\ge 0.60$.
+6. **Decoupling Invariants & Calibration Scope:**
+   * **ML Confidence $\ne$ Backend Priority:** Overall ML confidence measures evidence reliability, NOT incident importance or priority score (ADR-004).
+   * **Urgency Confidence $\ne$ Urgency Score:** Urgency confidence reflects feature extraction certainty, not severity points (Feature 7).
+   * **Proxy Confidence $\ne$ Calibrated Probability:** Scores reflect engineering quality aggregation over correlated text evidence; they are not claimed as statistical posterior probabilities.
+7. **Resilience Invariant:** The pipeline NEVER throws an uncaught exception that halts execution. If an extraction step fails, it emits `null` for that field, appends descriptive diagnostics to `warnings`, and degrades gracefully according to the deterministic precedence hierarchy.
 
 ---
 
