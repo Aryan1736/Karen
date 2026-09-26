@@ -23,7 +23,7 @@ export const IncidentStreamsView: React.FC = () => {
     if (event === 'INCIDENT_CREATED') return `New Incident Created: ${payload.incident_id || 'ID Unknown'} [${payload.incident_type || 'Unclassified'}]`;
     if (event === 'INCIDENT_UPDATED') return `Incident Updated: ${payload.incident_id || 'ID Unknown'} (Score: ${payload.priority?.score ?? payload.new_priority_score ?? 'N/A'})`;
     if (event === 'INCIDENT_STATUS_CHANGED') return `Status Transition: ${payload.incident_id} [${payload.old_status} → ${payload.new_status}]`;
-    if (event === 'SIMULATION_PULSE') return `Simulation Pulse: Injected ${payload.injected_count}, Total ${payload.total_simulated} (${payload.scenario})`;
+    if (event === 'SIMULATION_PULSE') return `Simulation Pulse: Injected ${payload?.injected_count ?? 0}, Total ${payload?.total_simulated ?? 0} (${payload?.scenario || 'simulation'})`;
     return `Payload: ${JSON.stringify(payload).substring(0, 80)}`;
   };
 

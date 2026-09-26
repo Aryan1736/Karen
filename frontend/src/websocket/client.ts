@@ -10,10 +10,28 @@ export type WebSocketConnectionStatus =
 export type EventListener<T = unknown> = (event: RealtimeEvent<T>) => void;
 export type StatusListener = (status: WebSocketConnectionStatus) => void;
 
-function getWebSocketUrl(): string {
+export function getWebSocketUrl(): string {
   const customWsUrl = import.meta.env.VITE_WS_URL as string | undefined;
-  if (customWsUrl) {
-    return customWsUrl;
+  if (customWsUrl && customWsUrl.trim()) {
+    let wsUrl = customWsUrl.trim();
+    // Guard against accidental /api/ws/events path
+    if (wsUrl.includes('/api/ws/events')) {
+      wsUrl = wsUrl.replace('/api/ws/events', '/ws/events');
+    }
+    return wsUrl;
+  }
+
+  // If VITE_API_BASE_URL (or legacy VITE_API_URL) is specified as an absolute HTTP(S) URL, derive WS URL
+  const apiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
+                  (import.meta.env.VITE_API_URL as string | undefined);
+  if (apiBase && /^https?:\/\//i.test(apiBase.trim())) {
+    try {
+      const parsed = new URL(apiBase.trim());
+      const wsProtocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${wsProtocol}//${parsed.host}/ws/events`;
+    } catch {
+      // Fall through to window origin fallback
+    }
   }
 
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';

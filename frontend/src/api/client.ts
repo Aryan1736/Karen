@@ -4,7 +4,23 @@ export const getOperatorId = (): string => {
   return (import.meta.env.VITE_OPERATOR_ID as string) || 'console-operator';
 };
 
-const BASE_URL = (import.meta.env.VITE_API_URL as string) || '/api';
+export const getApiBaseUrl = (): string => {
+  const envUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
+                 (import.meta.env.VITE_API_URL as string | undefined);
+  if (!envUrl || !envUrl.trim()) {
+    // Default to local development Vite proxy prefix
+    return '/api';
+  }
+
+  let cleanUrl = envUrl.trim().replace(/\/+$/, '');
+  // If a full HTTP/HTTPS URL is provided and accidentally ends with /api, strip it
+  // because Karen backend mounts routes at root (/incidents, /reports, /health)
+  if (/^https?:\/\//i.test(cleanUrl) && cleanUrl.toLowerCase().endsWith('/api')) {
+    cleanUrl = cleanUrl.slice(0, -4).replace(/\/+$/, '');
+  }
+
+  return cleanUrl;
+};
 
 export class ApiRequestError extends Error {
   code: string;
@@ -29,7 +45,8 @@ export interface RequestOptions extends RequestInit {
 export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { includeOperatorId = false, headers: customHeaders, ...restOptions } = options;
 
-  const url = `${BASE_URL.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}/${endpoint.replace(/^\//, '')}`;
 
   const headers: Record<string, string> = {
     'Accept': 'application/json',
