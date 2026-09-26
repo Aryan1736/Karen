@@ -15,6 +15,34 @@ logger = logging.getLogger("karen.backend.api.websockets")
 router = APIRouter(tags=["Realtime"])
 
 
+def _handle_client_frame(client_frame: str, websocket: WebSocket) -> None:
+    """
+    Process incoming client frame:
+    - Parses JSON safely without logging raw unvalidated payload
+    - Ingests keepalive PONG responses ({"type": "PONG"} or {"event": "PONG"})
+    - Logs unhandled message types or non-dict frames safely
+    """
+    try:
+        message = json.loads(client_frame)
+    except Exception:
+        # Do not send ERROR events for malformed client frames.
+        # Safe operational log: log frame length only, never raw payload.
+        logger.warning(
+            "Malformed non-JSON client frame received over WebSocket (length: %d)",
+            len(client_frame),
+        )
+        return
+
+    if isinstance(message, dict):
+        msg_type = message.get("type") or message.get("event")
+        if msg_type == "PONG":
+            connection_manager.record_pong(websocket)
+        else:
+            logger.debug("Received unhandled client message type: %s", msg_type)
+    else:
+        logger.debug("Received non-dict JSON client frame of type: %s", type(message).__name__)
+
+
 @router.websocket("/ws/events")
 async def websocket_events_endpoint(websocket: WebSocket) -> None:
     """
@@ -38,25 +66,7 @@ async def websocket_events_endpoint(websocket: WebSocket) -> None:
                 logger.warning("Error receiving WebSocket text: %s", recv_err)
                 break
 
-            try:
-                message = json.loads(client_frame)
-            except Exception:
-                # Do not send ERROR events for malformed client frames.
-                # Safe operational log: log frame length only, never raw payload.
-                logger.warning(
-                    "Malformed non-JSON client frame received over WebSocket (length: %d)",
-                    len(client_frame),
-                )
-                continue
-
-            if isinstance(message, dict):
-                msg_type = message.get("type") or message.get("event")
-                if msg_type == "PONG":
-                    connection_manager.record_pong(websocket)
-                else:
-                    logger.debug("Received unhandled client message type: %s", msg_type)
-            else:
-                logger.debug("Received non-dict JSON client frame of type: %s", type(message).__name__)
+            _handle_client_frame(client_frame, websocket)
     except Exception as exc:
         logger.warning("WebSocket connection encountered unhandled error: %s", exc)
     finally:

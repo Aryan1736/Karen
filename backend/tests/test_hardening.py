@@ -17,7 +17,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 from sqlalchemy.exc import OperationalError
 
-from backend.app.core.config import Settings
+from backend.app.core.config import Settings, _parse_cors_origins_str
 from backend.app.core.logging import configure_logging
 from backend.app.db.session import dispose_engine, engine, get_db
 from backend.app.main import app, lifespan
@@ -118,6 +118,46 @@ def test_cors_settings_rejects_wildcard_origin():
             DATABASE_URL="postgresql://user:pass@localhost:5432/db",
         )
     assert "Wildcard origin '*' is not permitted" in str(exc_info.value)
+
+
+def test_cors_parser_blank_string():
+    """Verify blank string returns empty list."""
+    assert _parse_cors_origins_str("") == []
+    assert _parse_cors_origins_str("   ") == []
+
+
+def test_cors_parser_comma_separated_origins():
+    """Verify comma-separated origins are split and stripped."""
+    assert _parse_cors_origins_str("https://a.com,http://localhost:5173") == [
+        "https://a.com",
+        "http://localhost:5173",
+    ]
+
+
+def test_cors_parser_valid_json_list():
+    """Verify valid JSON list parses into stripped strings."""
+    assert _parse_cors_origins_str('["https://a.com", "http://localhost:5173"]') == [
+        "https://a.com",
+        "http://localhost:5173",
+    ]
+
+
+def test_cors_parser_malformed_bracketed_fallback():
+    """Verify malformed bracketed JSON falls back to comma-separated split."""
+    assert _parse_cors_origins_str("[https://a.com, http://b.com]") == [
+        "[https://a.com",
+        "http://b.com]",
+    ]
+
+
+def test_cors_parser_valid_json_string_unbracketed():
+    """Verify valid JSON string without brackets splits by comma without trying json.loads."""
+    assert _parse_cors_origins_str('"https://a.com"') == ['"https://a.com"']
+
+
+def test_cors_parser_valid_json_object_unbracketed():
+    """Verify valid JSON object without brackets splits by comma without trying json.loads."""
+    assert _parse_cors_origins_str('{"origin":"https://a.com"}') == ['{"origin":"https://a.com"}']
 
 
 # ==============================================================================

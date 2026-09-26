@@ -37,6 +37,31 @@ def mask_database_url(url: str) -> str:
         return "<DATABASE_URL masked>"
 
 
+def _parse_cors_origins_str(value: str) -> list[str]:
+    """
+    Parse CORS origins from a JSON array or comma-separated string:
+    - Blank string -> []
+    - String beginning '[' and ending ']':
+        - Valid JSON list -> stripped list items
+        - Malformed JSON -> fall back to comma-separated split
+    - Every other string -> comma-separated split without trying json.loads()
+    """
+    stripped = value.strip()
+    if not stripped:
+        return []
+
+    if stripped.startswith("[") and stripped.endswith("]"):
+        try:
+            parsed = json.loads(stripped)
+        except json.JSONDecodeError:
+            return [part.strip() for part in stripped.split(",") if part.strip()]
+
+        if isinstance(parsed, list):
+            return [str(item).strip() for item in parsed if str(item).strip()]
+
+    return [part.strip() for part in stripped.split(",") if part.strip()]
+
+
 class Settings(BaseSettings):
     """
     Application settings loaded from environment variables and/or root .env file.
@@ -75,20 +100,8 @@ class Settings(BaseSettings):
     @field_validator("CORS_ORIGINS")
     @classmethod
     def assemble_cors_origins(cls, v: Any) -> list[str]:
-        origins: list[str] = []
         if isinstance(v, str):
-            s = v.strip()
-            if not s:
-                return []
-            if s.startswith("[") and s.endswith("]"):
-                try:
-                    parsed = json.loads(s)
-                    if isinstance(parsed, list):
-                        origins = [str(item).strip() for item in parsed if str(item).strip()]
-                except Exception:
-                    origins = [part.strip() for part in s.split(",") if part.strip()]
-            else:
-                origins = [part.strip() for part in s.split(",") if part.strip()]
+            origins = _parse_cors_origins_str(v)
         elif isinstance(v, (list, tuple, set)):
             origins = [str(item).strip() for item in v if str(item).strip()]
         else:

@@ -145,8 +145,8 @@ def review_incident(
     except Exception as broadcast_exc:
         logger.error(
             "Failed to dispatch post-commit WebSocket broadcast for review on %s: %s",
-            id,
-            broadcast_exc,
+            incident_dto.incident_id,
+            type(broadcast_exc).__name__,
         )
 
     return success_response(
@@ -197,8 +197,8 @@ def override_incident(
     except Exception as broadcast_exc:
         logger.error(
             "Failed to dispatch post-commit WebSocket broadcast for override on %s: %s",
-            id,
-            broadcast_exc,
+            incident_dto.incident_id,
+            type(broadcast_exc).__name__,
         )
 
     return success_response(

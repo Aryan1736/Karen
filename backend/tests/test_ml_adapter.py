@@ -302,12 +302,13 @@ def test_process_level_lock_serializes_concurrent_calls():
     with patch.dict(sys.modules, {"ml": MagicMock(), "ml.pipeline": mock_pipeline}):
         threads = []
         errors = []
+        results = []
 
         def worker(idx: int):
             try:
                 ad = MLAdapter()
                 res = ad.analyze_report(text=f"Concurrent text {idx}", report_id=f"rep-thread-{idx}")
-                assert res.processing_status == ProcessingStatus.SUCCESS
+                results.append(res)
             except Exception as e:
                 errors.append(e)
 
@@ -320,6 +321,9 @@ def test_process_level_lock_serializes_concurrent_calls():
             t.join()
 
         assert not errors
+        assert len(results) == 5
+        for res in results:
+            assert res.processing_status == ProcessingStatus.SUCCESS
         assert mock_engine.analyze.call_count == 5
         # Under process-level lock, max concurrent calls inside analyze() must strictly be 1
         assert max_concurrent_calls == 1
