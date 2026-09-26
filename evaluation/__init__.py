@@ -1,0 +1,86 @@
+"""
+Karen's Ear — Canonical Evaluation & Benchmark Package.
+
+Owner: Pankaj (feature/evaluation-integration)
+Authority: gemini.md (v1.2), docs/data-schema.md, docs/api-contract.md, DISASTER_SIMULATOR_ROADMAP.md
+Status: Production Hardened Evaluation Package
+"""
+
+from evaluation.metrics import (
+    ClassMetric,
+    ClassificationReport,
+    CoverageReport,
+    DualCriticalRecall,
+    FusionAccuracyReport,
+    LatencyProfile,
+    LocationEvaluationReport,
+    MultilabelReport,
+    PeopleAtRiskEvaluationReport,
+    UrgencyAlignmentReport,
+    compute_classification_report,
+    compute_coverage_report,
+    compute_dual_critical_recall,
+    compute_fusion_accuracy,
+    compute_latency_profile,
+    compute_location_metrics,
+    compute_multilabel_response_metrics,
+    compute_people_at_risk_metrics,
+    compute_spearman_rho,
+    compute_urgency_alignment,
+)
+from evaluation.evaluate_ml import (
+    EvaluationMode,
+    LocationEvalMode,
+    MLEvaluationReport,
+    MLPredictionAdapter,
+    NormalizedMLPrediction,
+    evaluate_ml_predictions,
+)
+from evaluation.evaluate_correlation import (
+    AssertionResult,
+    CorrelationEvaluationReport,
+    evaluate_correlation_engine,
+)
+from typing import Any
+
+
+def __getattr__(name: str) -> Any:
+    if name in ("generate_markdown_scorecard", "run_full_benchmark"):
+        from evaluation import run_all_evals
+        return getattr(run_all_evals, name)
+    raise AttributeError(f"module 'evaluation' has no attribute '{name}'")
+
+
+__all__ = [
+    "AssertionResult",
+    "ClassMetric",
+    "ClassificationReport",
+    "CorrelationEvaluationReport",
+    "CoverageReport",
+    "DualCriticalRecall",
+    "EvaluationMode",
+    "FusionAccuracyReport",
+    "LatencyProfile",
+    "LocationEvalMode",
+    "LocationEvaluationReport",
+    "MLEvaluationReport",
+    "MLPredictionAdapter",
+    "MultilabelReport",
+    "NormalizedMLPrediction",
+    "PeopleAtRiskEvaluationReport",
+    "UrgencyAlignmentReport",
+    "compute_classification_report",
+    "compute_coverage_report",
+    "compute_dual_critical_recall",
+    "compute_fusion_accuracy",
+    "compute_latency_profile",
+    "compute_location_metrics",
+    "compute_multilabel_response_metrics",
+    "compute_people_at_risk_metrics",
+    "compute_spearman_rho",
+    "compute_urgency_alignment",
+    "evaluate_correlation_engine",
+    "evaluate_ml_predictions",
+    "generate_markdown_scorecard",
+    "run_full_benchmark",
+]

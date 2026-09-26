@@ -1,0 +1,7 @@
+"""
+Karen's Ear — Backward Compatibility Re-export for evaluation.metrics.
+
+All canonical implementations now reside in the top-level evaluation/ package.
+"""
+
+from evaluation.metrics import *
