@@ -1,0 +1,83 @@
+.tactical-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: var(--radius-none);
+  border: 1px solid var(--color-void-dark);
+  box-shadow: 1px 1px 0px var(--color-void-dark);
+  user-select: none;
+}
+
+.status-dot-core {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+.status-dot-pulse {
+  animation: status-dot-pulse 2s infinite ease-in-out;
+}
+
+@keyframes status-dot-pulse {
+  0% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0.4; transform: scale(0.9); }
+}
+
+/* VARIANTS */
+.tactical-status-online {
+  background-color: var(--color-surface-container-high);
+  color: var(--color-system-green);
+  border-color: var(--color-void-dark);
+}
+.tactical-status-online .status-dot-core {
+  background-color: var(--color-system-green);
+  box-shadow: 0 0 6px var(--color-system-green);
+}
+
+.tactical-status-connected {
+  background-color: var(--color-surface-container-high);
+  color: var(--color-multiverse-cyan);
+  border-color: var(--color-void-dark);
+}
+.tactical-status-connected .status-dot-core {
+  background-color: var(--color-multiverse-cyan);
+  box-shadow: 0 0 6px var(--color-multiverse-cyan);
+}
+
+.tactical-status-standby {
+  background-color: var(--color-surface-container-high);
+  color: var(--color-dispatch-yellow);
+  border-color: var(--color-void-dark);
+}
+.tactical-status-standby .status-dot-core {
+  background-color: var(--color-dispatch-yellow);
+  box-shadow: 0 0 6px var(--color-dispatch-yellow);
+}
+
+.tactical-status-alert {
+  background-color: var(--color-critical-bg);
+  color: var(--color-spider-red-bright);
+  border-color: var(--color-p0-critical);
+}
+.tactical-status-alert .status-dot-core {
+  background-color: var(--color-spider-red-bright);
+  box-shadow: 0 0 6px var(--color-spider-red-bright);
+}
+
+.tactical-status-offline {
+  background-color: var(--color-surface-container-low);
+  color: var(--color-text-muted);
+  border-color: var(--color-void-dark);
+}
+.tactical-status-offline .status-dot-core {
+  background-color: var(--color-text-muted);
+}

@@ -1,0 +1,138 @@
+.tactical-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 700;
+  border-radius: var(--radius-none);
+  border: 2px solid var(--color-void-dark);
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  transition: transform var(--transition-tactile), box-shadow var(--transition-tactile), background-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.tactical-btn:focus-visible {
+  outline: 2px solid var(--color-multiverse-cyan);
+  outline-offset: 2px;
+}
+
+.tactical-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* SIZES */
+.tactical-btn-sm {
+  font-size: 11px;
+  line-height: 14px;
+  padding: 4px 8px;
+  box-shadow: 2px 2px 0px var(--color-void-dark);
+}
+.tactical-btn-sm:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px var(--color-void-dark);
+}
+.tactical-btn-sm:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px var(--color-void-dark);
+}
+
+.tactical-btn-md {
+  font-size: 12px;
+  line-height: 16px;
+  padding: 6px 12px;
+  box-shadow: 3px 3px 0px var(--color-void-dark);
+}
+.tactical-btn-md:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0px var(--color-void-dark);
+}
+.tactical-btn-md:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px var(--color-void-dark);
+}
+
+.tactical-btn-lg {
+  font-size: 14px;
+  line-height: 20px;
+  padding: 10px 18px;
+  border-width: 3px;
+  box-shadow: 4px 4px 0px var(--color-void-dark);
+}
+.tactical-btn-lg:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--color-void-dark);
+}
+.tactical-btn-lg:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: 0px 0px 0px var(--color-void-dark);
+}
+
+/* VARIANTS */
+.tactical-btn-primary {
+  background-color: var(--color-p0-critical);
+  color: var(--color-newsprint-white);
+}
+.tactical-btn-primary:hover:not(:disabled) {
+  background-color: var(--color-spider-red-bright);
+}
+
+.tactical-btn-hazard {
+  background-color: var(--color-hazard-orange);
+  color: var(--color-void-dark);
+}
+.tactical-btn-hazard:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.tactical-btn-warning {
+  background-color: var(--color-dispatch-yellow);
+  color: var(--color-void-dark);
+}
+.tactical-btn-warning:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.tactical-btn-cyan {
+  background-color: var(--color-multiverse-cyan);
+  color: var(--color-void-dark);
+}
+.tactical-btn-cyan:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.tactical-btn-secondary {
+  background-color: var(--color-surface-container-high);
+  color: var(--color-newsprint-white);
+}
+.tactical-btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-surface-container-highest);
+}
+
+.tactical-btn-ghost {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border-bright);
+  box-shadow: 2px 2px 0px var(--color-void-dark);
+}
+.tactical-btn-ghost:hover:not(:disabled) {
+  background-color: var(--color-surface-container);
+  color: var(--color-newsprint-white);
+  border-color: var(--color-void-dark);
+}
+
+.tactical-btn-danger-stripe {
+  background-image: var(--texture-hazard-stripes);
+  color: var(--color-newsprint-white);
+  text-shadow: 0 1px 2px #000;
+}
+.tactical-btn-danger-stripe:hover:not(:disabled) {
+  filter: brightness(1.15);
+}

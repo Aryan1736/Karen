@@ -1,0 +1,96 @@
+.tactical-confidence-gauge {
+  background-color: var(--color-surface-container-lowest);
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 2px 2px 0px var(--color-void-dark);
+  padding: 8px 12px;
+  border-radius: var(--radius-none);
+  user-select: none;
+}
+
+.gauge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.gauge-label {
+  color: var(--color-text-secondary);
+}
+
+.gauge-percentage {
+  font-family: var(--font-mono);
+  font-weight: 800;
+}
+
+.gauge-percentage-cyan {
+  color: var(--color-multiverse-cyan);
+}
+.gauge-percentage-green {
+  color: var(--color-system-green);
+}
+.gauge-percentage-yellow {
+  color: var(--color-dispatch-yellow);
+}
+.gauge-percentage-orange {
+  color: var(--color-hazard-orange);
+}
+.gauge-percentage-red {
+  color: var(--color-spider-red-bright);
+}
+.gauge-percentage-magenta {
+  color: var(--color-glitch-magenta);
+}
+
+/* Track & Bar */
+.gauge-track {
+  width: 100%;
+  height: 12px;
+  background-color: var(--color-void-dark);
+  border: 1px solid var(--color-void-dark);
+  display: flex;
+  padding: 2px;
+  gap: 2px;
+  border-radius: var(--radius-none);
+}
+
+.gauge-fill {
+  height: 100%;
+  transition: width var(--transition-normal);
+  border-radius: var(--radius-none);
+}
+
+.gauge-fill-cyan {
+  background-color: var(--color-multiverse-cyan);
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+}
+.gauge-fill-green {
+  background-color: var(--color-system-green);
+  box-shadow: 0 0 6px rgba(0, 255, 102, 0.4);
+}
+.gauge-fill-yellow {
+  background-color: var(--color-dispatch-yellow);
+  box-shadow: 0 0 6px rgba(255, 230, 0, 0.4);
+}
+.gauge-fill-orange {
+  background-color: var(--color-hazard-orange);
+  box-shadow: 0 0 6px rgba(255, 92, 0, 0.4);
+}
+.gauge-fill-red {
+  background-color: var(--color-p0-critical);
+  box-shadow: 0 0 6px rgba(230, 25, 55, 0.4);
+}
+.gauge-fill-magenta {
+  background-color: var(--color-glitch-magenta);
+  box-shadow: 0 0 6px rgba(255, 0, 122, 0.4);
+}
+
+.gauge-empty {
+  height: 100%;
+  background-color: var(--color-surface-container-high);
+  flex: 1;
+}

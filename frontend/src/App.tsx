@@ -2,11 +2,18 @@ import React from 'react';
 import { 
   Radio, 
   MapPin, 
-  Activity, 
-  Wifi, 
   Layers,
-  Clock
+  Clock,
+  Wifi,
+  Search,
+  Activity
 } from 'lucide-react';
+import {
+  Badge,
+  StatusIndicator,
+  AudioVisualizerBar,
+  TacticalInput
+} from './components/ui';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -23,39 +30,50 @@ export const App: React.FC = () => {
 
   return (
     <div className="command-center">
-      {/* Top Header Bar */}
+      {/* Simulation / Training Strip */}
+      <div className="sim-alert-strip">
+        <div className="sim-strip-left">
+          <Badge variant="simulation" size="sm" showBeacon beaconColor="var(--color-void-dark)">
+            MODE: SIM-LIVE
+          </Badge>
+          <span className="sim-strip-text">
+            DRILL RUNBOOK READY // TINGLE OPERATOR DECISION SUPPORT CONSOLE
+          </span>
+        </div>
+        <div className="sim-strip-right">
+          <span className="sim-id">SYSTEM: TINGLE v0.2.0-STARK</span>
+          <span className="sim-speed">SPEED: 1.0X</span>
+        </div>
+      </div>
+
+      {/* Primary Header Bar */}
       <header className="header-bar">
         <div className="header-left">
-          <div className="header-title-group">
-            <span className="brand-icon">🎙️</span>
-            <span className="brand-title">Karen's Ear</span>
-            <span className="brand-badge">Command Center</span>
+          <div className="header-brand-group">
+            <span className="brand-logo-badge">TINGLE</span>
+            <Badge variant="p2-medium" size="sm">TAC-OPS</Badge>
+          </div>
+          <div className="header-hud-metrics">
+            <StatusIndicator status="online" label="ENGINE ONLINE" />
+            <StatusIndicator status="connected" label="WS READY" />
           </div>
         </div>
 
         <div className="header-center">
-          <div className="metric-pill">
-            <span className="metric-label">TOTAL:</span>
-            <span className="metric-value">0</span>
-          </div>
-          <div className="metric-pill">
-            <span className="metric-label">CRITICAL:</span>
-            <span className="metric-value critical">0</span>
-          </div>
-          <div className="metric-pill">
-            <span className="metric-label">HIGH:</span>
-            <span className="metric-value high">0</span>
-          </div>
-          <div className="metric-pill">
-            <span className="metric-label">REVIEW:</span>
-            <span className="metric-value">0</span>
+          <div className="search-container">
+            <TacticalInput
+              placeholder="SEARCH INCIDENTS, LOCATIONS, TAC-CHANNELS..."
+              leftIcon={<Search size={14} />}
+              disabled
+            />
           </div>
         </div>
 
         <div className="header-right">
-          <div className="status-indicator">
-            <span className="status-dot" />
-            <span>STANDBY</span>
+          <div className="header-channel-monitor">
+            <span className="channel-label">RF MONITOR:</span>
+            <AudioVisualizerBar />
+            <span className="channel-freq">470.8125 MHz</span>
           </div>
           <div className="operator-badge">
             OP: SRINIVASH
@@ -63,22 +81,34 @@ export const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Workspace Split */}
+      {/* Main Workspace Split (Placeholder ready for Phase 4 / Stitch screens) */}
       <main className="workspace-split">
-        {/* Left Pane: Prioritized Incident Queue Container */}
+        {/* Left Pane: Incident Queue Container */}
         <section className="queue-panel" aria-label="Incident Queue">
           <div className="panel-header">
-            <div className="panel-title">Prioritized Incident Queue</div>
-            <Layers size={14} color="var(--color-text-muted)" />
+            <div className="panel-title-group">
+              <span className="panel-title">Prioritized Incident Queue</span>
+              <Badge variant="neutral" size="sm">0 QUEUED</Badge>
+            </div>
+            <div className="panel-controls">
+              <Layers size={14} color="var(--color-text-muted)" />
+            </div>
           </div>
 
           <div className="panel-body-placeholder">
             <div className="placeholder-icon">
-              <Radio size={36} color="var(--color-cyan-corroboration)" />
+              <Radio size={40} color="var(--color-multiverse-cyan)" />
             </div>
             <div className="placeholder-title">Awaiting Live Dispatches</div>
             <div className="placeholder-desc">
-              Incident queue initialized. Real-time correlation and priority ranking will stream here once active.
+              Tingle kinetic triage engine initialized. Incoming emergency signals, multi-report fusion, and deterministic priority scoring will stream here.
+            </div>
+            <div className="placeholder-tags">
+              <Badge variant="p0-critical" size="sm">P0 CRITICAL</Badge>
+              <Badge variant="p1-high" size="sm">P1 HIGH</Badge>
+              <Badge variant="p2-medium" size="sm">P2 MED</Badge>
+              <Badge variant="p3-low" size="sm">P3 LOW</Badge>
+              <Badge variant="needs-review" size="sm">NEEDS REVIEW</Badge>
             </div>
           </div>
         </section>
@@ -86,17 +116,17 @@ export const App: React.FC = () => {
         {/* Right Pane: Tactical Geographic Map Container */}
         <section className="map-panel" aria-label="Tactical Map">
           <div className="map-overlay-badge">
-            <MapPin size={14} color="var(--color-cyan-corroboration)" />
-            <span>TACTICAL GEOGRAPHIC MAP — OSM ENGINE</span>
+            <MapPin size={14} color="var(--color-multiverse-cyan)" />
+            <span>TACTICAL GEOGRAPHIC MAP — LEAFLET / OSM ENGINE</span>
           </div>
 
           <div className="map-view-area">
             <div className="placeholder-icon">
-              <Activity size={40} color="var(--color-text-muted)" />
+              <Activity size={44} color="var(--color-text-muted)" />
             </div>
-            <div className="placeholder-title">Tactical Grid Ready</div>
+            <div className="placeholder-title">Cartographic Grid Primed</div>
             <div className="placeholder-desc">
-              Geographic coordinates and verified hazard hotspots will be plotted on OpenStreetMap tiles.
+              Validated hazard coordinates and corroboration vectors will be plotted with 0px neo-brutalist pins without coordinate hallucination.
             </div>
           </div>
         </section>
@@ -105,9 +135,10 @@ export const App: React.FC = () => {
       {/* Footer Telemetry Bar */}
       <footer className="footer-bar">
         <div className="footer-left">
-          <span>SYSTEM: KAREN DECISION SUPPORT v1.2</span>
-          <span>MODE: DETERMINISTIC TRIAGE</span>
+          <span>PRODUCT: TINGLE</span>
+          <span>DECISION SUPPORT v1.2</span>
           <span>BACKEND: http://127.0.0.1:8000</span>
+          <span>HUMAN-IN-THE-LOOP SOVEREIGN</span>
         </div>
         <div className="footer-right">
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -116,7 +147,7 @@ export const App: React.FC = () => {
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <Wifi size={12} />
-            WS READY
+            WS STANDBY
           </span>
         </div>
       </footer>

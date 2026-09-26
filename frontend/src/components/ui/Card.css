@@ -1,0 +1,103 @@
+.tactical-card {
+  position: relative;
+  background-color: var(--color-surface-dark);
+  border: 2px solid var(--color-void-dark);
+  border-radius: var(--radius-none);
+  box-shadow: var(--shadow-hard-md);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  transition: transform var(--transition-tactile), box-shadow var(--transition-tactile), background-color var(--transition-fast);
+}
+
+.tactical-card-interactive {
+  cursor: pointer;
+}
+.tactical-card-interactive:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-hard-lg);
+  background-color: var(--color-surface-container);
+}
+.tactical-card-interactive:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px var(--color-void-dark);
+}
+
+/* BORDER THICKNESS */
+.tactical-card-border-thin {
+  border-width: 1px;
+}
+.tactical-card-border-default {
+  border-width: 2px;
+}
+.tactical-card-border-thick {
+  border-width: 3px;
+}
+.tactical-card-border-heavy {
+  border-width: 4px;
+}
+
+/* ELEVATION / SHADOW */
+.tactical-card-elevation-0 {
+  box-shadow: none;
+}
+.tactical-card-elevation-1 {
+  box-shadow: var(--shadow-hard-sm);
+}
+.tactical-card-elevation-2 {
+  box-shadow: var(--shadow-hard-md);
+}
+.tactical-card-elevation-3 {
+  box-shadow: var(--shadow-hard-xl);
+}
+.tactical-card-elevation-chromatic {
+  box-shadow: var(--shadow-chromatic-cyan);
+}
+
+/* SURFACE VARIANTS */
+.tactical-card-surface-default {
+  background-color: var(--color-surface-dark);
+}
+.tactical-card-surface-elevated {
+  background-color: var(--color-surface-dark-elevated);
+}
+.tactical-card-surface-container {
+  background-color: var(--color-surface-container);
+}
+.tactical-card-surface-newsprint {
+  background-color: var(--color-newsprint-white);
+  color: var(--color-void-dark);
+}
+.tactical-card-surface-glitch {
+  background-color: #1C0E24;
+  border-color: #FF7BF0;
+  box-shadow: 3px 3px 0px var(--color-void-dark);
+}
+
+/* Card Header Tape / Badge Bar */
+.tactical-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: var(--color-surface-container-low);
+  border-bottom: 2px solid var(--color-void-dark);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tactical-card-body {
+  padding: 12px;
+}
+
+.tactical-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: var(--color-surface-container-lowest);
+  border-top: 1px solid var(--color-void-dark);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}

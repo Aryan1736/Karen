@@ -1,68 +1,169 @@
 /**
- * Karen's Ear — Tactical Dark-Mode Design Tokens
- * Authority: architecture/frontend.md Section 4
+ * TINGLE — Tactical Neo-Brutalist Design Tokens
+ * 
+ * Visual Source of Truth: Google Stitch Project 14393008759381373726
+ * Style: Kinetic Neo-Brutalism & Multiverse Tactical Dispatch
+ * System Authority: frontend/DESIGN.md & architecture/frontend.md
  */
 
 :root {
-  /* Color Palette — Backgrounds */
-  --color-bg-canvas: #0B0F17;
-  --color-bg-surface: #131B2E;
-  --color-bg-surface-hover: #192338;
-  --color-bg-surface-secondary: #1A2234;
-  --color-bg-overlay: rgba(11, 15, 23, 0.85);
+  /* ==========================================================================
+     1. COLOR PALETTE — VOID & SURFACES
+     ========================================================================== */
+  /* Core Void & Canvases */
+  --color-void-dark: #08080C;
+  --color-bg-canvas: #08080C;
 
-  /* Borders & Dividers */
-  --color-border: #1E293B;
-  --color-border-bright: #334155;
-  --color-border-accent: #38BDF8;
+  /* Primary Surfaces */
+  --color-surface-dark: #111116;
+  --color-bg-surface: #111116;
+  --color-surface-dark-elevated: #1A1A24;
+  --color-bg-surface-secondary: #1A1A24;
+  --color-bg-surface-hover: #1f1f24;
+  --color-bg-overlay: rgba(8, 8, 12, 0.88);
 
-  /* Text Colors */
-  --color-text-primary: #F8FAFC;
-  --color-text-secondary: #94A3B8;
-  --color-text-muted: #64748B;
-  --color-text-inverse: #0B0F17;
+  /* Surface Container Scale (from Stitch Theme) */
+  --color-surface-container-lowest: #0e0e12;
+  --color-surface-container-low: #1b1b20;
+  --color-surface-container: #1f1f24;
+  --color-surface-container-high: #2a292e;
+  --color-surface-container-highest: #353439;
+  --color-surface-dim: #131317;
+  --color-surface-bright: #39393e;
 
-  /* Severity / Priority Tiers */
-  --color-critical: #EF4444;
-  --color-critical-bg: rgba(239, 68, 68, 0.12);
-  --color-critical-glow: rgba(239, 68, 68, 0.35);
+  /* ==========================================================================
+     2. COLOR PALETTE — TYPOGRAPHY & TEXT
+     ========================================================================== */
+  --color-newsprint-white: #F4F4F0;
+  --color-text-primary: #F4F4F0;
+  --color-on-surface: #e4e1e8;
+  --color-on-surface-variant: #e7bdbb;
+  --color-text-secondary: #e4e1e8;
+  --color-text-muted: #94A3B8;
+  --color-text-inverse: #08080C;
 
-  --color-high: #F97316;
-  --color-high-bg: rgba(249, 115, 22, 0.12);
-  --color-high-glow: rgba(249, 115, 22, 0.35);
+  /* ==========================================================================
+     3. COLOR PALETTE — TACTICAL PRIORITY SPECTRUM
+     ========================================================================== */
+  /* P0 CRITICAL */
+  --color-p0-critical: #E61937;
+  --color-spider-red-bright: #FF2B4A;
+  --color-critical: #E61937;
+  --color-critical-bg: rgba(230, 25, 55, 0.16);
+  --color-critical-glow: rgba(255, 43, 74, 0.35);
 
-  --color-medium: #F59E0B;
-  --color-medium-bg: rgba(245, 158, 11, 0.12);
-  --color-medium-glow: rgba(245, 158, 11, 0.35);
+  /* P1 HIGH */
+  --color-hazard-orange: #FF5C00;
+  --color-p1-high: #FF5C00;
+  --color-high: #FF5C00;
+  --color-high-bg: rgba(255, 92, 0, 0.16);
+  --color-high-glow: rgba(255, 92, 0, 0.35);
 
-  --color-low: #64748B;
-  --color-low-bg: rgba(100, 116, 139, 0.15);
-  --color-low-glow: rgba(100, 116, 139, 0.3);
+  /* P2 MEDIUM */
+  --color-dispatch-yellow: #FFE600;
+  --color-p2-medium: #FFE600;
+  --color-medium: #FFE600;
+  --color-medium-bg: rgba(255, 230, 0, 0.16);
+  --color-medium-glow: rgba(255, 230, 0, 0.35);
 
-  /* Special Indicators */
-  --color-cyan-corroboration: #06B6D4;
-  --color-cyan-bg: rgba(6, 182, 212, 0.12);
+  /* P3 LOW & CORROBORATION */
+  --color-multiverse-cyan: #00F0FF;
+  --color-p3-cyan: #00F0FF;
+  --color-low: #00F0FF;
+  --color-low-bg: rgba(0, 240, 255, 0.14);
+  --color-low-glow: rgba(0, 240, 255, 0.35);
+  --color-cyan-corroboration: #00F0FF;
+  --color-cyan-bg: rgba(0, 240, 255, 0.14);
+
+  /* Special Indicators & Systems */
+  --color-glitch-magenta: #FF007A;
+  --color-review-purple: #B026FF;
   --color-purple-synthetic: #A855F7;
-  --color-purple-bg: rgba(168, 85, 247, 0.15);
-  --color-success: #10B981;
-  --color-success-bg: rgba(16, 185, 129, 0.12);
+  --color-purple-bg: rgba(168, 85, 247, 0.16);
+  --color-system-green: #00FF66;
+  --color-success: #00FF66;
+  --color-success-bg: rgba(0, 255, 102, 0.14);
+  --color-multiverse-blue: #0D6EFD;
 
-  /* Typography */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "JetBrains Mono", monospace;
+  /* ==========================================================================
+     4. BORDERS & STRUCTURAL INK
+     ========================================================================== */
+  --color-border: #08080C;
+  --color-border-ink: #08080C;
+  --color-border-subtle: #1E293B;
+  --color-border-bright: #353439;
+  --color-border-accent: #00F0FF;
+  --color-outline: #ad8886;
+  --color-outline-variant: #5d3f3e;
 
-  /* Elevations / Shadows */
+  --border-ink-thin: 1px solid var(--color-void-dark);
+  --border-ink: 2px solid var(--color-void-dark);
+  --border-ink-thick: 3px solid var(--color-void-dark);
+  --border-ink-heavy: 4px solid var(--color-void-dark);
+
+  /* ==========================================================================
+     5. TYPOGRAPHY FONT STACKS & SCALE
+     ========================================================================== */
+  --font-display: 'Anton', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-headline: 'Anton', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Typography Scales */
+  --type-display-hero: 64px;
+  --type-headline-lg: 36px;
+  --type-headline-md: 24px;
+  --type-headline-sm: 18px;
+  --type-body-lg: 16px;
+  --type-body-md: 14px;
+  --type-body-sm: 12px;
+  --type-label-lg: 14px;
+  --type-label-md: 12px;
+  --type-label-sm: 10px;
+
+  /* ==========================================================================
+     6. ELEVATION — HARD OFFSET SHADOWS (NEO-BRUTALIST)
+     ========================================================================== */
+  --shadow-hard-xs: 1px 1px 0px var(--color-void-dark);
+  --shadow-hard-sm: 2px 2px 0px var(--color-void-dark);
+  --shadow-hard-md: 3px 3px 0px var(--color-void-dark);
+  --shadow-hard-lg: 4px 4px 0px var(--color-void-dark);
+  --shadow-hard-xl: 6px 6px 0px var(--color-void-dark);
+  --shadow-hard-2xl: 8px 8px 0px var(--color-void-dark);
+
+  /* Chromatic Overdrive Shadows */
+  --shadow-chromatic-cyan: 4px 4px 0px var(--color-multiverse-cyan), 8px 8px 0px var(--color-void-dark);
+  --shadow-chromatic-magenta: -2px 0px var(--color-multiverse-cyan), 2px 0px var(--color-glitch-magenta);
+
+  /* Preserved Phase 1 Diffused Shadows (Secondary Fallbacks) */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.6);
   --shadow-glow-critical: 0 0 16px var(--color-critical-glow);
 
-  /* Transitions & Animation Durations */
-  --transition-fast: 150ms ease-in-out;
+  /* ==========================================================================
+     7. TEXTURES & PATTERNS
+     ========================================================================== */
+  --texture-halftone: radial-gradient(var(--color-surface-container-high) 1px, transparent 1px);
+  --texture-hazard-stripes: repeating-linear-gradient(45deg, var(--color-void-dark), var(--color-void-dark) 10px, var(--color-dispatch-yellow) 10px, var(--color-dispatch-yellow) 20px);
+  --texture-hazard-orange-stripes: repeating-linear-gradient(45deg, var(--color-void-dark), var(--color-void-dark) 10px, var(--color-hazard-orange) 10px, var(--color-hazard-orange) 20px);
+
+  /* ==========================================================================
+     8. GEOMETRY & TRANSITIONS
+     ========================================================================== */
+  --radius-none: 0px;
+  --radius-pill: 9999px;
+
+  --transition-fast: 100ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-tactile: 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --transition-normal: 250ms ease-in-out;
   --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ==========================================================================
+   GLOBAL RESET & STYLING INVARIANTS
+   ========================================================================== */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -73,9 +174,9 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: var(--color-bg-canvas);
+  background-color: var(--color-void-dark);
   color: var(--color-text-primary);
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -89,18 +190,82 @@ html, body {
   flex-direction: column;
 }
 
+/* Text Selection: High-contrast dispatch yellow */
+::selection {
+  background-color: var(--color-dispatch-yellow);
+  color: var(--color-void-dark);
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-canvas);
+  background: var(--color-void-dark);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-bright);
-  border-radius: 3px;
+  background: var(--color-surface-container-highest);
+  border: 1px solid var(--color-void-dark);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
+  background: var(--color-outline);
+}
+
+/* ==========================================================================
+   NEO-BRUTALIST UTILITY CLASSES
+   ========================================================================== */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.border-ink-2 {
+  border: 2px solid var(--color-void-dark);
+}
+
+.border-ink-3 {
+  border: 3px solid var(--color-void-dark);
+}
+
+.border-ink-4 {
+  border: 4px solid var(--color-void-dark);
+}
+
+.shadow-hard-sm {
+  box-shadow: var(--shadow-hard-sm);
+}
+
+.shadow-hard-md {
+  box-shadow: var(--shadow-hard-md);
+}
+
+.shadow-hard-lg {
+  box-shadow: var(--shadow-hard-lg);
+}
+
+.shadow-hard-xl {
+  box-shadow: var(--shadow-hard-xl);
+}
+
+.pattern-halftone {
+  background-image: var(--texture-halftone);
+  background-size: 6px 6px;
+}
+
+.pattern-hazard-yellow {
+  background-image: var(--texture-hazard-stripes);
+}
+
+.pattern-hazard-orange {
+  background-image: var(--texture-hazard-orange-stripes);
 }

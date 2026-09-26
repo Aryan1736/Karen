@@ -1,0 +1,62 @@
+.tactical-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.tactical-input-icon-left {
+  position: absolute;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  color: var(--color-text-muted);
+}
+
+.tactical-input-icon-right {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  color: var(--color-text-muted);
+}
+
+.tactical-input {
+  width: 100%;
+  background-color: var(--color-surface-container-low);
+  border: 2px solid var(--color-void-dark);
+  border-radius: var(--radius-none);
+  color: var(--color-newsprint-white);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  padding: 8px 12px;
+  box-shadow: var(--shadow-hard-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.tactical-input-has-left-icon {
+  padding-left: 36px;
+}
+
+.tactical-input-has-right-icon {
+  padding-right: 36px;
+}
+
+.tactical-input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+.tactical-input:focus {
+  outline: none;
+  border-color: var(--color-multiverse-cyan);
+  box-shadow: 2px 2px 0px var(--color-multiverse-cyan), 4px 4px 0px var(--color-void-dark);
+}
+
+.tactical-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--color-surface-dark);
+}
