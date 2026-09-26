@@ -7,4 +7,30 @@ Responsible for generating 384-dimensional unit-norm dense vector embeddings
 deduplication and corroboration triangulation.
 """
 
-__all__: list[str] = []
+from ml.embeddings.embedder import (
+    EmbeddingEngine,
+    SentenceTransformerEmbedder,
+    compute_similarity,
+    embed_report,
+    embed_reports,
+    is_model_loaded,
+    reset_model_cache,
+)
+from ml.embeddings.evaluator import (
+    EmbeddingEvaluationReport,
+    EmbeddingEvaluator,
+    run_embedding_evaluation,
+)
+
+__all__: list[str] = [
+    "EmbeddingEngine",
+    "EmbeddingEvaluationReport",
+    "EmbeddingEvaluator",
+    "SentenceTransformerEmbedder",
+    "compute_similarity",
+    "embed_report",
+    "embed_reports",
+    "is_model_loaded",
+    "reset_model_cache",
+    "run_embedding_evaluation",
+]

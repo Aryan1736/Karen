@@ -141,7 +141,13 @@ Return ML Output Payload
 * **Model:** `sentence-transformers/all-MiniLM-L6-v2`.
 * **Dimension:** 384 floats.
 * **Normalization:** Unit L2 norm ($\|v\|_2 = 1.0$), enabling cosine similarity computation via fast dot product:
-  $$\text{Cosine Similarity}(u, v) = u \cdot v$$
+  $$\text{Cosine Similarity}(u, v) = u \cdot v \quad (\in [-1.0, 1.0])$$
+* **Model Loading:** Lazy loading on first inference; thread-safe process-level cache reuses loaded weights across calls and instances without reload latency.
+* **Batch Support:** Native vectorized batch encoding with strict input order preservation and output shape $(N, 384)$.
+* **Architectural Boundary & Responsibility:**
+  * **ML Responsibility (Aryan):** Produces normalized 384-d vector embeddings and scalar semantic similarity signals. Provides representation and similarity only.
+  * **Backend Responsibility (Daksh):** Fuses semantic similarity signals with spatial proximity (Haversine/gazetteer), temporal decay, and incident metadata to perform actual clustering, deduplication, and corroboration decisions.
+  * **Strict Negative Invariants:** The embedding engine MUST NOT decide duplicate status, create incident IDs, merge reports, or assign backend priority/urgency.
 * **Benchmark Baseline:** Phase 2 measured **9.68 ms** per text inference on local CPU.
 * **Storage:** Embedding vectors are stored in memory or PostgreSQL array for fast incident correlation.
 
