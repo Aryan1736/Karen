@@ -32,23 +32,180 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-newsprint-white);
+  margin: 0;
 }
 
 .audit-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 24px;
-  text-align: center;
-  background-image: var(--texture-halftone);
-  background-size: 6px 6px;
-  color: var(--color-text-muted);
+  padding: 24px 20px;
+  background-color: var(--color-surface-container-low);
+  overflow-y: auto;
 }
 
-.audit-empty-card {
+/* Loading State */
+.audit-loading-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 360px;
+}
+
+.audit-loading-text {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--color-multiverse-cyan);
+}
+
+/* Error Card */
+.audit-error-card {
   max-width: 520px;
+  margin: 40px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border: 3px solid var(--color-p0-critical);
+  box-shadow: 6px 6px 0 var(--color-p0-critical);
+  padding: 32px 24px;
+  background-color: var(--color-surface-dark);
+  gap: 12px;
+}
+
+.audit-error-title {
+  font-size: 18px;
+  color: var(--color-p0-critical);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.audit-error-desc {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+/* Populated Overridden Incidents Ledger */
+.audit-ledger-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.audit-ledger-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background-color: rgba(230, 25, 55, 0.12);
+  border: 1px solid var(--color-p0-critical);
+  color: var(--color-newsprint-white);
+}
+
+.audit-ledger-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.audit-ledger-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface-dark);
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 4px 4px 0 var(--color-void-dark);
+  padding: 16px;
+  gap: 12px;
+  transition: transform var(--transition-tactical);
+}
+
+.audit-ledger-card:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--color-void-dark);
+}
+
+.audit-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.audit-card-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.audit-incident-id {
+  font-size: 18px;
+  color: var(--color-multiverse-cyan);
+  letter-spacing: 0.04em;
+}
+
+.audit-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  padding: 8px 12px;
+  background-color: var(--color-surface-container);
+  border: 1px solid var(--color-void-dark);
+  flex-wrap: wrap;
+}
+
+.audit-meta-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meta-sep {
+  color: var(--color-outline-variant);
+  opacity: 0.6;
+}
+
+.audit-card-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--color-surface-container-lowest);
+  border-left: 3px solid var(--color-dispatch-yellow);
+}
+
+.audit-reason-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-dispatch-yellow);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.audit-reason-text {
+  font-size: 13px;
+  color: var(--color-newsprint-white);
+  line-height: 1.5;
+  margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Standby Empty Card */
+.audit-empty-card {
+  max-width: 580px;
+  margin: 40px auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -56,6 +213,7 @@
   padding: 40px 32px;
   background-color: var(--color-surface-dark);
   box-shadow: 6px 6px 0 var(--color-void-dark);
+  text-align: center;
 }
 
 .audit-empty-icon {
@@ -84,4 +242,27 @@
   flex-wrap: wrap;
   gap: 8px;
   justify-content: center;
+  margin-bottom: 20px;
+}
+
+.audit-empty-actions {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .audit-header {
+    height: auto;
+    padding: 12px 16px;
+  }
+  .audit-body {
+    padding: 16px 12px;
+  }
+  .audit-card-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .audit-empty-card {
+    padding: 24px 16px;
+  }
 }

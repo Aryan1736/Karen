@@ -171,11 +171,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    if (mappedIncidents.length > 0) {
+    if (mappedIncidents.length > 1) {
       const bounds = L.latLngBounds(mappedIncidents.map((i) => [i.location.latitude!, i.location.longitude!]));
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    } else if (mappedIncidents.length === 1) {
+      map.setView([mappedIncidents[0].location.latitude!, mappedIncidents[0].location.longitude!], 14, { animate: true });
     } else {
-      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM, { animate: true });
     }
   };
 

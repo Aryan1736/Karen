@@ -43,11 +43,24 @@ const HASH_VIEW_MAP: Record<string, NavigationView> = {
 };
 
 const getViewFromHash = (hash: string): NavigationView => {
-  const normalized = hash.toLowerCase();
-  if (!normalized || normalized === '#' || normalized === '#landing') {
+  if (!hash) return 'landing';
+  const cleanHash = hash.split('?')[0].replace(/\/+$/, '').toLowerCase();
+  if (!cleanHash || cleanHash === '#' || cleanHash === '#landing') {
     return 'landing';
   }
-  return HASH_VIEW_MAP[normalized] || 'landing';
+  return HASH_VIEW_MAP[cleanHash] || 'landing';
+};
+
+const getIncidentIdFromHash = (hash: string): string | null => {
+  if (!hash || !hash.includes('?')) return null;
+  try {
+    const queryPart = hash.split('?')[1];
+    const params = new URLSearchParams(queryPart);
+    const id = params.get('id') || params.get('incident_id');
+    return id ? id.trim() : null;
+  } catch {
+    return null;
+  }
 };
 
 const NavigationContext = createContext<NavigationContextValue | undefined>(undefined);
@@ -56,16 +69,23 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [activeView, setActiveViewState] = useState<NavigationView>(() => 
     typeof window !== 'undefined' ? getViewFromHash(window.location.hash) : 'landing'
   );
-  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? getIncidentIdFromHash(window.location.hash) : null
+  );
   const [activeFilter, setActiveFilter] = useState<IncidentPriorityFilter>('ALL');
   const [isSimulatorModalOpen, setIsSimulatorModalOpen] = useState<boolean>(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
 
-  // Sync state when browser hash changes (e.g. back/forward buttons)
+  // Sync state when browser hash changes (e.g. back/forward buttons, direct deep links)
   useEffect(() => {
     const handleHashChange = () => {
-      const newView = getViewFromHash(window.location.hash);
+      const hash = window.location.hash;
+      const newView = getViewFromHash(hash);
       setActiveViewState(newView);
+      const incId = getIncidentIdFromHash(hash);
+      if (incId) {
+        setSelectedIncidentId(incId);
+      }
     };
 
     window.addEventListener('hashchange', handleHashChange);
@@ -74,16 +94,23 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const setActiveView = useCallback((view: NavigationView) => {
     setActiveViewState(view);
-    const targetHash = VIEW_HASH_MAP[view];
+    const baseHash = VIEW_HASH_MAP[view];
+    const targetHash = (view === 'investigation' && selectedIncidentId)
+      ? `${baseHash}?id=${encodeURIComponent(selectedIncidentId)}`
+      : baseHash;
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+    }
+  }, [selectedIncidentId]);
+
+  const navigateToIncident = useCallback((incidentId: string) => {
+    setSelectedIncidentId(incidentId);
+    setActiveViewState('investigation');
+    const targetHash = `#investigation?id=${encodeURIComponent(incidentId)}`;
     if (window.location.hash !== targetHash) {
       window.location.hash = targetHash;
     }
   }, []);
-
-  const navigateToIncident = useCallback((incidentId: string) => {
-    setSelectedIncidentId(incidentId);
-    setActiveView('investigation');
-  }, [setActiveView]);
 
   return (
     <NavigationContext.Provider

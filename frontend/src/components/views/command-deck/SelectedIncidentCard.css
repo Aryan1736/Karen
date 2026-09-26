@@ -93,6 +93,8 @@
   text-transform: uppercase;
   color: var(--color-newsprint-white);
   margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Location Bar */
@@ -108,6 +110,8 @@
 .location-name {
   color: var(--color-dispatch-yellow);
   font-weight: 700;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .location-precision-tag {
@@ -141,6 +145,8 @@
   color: var(--color-newsprint-white);
   padding-top: 6px;
   border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .rationale-tag {

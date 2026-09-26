@@ -16,6 +16,8 @@
   background-color: var(--color-surface-dark);
   border-bottom: 3px solid var(--color-void-dark);
   flex-shrink: 0;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .briefing-title-group {
@@ -30,17 +32,45 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-newsprint-white);
+  margin: 0;
 }
 
 .briefing-content {
   max-width: 960px;
   margin: 0 auto;
-  padding: 32px 20px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  width: 100%;
 }
 
+/* System Telemetry Strip */
+.briefing-telemetry-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background-color: var(--color-surface-dark);
+  border: 1px solid var(--color-void-dark);
+  box-shadow: 2px 2px 0 var(--color-void-dark);
+  font-size: 11px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.briefing-telemetry-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.briefing-telemetry-right {
+  color: var(--color-text-muted);
+}
+
+/* Hero Panel */
 .briefing-hero-panel {
   border: 3px solid var(--color-void-dark);
   background-color: var(--color-surface-dark);
@@ -96,6 +126,14 @@
   color: var(--color-multiverse-cyan);
 }
 
+.briefing-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Pillars Grid */
 .briefing-pillars-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -123,10 +161,31 @@
   font-size: 13px;
   line-height: 1.5;
   color: var(--color-text-secondary);
+  margin: 0;
 }
 
 @media (max-width: 860px) {
   .briefing-pillars-grid {
     grid-template-columns: 1fr;
+  }
+  .briefing-hero-headline {
+    font-size: 26px;
+  }
+  .briefing-header {
+    height: auto;
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .briefing-content {
+    padding: 16px 12px;
+  }
+  .briefing-hero-panel {
+    padding: 18px 14px;
+  }
+  .briefing-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

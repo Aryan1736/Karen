@@ -205,6 +205,8 @@
   color: var(--color-dispatch-yellow);
   font-style: italic;
   max-width: 320px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .log-time-cell {

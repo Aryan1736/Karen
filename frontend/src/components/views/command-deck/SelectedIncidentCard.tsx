@@ -189,11 +189,12 @@ export const SelectedIncidentCard: React.FC<SelectedIncidentCardProps> = ({
           variant="secondary"
           size="md"
           className="action-btn-review"
-          disabled
-          title="Human sovereign review and override will be enabled in Phase 7"
+          onClick={() => onInvestigate(incident.incident_id)}
+          title="Open operator review and sovereign override console in Investigation"
+          aria-label={`Open operator review for incident ${incident.incident_id}`}
         >
           <ShieldCheck size={14} style={{ marginRight: 6 }} />
-          OPERATOR REVIEW [PHASE 7]
+          OPERATOR REVIEW
         </Button>
       </div>
     </section>

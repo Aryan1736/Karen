@@ -25,6 +25,9 @@
 
 .sim-strip-text {
   font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sim-strip-right {
@@ -48,5 +51,8 @@
 @media (max-width: 768px) {
   .sim-strip-right {
     display: none;
+  }
+  .sim-alert-strip {
+    padding: 0 10px;
   }
 }

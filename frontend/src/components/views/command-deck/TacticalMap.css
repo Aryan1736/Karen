@@ -622,11 +622,37 @@
   }
 }
 
+@media (max-width: 768px) {
+  .map-hud-grid,
+  .map-hud-sync,
+  .hud-divider {
+    display: none;
+  }
+  .map-hud-strip {
+    padding: 0 10px;
+  }
+  .map-telemetry-bar {
+    padding: 0 10px;
+  }
+}
+
 @media (max-width: 640px) {
   .map-legend-dock {
     display: none;
   }
   .tac-mini-widget {
     display: none;
+  }
+  .map-telemetry-right {
+    display: none;
+  }
+  .map-layer-tag {
+    display: none;
+  }
+  .unmapped-drawer {
+    left: 8px;
+    bottom: 8px;
+    width: calc(100% - 16px);
+    max-width: calc(100% - 16px);
   }
 }

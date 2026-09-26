@@ -718,6 +718,13 @@ export const IncidentOverridePanel: React.FC<IncidentOverridePanelProps> = ({
             role="dialog"
             aria-labelledby="confirm-override-heading"
             aria-modal="true"
+            tabIndex={-1}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.stopPropagation();
+                handleCancelConfirmation();
+              }
+            }}
           >
             <div className="override-confirm-header">
               <Zap size={18} className="text-hazard" />

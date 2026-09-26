@@ -378,6 +378,13 @@ export const OperatorReviewPanel: React.FC<OperatorReviewPanelProps> = ({
             role="dialog"
             aria-labelledby="confirm-review-heading"
             aria-modal="true"
+            tabIndex={-1}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.stopPropagation();
+                handleCancelConfirmation();
+              }
+            }}
           >
             <div className="op-confirm-header">
               <AlertTriangle size={18} className="text-dispatch-yellow" />

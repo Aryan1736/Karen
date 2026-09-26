@@ -19,12 +19,18 @@ export const IncidentStreamsView: React.FC = () => {
   };
 
   const formatPayloadSummary = (event: string, payload: any): string => {
+    const p = payload && typeof payload === 'object' ? payload : {};
     if (event === 'PING') return 'Heartbeat PING keepalive frame received from server';
-    if (event === 'INCIDENT_CREATED') return `New Incident Created: ${payload.incident_id || 'ID Unknown'} [${payload.incident_type || 'Unclassified'}]`;
-    if (event === 'INCIDENT_UPDATED') return `Incident Updated: ${payload.incident_id || 'ID Unknown'} (Score: ${payload.priority?.score ?? payload.new_priority_score ?? 'N/A'})`;
-    if (event === 'INCIDENT_STATUS_CHANGED') return `Status Transition: ${payload.incident_id} [${payload.old_status} → ${payload.new_status}]`;
-    if (event === 'SIMULATION_PULSE') return `Simulation Pulse: Injected ${payload?.injected_count ?? 0}, Total ${payload?.total_simulated ?? 0} (${payload?.scenario || 'simulation'})`;
-    return `Payload: ${JSON.stringify(payload).substring(0, 80)}`;
+    if (event === 'PONG') return 'Heartbeat PONG response frame';
+    if (event === 'INCIDENT_CREATED') return `New Incident Created: ${p.incident_id || 'ID Unknown'} [${p.incident_type || 'Unclassified'}]`;
+    if (event === 'INCIDENT_UPDATED') return `Incident Updated: ${p.incident_id || 'ID Unknown'} (Score: ${p.priority?.score ?? p.new_priority_score ?? 'N/A'})`;
+    if (event === 'INCIDENT_STATUS_CHANGED') return `Status Transition: ${p.incident_id || 'ID Unknown'} [${p.old_status || 'UNKNOWN'} → ${p.new_status || 'UNKNOWN'}]`;
+    if (event === 'SIMULATION_PULSE') return `Simulation Pulse: Injected ${p?.injected_count ?? 0}, Total ${p?.total_simulated ?? 0} (${p?.scenario || 'simulation'})`;
+    try {
+      return `Payload: ${JSON.stringify(payload).substring(0, 80)}`;
+    } catch {
+      return 'Payload: [unserializable]';
+    }
   };
 
   return (

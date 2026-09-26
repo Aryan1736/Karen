@@ -151,7 +151,7 @@
 /* Workspace Split Layout (65% Map Dominant / 35% Priority Rail) */
 .workspace-split {
   display: grid;
-  grid-template-columns: minmax(0, 1.85fr) minmax(380px, 1fr);
+  grid-template-columns: minmax(0, 1.85fr) minmax(320px, 1fr);
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -175,7 +175,7 @@
   }
 
   .deck-map-pane {
-    height: 420px;
+    height: 400px;
     flex: none;
   }
 
@@ -191,7 +191,8 @@
 
   .filter-search-container {
     max-width: 100%;
-    min-width: 100%;
+    min-width: 0;
+    width: 100%;
   }
 
   .filter-chip-group {
@@ -204,6 +205,6 @@
   }
 
   .deck-map-pane {
-    height: 360px;
+    height: 320px;
   }
 }

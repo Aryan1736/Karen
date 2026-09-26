@@ -115,5 +115,27 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+    padding: 8px 12px;
+  }
+  .command-bar-audio-segment {
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+  .command-bar-actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .audio-channel-title {
+    display: none;
+  }
+  .audio-standby-pill {
+    display: none;
+  }
+  .command-bar-security-tag {
+    display: none;
   }
 }
