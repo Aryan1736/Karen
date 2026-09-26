@@ -3,8 +3,9 @@ Karen's Ear — Incident Canonical Schemas
 Adheres strictly to docs/data-schema.md Section 2.3 and docs/api-contract.md Section 5.
 """
 from typing import Any, Optional, Union
-from pydantic import Field
+from pydantic import Field, field_validator
 
+from backend.app.schemas.audit import AuditLogResponse
 from backend.app.schemas.common import (
     IncidentStatus,
     IncidentType,
@@ -14,6 +15,7 @@ from backend.app.schemas.common import (
     PriorityLevel,
     UrgencyLevel,
 )
+from backend.app.schemas.report import RawReportResponse
 
 
 class IncidentLocation(KarenBaseModel):
@@ -133,21 +135,34 @@ class IncidentResponse(KarenBaseModel):
 
 class IncidentReviewRequest(KarenBaseModel):
     """Payload for POST /incidents/{id}/review to transition incident state."""
-    operator_id: str = Field(..., min_length=1, description="Acting operator identifier")
+    operator_id: Optional[str] = Field(default=None, description="Acting operator identifier (optional if X-Operator-Id header provided)")
     target_status: IncidentStatus = Field(..., description="Target status transition")
-    notes: Optional[str] = Field(default=None, description="Review notes")
+    notes: str = Field(..., description="Review notes (at least 5 non-whitespace characters)")
+
+    @field_validator("notes")
+    @classmethod
+    def validate_notes(cls, v: str) -> str:
+        if not v or len(v.strip()) < 5:
+            raise ValueError("Review notes must contain at least 5 non-whitespace characters.")
+        return v.strip()
 
 
 class IncidentOverrideRequest(KarenBaseModel):
     """Payload for POST /incidents/{id}/override with mandatory justification."""
-    operator_id: str = Field(..., min_length=1, description="Acting operator identifier")
+    operator_id: Optional[str] = Field(default=None, description="Acting operator identifier (optional if X-Operator-Id header provided)")
     field: str = Field(..., min_length=1, description="Field to override (e.g. urgency, priority_score)")
     new_value: Any = Field(..., description="New value assigned by operator")
     reason: str = Field(
         ...,
-        min_length=5,
-        description="Mandatory justification (at least 5 characters)",
+        description="Mandatory justification (at least 5 non-whitespace characters)",
     )
+
+    @field_validator("reason")
+    @classmethod
+    def validate_reason(cls, v: str) -> str:
+        if not v or len(v.strip()) < 5:
+            raise ValueError("Override reason must contain at least 5 non-whitespace characters.")
+        return v.strip()
 
 
 class IncidentListResponse(KarenBaseModel):
@@ -155,3 +170,26 @@ class IncidentListResponse(KarenBaseModel):
     incidents: list[IncidentResponse]
     total_count: int
     critical_count: int
+
+
+class IncidentDetailResponse(KarenBaseModel):
+    """Deep incident inspection response for GET /incidents/{id}."""
+    incident: IncidentResponse
+    source_reports: list[RawReportResponse] = Field(default_factory=list)
+    audit_trail: list[AuditLogResponse] = Field(default_factory=list)
+
+
+class TimelineEvent(KarenBaseModel):
+    """Standardized chronological event item for GET /incidents/{id}/timeline."""
+    event_id: str
+    event_type: str
+    timestamp: IsoUtcDatetime
+    summary: str
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class IncidentTimelineResponse(KarenBaseModel):
+    """Timeline response collection for GET /incidents/{id}/timeline."""
+    incident_id: str
+    total_events: int
+    events: list[TimelineEvent] = Field(default_factory=list)

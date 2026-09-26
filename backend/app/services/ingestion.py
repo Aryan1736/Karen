@@ -435,34 +435,39 @@ class IngestionService:
             incident.urgency = fuse_urgency(incident.urgency, new_urgency, has_human_override)
 
             # Locked Decision 3: People at Risk
-            new_risk = pred_record.people_at_risk.get("count") if pred_record.people_at_risk else None
-            incident.people_at_risk_count = fuse_people_at_risk(incident.people_at_risk_count, new_risk)
+            if not has_human_override:
+                new_risk = pred_record.people_at_risk.get("count") if pred_record.people_at_risk else None
+                incident.people_at_risk_count = fuse_people_at_risk(incident.people_at_risk_count, new_risk)
 
             # Locked Decision 4: Location
-            pred_loc = pred_record.location or {}
-            location_conflict = any("Conflicting locations" in w for w in best_result.warnings)
-            f_lat, f_lon, f_prec, f_text, loc_conflict = fuse_location(
-                existing_lat=incident.latitude,
-                existing_lon=incident.longitude,
-                existing_prec=incident.location_precision,
-                existing_text=incident.location_text,
-                new_lat=pred_loc.get("latitude"),
-                new_lon=pred_loc.get("longitude"),
-                new_prec=pred_loc.get("precision", "unknown"),
-                new_text=pred_loc.get("text"),
-                correlation_conflict=location_conflict,
-            )
-            incident.latitude = f_lat
-            incident.longitude = f_lon
-            incident.location_precision = f_prec
-            incident.location_text = f_text
+            if not has_human_override:
+                pred_loc = pred_record.location or {}
+                location_conflict = any("Conflicting locations" in w for w in best_result.warnings)
+                f_lat, f_lon, f_prec, f_text, loc_conflict = fuse_location(
+                    existing_lat=incident.latitude,
+                    existing_lon=incident.longitude,
+                    existing_prec=incident.location_precision,
+                    existing_text=incident.location_text,
+                    new_lat=pred_loc.get("latitude"),
+                    new_lon=pred_loc.get("longitude"),
+                    new_prec=pred_loc.get("precision", "unknown"),
+                    new_text=pred_loc.get("text"),
+                    correlation_conflict=location_conflict,
+                )
+                incident.latitude = f_lat
+                incident.longitude = f_lon
+                incident.location_precision = f_prec
+                incident.location_text = f_text
+            else:
+                loc_conflict = False
 
             # Locked Decision 5: Required Response
-            new_responses = [
-                r["type"] for r in (pred_record.required_response or [])
-                if isinstance(r, dict) and "type" in r
-            ]
-            incident.required_response = fuse_required_response(incident.required_response or [], new_responses)
+            if not has_human_override:
+                new_responses = [
+                    r["type"] for r in (pred_record.required_response or [])
+                    if isinstance(r, dict) and "type" in r
+                ]
+                incident.required_response = fuse_required_response(incident.required_response or [], new_responses)
 
             # Status determination
             if not is_protected_status:
@@ -574,15 +579,21 @@ class IngestionService:
                 ml_confidence=ml_conf,
             )
 
-        incident.priority_score = priority_res.score
-        incident.priority_level = priority_res.level.value if hasattr(priority_res.level, "value") else str(priority_res.level)
-
-        # Record priority calculation in ledger
-        self.repo.create_priority_calculation(
-            self.db,
-            incident_id=incident.incident_id,
-            priority_result=priority_res,
+        has_override = bool(incident.human_override and incident.human_override.get("active", False))
+        is_priority_manually_overridden = bool(
+            has_override and (incident.human_override or {}).get("priority_overridden", False)
         )
+
+        if not is_priority_manually_overridden:
+            incident.priority_score = priority_res.score
+            incident.priority_level = priority_res.level.value if hasattr(priority_res.level, "value") else str(priority_res.level)
+
+            # Record priority calculation in ledger
+            self.repo.create_priority_calculation(
+                self.db,
+                incident_id=incident.incident_id,
+                priority_result=priority_res,
+            )
 
         # Commit Phase B
         self.db.commit()

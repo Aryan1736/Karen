@@ -22,14 +22,17 @@ from backend.app.schemas.incident import (
     ConfidenceBlock,
     Corroboration,
     HumanOverrideBlock,
+    IncidentDetailResponse,
     IncidentListResponse,
     IncidentLocation,
     IncidentOverrideRequest,
     IncidentResponse,
     IncidentReviewRequest,
     IncidentRisk,
+    IncidentTimelineResponse,
     PriorityBlock,
     PriorityFactor,
+    TimelineEvent,
 )
 from backend.app.schemas.link import IncidentReportLinkResponse, ReportIngestResult
 from backend.app.schemas.ml import (
@@ -88,6 +91,9 @@ __all__ = [
     "IncidentReviewRequest",
     "IncidentOverrideRequest",
     "IncidentListResponse",
+    "IncidentDetailResponse",
+    "TimelineEvent",
+    "IncidentTimelineResponse",
     # Link
     "IncidentReportLinkResponse",
     "ReportIngestResult",
