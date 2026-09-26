@@ -3,6 +3,8 @@ Karen's Ear — FastAPI Backend Application Entrypoint
 Foundation setup: Request IDs, canonical envelope, error handlers, and /health probe.
 DO NOT call Base.metadata.create_all() on startup.
 """
+import asyncio
+from contextlib import asynccontextmanager
 import logging
 from fastapi import Depends, FastAPI, Request, status
 from sqlalchemy import text
@@ -18,14 +20,40 @@ from .core.envelope import (
 )
 from .core.exceptions import setup_exception_handlers
 from .db.session import get_db
+from .services.websocket_manager import connection_manager
 
 logger = logging.getLogger("karen.backend")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Application lifespan context manager:
+    - Registers running ASGI event loop for thread-safe WebSocket broadcasts.
+    - Initiates 30-second server keepalive heartbeat loop.
+    - Cleanly cancels heartbeat task and closes active sockets on shutdown.
+    """
+    loop = asyncio.get_running_loop()
+    connection_manager.set_event_loop(loop)
+    heartbeat_task = asyncio.create_task(connection_manager.heartbeat_loop(interval=30.0))
+    try:
+        yield
+    finally:
+        heartbeat_task.cancel()
+        try:
+            await heartbeat_task
+        except asyncio.CancelledError:
+            pass
+        await connection_manager.close_all()
+        connection_manager.set_event_loop(None)
+
 
 app = FastAPI(
     title=settings.APP_NAME,
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 
@@ -53,9 +81,12 @@ setup_exception_handlers(app)
 
 from .api.routes.incidents import router as incidents_router
 from .api.routes.reports import router as reports_router
+from .api.routes.websockets import router as websockets_router
 
 app.include_router(reports_router)
 app.include_router(incidents_router)
+app.include_router(websockets_router)
+
 
 
 @app.get("/health", status_code=status.HTTP_200_OK)

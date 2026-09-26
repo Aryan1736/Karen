@@ -23,6 +23,7 @@ from backend.app.schemas.incident import (
     IncidentReviewRequest,
 )
 from backend.app.services.incident_service import IncidentService
+from backend.app.services.websocket_manager import broadcast_event
 
 logger = logging.getLogger("karen.backend.api.incidents")
 
@@ -120,6 +121,7 @@ def review_incident(
     - Resolves operator identity between header and body
     - Logs audit record
     - Recalculates priority on status change
+    - Post-commit: broadcasts 1. INCIDENT_STATUS_CHANGED, 2. INCIDENT_UPDATED
     """
     req_id = getattr(request.state, "request_id", None) or get_request_id()
 
@@ -130,6 +132,22 @@ def review_incident(
         x_operator_id=x_operator_id,
         body_operator_id=payload.operator_id,
     )
+
+    # Post-commit real-time event broadcasts (safe and non-blocking to REST)
+    try:
+        status_changed_payload = {
+            "incident_id": incident_dto.incident_id,
+            "old_status": str(audit_dto.previous_value),
+            "new_status": str(audit_dto.new_value),
+        }
+        broadcast_event("INCIDENT_STATUS_CHANGED", status_changed_payload)
+        broadcast_event("INCIDENT_UPDATED", incident_dto.model_dump(mode="json"))
+    except Exception as broadcast_exc:
+        logger.error(
+            "Failed to dispatch post-commit WebSocket broadcast for review on %s: %s",
+            id,
+            broadcast_exc,
+        )
 
     return success_response(
         data={
@@ -160,6 +178,7 @@ def override_incident(
     - Updates human_override snapshot
     - Protects against subsequent ML automation
     - Recalculates priority when applicable
+    - Post-commit: broadcasts INCIDENT_UPDATED with complete canonical IncidentResponse
     """
     req_id = getattr(request.state, "request_id", None) or get_request_id()
 
@@ -172,6 +191,16 @@ def override_incident(
         body_operator_id=payload.operator_id,
     )
 
+    # Post-commit real-time event broadcast (safe and non-blocking to REST)
+    try:
+        broadcast_event("INCIDENT_UPDATED", incident_dto.model_dump(mode="json"))
+    except Exception as broadcast_exc:
+        logger.error(
+            "Failed to dispatch post-commit WebSocket broadcast for override on %s: %s",
+            id,
+            broadcast_exc,
+        )
+
     return success_response(
         data={
             "incident": incident_dto.model_dump(mode="json"),
@@ -180,6 +209,7 @@ def override_incident(
         status_code=http_status.HTTP_200_OK,
         request_id=req_id,
     )
+
 
 
 @router.get(

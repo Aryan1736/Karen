@@ -50,6 +50,14 @@ from backend.app.schemas.simulation import (
     SimulationRunResponse,
     SimulationStartRequest,
 )
+from backend.app.schemas.websocket import (
+    ClientPongMessage,
+    IncidentStatusChangedPayload,
+    PingPayload,
+    SimulationPulsePayload,
+    WebSocketEnvelope,
+    WebSocketEventType,
+)
 
 __all__ = [
     # Common
@@ -102,4 +110,12 @@ __all__ = [
     # Simulation
     "SimulationRunResponse",
     "SimulationStartRequest",
+    # WebSocket
+    "WebSocketEventType",
+    "WebSocketEnvelope",
+    "IncidentStatusChangedPayload",
+    "SimulationPulsePayload",
+    "PingPayload",
+    "ClientPongMessage",
 ]
+
