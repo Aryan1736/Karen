@@ -46,7 +46,7 @@ If during development you discover that a shared contract needs an additional fi
 ## 4. Role-Specific Implementation Rules
 
 ### 4.1 Aryan (ML Pipeline Rule)
-* Your pipeline function `analyze_report()` must return a dictionary strictly validating against `ml/schemas/incident_output.json`.
+* Your pipeline entry point `inference_engine.analyze()` must return a dictionary strictly validating against `ml/schemas/incident_output.json`.
 * Do NOT change the 384-dimensional embedding output or field names without coordinating with Daksh.
 * Strictly enforce the **No-Hallucination Policy**: If coordinates cannot be verified via the gazetteer, emit `null` for `latitude` and `longitude`.
 * Operational urgency must follow the feature-derived rules (life-safety + hazard velocity) documented in `architecture/ml-pipeline.md`.

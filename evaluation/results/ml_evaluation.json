@@ -1,0 +1,899 @@
+{
+  "evaluation_version": "1.0.0",
+  "timestamp_utc": "2026-09-26T19:37:22.384122+00:00",
+  "environment": {
+    "python_version": "3.13.5",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "operating_system": "Windows",
+    "architecture": "AMD64",
+    "processor": "Intel64 Family 6 Model 186 Stepping 3, GenuineIntel",
+    "process_pid": 18288,
+    "model_version": "all-MiniLM-L6-v2+heuristic-v1"
+  },
+  "classification": {
+    "fixture_name": "INCIDENT_BENCHMARK_DATASET",
+    "sample_count": 63,
+    "accuracy": 0.9365,
+    "macro_precision": 0.9596,
+    "macro_recall": 0.9365,
+    "macro_f1": 0.9411,
+    "canonical_labels": [
+      "FLOOD_FLASH_FLOOD",
+      "FIRE_WILDFIRE_EXPLOSION",
+      "STRUCTURAL_COLLAPSE",
+      "EARTHQUAKE_LANDSLIDE",
+      "SEVERE_WEATHER_STORM",
+      "MEDICAL_EMERGENCY",
+      "CIVIL_UNREST_ACTIVE_THREAT",
+      "UTILITY_INFRASTRUCTURE_FAILURE",
+      "OTHER_GENERAL_INCIDENT"
+    ],
+    "per_class": {
+      "FLOOD_FLASH_FLOOD": {
+        "label": "FLOOD_FLASH_FLOOD",
+        "tp": 6,
+        "fp": 0,
+        "fn": 1,
+        "tn": 56,
+        "precision": 1.0,
+        "recall": 0.8571,
+        "f1": 0.9231,
+        "support": 7
+      },
+      "FIRE_WILDFIRE_EXPLOSION": {
+        "label": "FIRE_WILDFIRE_EXPLOSION",
+        "tp": 7,
+        "fp": 0,
+        "fn": 0,
+        "tn": 56,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 7
+      },
+      "STRUCTURAL_COLLAPSE": {
+        "label": "STRUCTURAL_COLLAPSE",
+        "tp": 6,
+        "fp": 0,
+        "fn": 1,
+        "tn": 56,
+        "precision": 1.0,
+        "recall": 0.8571,
+        "f1": 0.9231,
+        "support": 7
+      },
+      "EARTHQUAKE_LANDSLIDE": {
+        "label": "EARTHQUAKE_LANDSLIDE",
+        "tp": 7,
+        "fp": 0,
+        "fn": 0,
+        "tn": 56,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 7
+      },
+      "SEVERE_WEATHER_STORM": {
+        "label": "SEVERE_WEATHER_STORM",
+        "tp": 6,
+        "fp": 0,
+        "fn": 1,
+        "tn": 56,
+        "precision": 1.0,
+        "recall": 0.8571,
+        "f1": 0.9231,
+        "support": 7
+      },
+      "MEDICAL_EMERGENCY": {
+        "label": "MEDICAL_EMERGENCY",
+        "tp": 7,
+        "fp": 0,
+        "fn": 0,
+        "tn": 56,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 7
+      },
+      "CIVIL_UNREST_ACTIVE_THREAT": {
+        "label": "CIVIL_UNREST_ACTIVE_THREAT",
+        "tp": 6,
+        "fp": 0,
+        "fn": 1,
+        "tn": 56,
+        "precision": 1.0,
+        "recall": 0.8571,
+        "f1": 0.9231,
+        "support": 7
+      },
+      "UTILITY_INFRASTRUCTURE_FAILURE": {
+        "label": "UTILITY_INFRASTRUCTURE_FAILURE",
+        "tp": 7,
+        "fp": 0,
+        "fn": 0,
+        "tn": 56,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 7
+      },
+      "OTHER_GENERAL_INCIDENT": {
+        "label": "OTHER_GENERAL_INCIDENT",
+        "tp": 7,
+        "fp": 4,
+        "fn": 0,
+        "tn": 52,
+        "precision": 0.6364,
+        "recall": 1.0,
+        "f1": 0.7778,
+        "support": 7
+      }
+    },
+    "confusion_matrix": {
+      "FLOOD_FLASH_FLOOD": {
+        "FLOOD_FLASH_FLOOD": 6,
+        "FIRE_WILDFIRE_EXPLOSION": 0,
+        "STRUCTURAL_COLLAPSE": 0,
+        "EARTHQUAKE_LANDSLIDE": 0,
+        "SEVERE_WEATHER_STORM": 0,
+        "MEDICAL_EMERGENCY": 0,
+        "CIVIL_UNREST_ACTIVE_THREAT": 0,
+        "UTILITY_INFRASTRUCTURE_FAILURE": 0,
+        "OTHER_GENERAL_INCIDENT": 1
+      },
+      "FIRE_WILDFIRE_EXPLOSION": {
+        "FLOOD_FLASH_FLOOD": 0,
+        "FIRE_WILDFIRE_EXPLOSION": 7,
+        "STRUCTURAL_COLLAPSE": 0,
+        "EARTHQUAKE_LANDSLIDE": 0,
+        "SEVERE_WEATHER_STORM": 0,
+        "MEDICAL_EMERGENCY": 0,
+        "CIVIL_UNREST_ACTIVE_THREAT": 0,
+        "UTILITY_INFRASTRUCTURE_FAILURE": 0,
+        "OTHER_GENERAL_INCIDENT": 0
+      },
+      "STRUCTURAL_COLLAPSE": {
+        "FLOOD_FLASH_FLOOD": 0,
+        "FIRE_WILDFIRE_EXPLOSION": 0,
+        "STRUCTURAL_COLLAPSE": 6,
+        "EARTHQUAKE_LANDSLIDE": 0,
+        "SEVERE_WEATHER_STORM": 0,
+        "MEDICAL_EMERGENCY": 0,
+        "CIVIL_UNREST_ACTIVE_THREAT": 0,
+        "UTILITY_INFRASTRUCTURE_FAILURE": 0,
+        "OTHER_GENERAL_INCIDENT": 1
+      },
+      "EARTHQUAKE_LANDSLIDE": {
+        "FLOOD_FLASH_FLOOD": 0,
+        "FIRE_WILDFIRE_EXPLOSION": 0,
+        "STRUCTURAL_COLLAPSE": 0,
+        "EARTHQUAKE_LANDSLIDE": 7,
+        "SEVERE_WEATHER_STORM": 0,
+        "MEDICAL_EMERGENCY": 0,
+        "CIVIL_UNREST_ACTIVE_THREAT": 0,
+        "UTILITY_INFRASTRUCTURE_FAILURE": 0,
+        "OTHER_GENERAL_INCIDENT": 0
+      },
+      "SEVERE_WEATHER_STORM": {
+        "FLOOD_FLASH_FLOOD": 0,
+        "FIRE_WILDFIRE_EXPLOSION": 0,
+        "STRUCTURAL_COLLAPSE": 0,
+        "EARTHQUAKE_LANDSLIDE": 0,
+        "SEVERE_WEATHER_STORM": 6,
+        "MEDICAL_EMERGENCY": 0,
+        "CIVIL_UNREST_ACTIVE_THREAT": 0,
+        "UTILITY_INFRASTRUCTURE_FAILURE": 0,
+        "OTHER_GENERAL_INCIDENT": 1
+      },
+      "MEDICAL_EMERGENCY": {
+        "FLOOD_FLASH_FLOOD": 0,
+        "FIRE_WILDFIRE_EXPLOSION": 0,
+        "STRUCTURAL_COLLAPSE": 0,
+        "EARTHQUAKE_LANDSLIDE": 0,
+        "SEVERE_WEATHER_STORM": 0,
+        "MEDICAL_EMERGENCY": 7,
+        "CIVIL_UNREST_ACTIVE_THREAT": 0,
+        "UTILITY_INFRASTRUCTURE_FAILURE": 0,
+        "OTHER_GENERAL_INCIDENT": 0
+      },
+      "CIVIL_UNREST_ACTIVE_THREAT": {
+        "FLOOD_FLASH_FLOOD": 0,
+        "FIRE_WILDFIRE_EXPLOSION": 0,
+        "STRUCTURAL_COLLAPSE": 0,
+        "EARTHQUAKE_LANDSLIDE": 0,
+        "SEVERE_WEATHER_STORM": 0,
+        "MEDICAL_EMERGENCY": 0,
+        "CIVIL_UNREST_ACTIVE_THREAT": 6,
+        "UTILITY_INFRASTRUCTURE_FAILURE": 0,
+        "OTHER_GENERAL_INCIDENT": 1
+      },
+      "UTILITY_INFRASTRUCTURE_FAILURE": {
+        "FLOOD_FLASH_FLOOD": 0,
+        "FIRE_WILDFIRE_EXPLOSION": 0,
+        "STRUCTURAL_COLLAPSE": 0,
+        "EARTHQUAKE_LANDSLIDE": 0,
+        "SEVERE_WEATHER_STORM": 0,
+        "MEDICAL_EMERGENCY": 0,
+        "CIVIL_UNREST_ACTIVE_THREAT": 0,
+        "UTILITY_INFRASTRUCTURE_FAILURE": 7,
+        "OTHER_GENERAL_INCIDENT": 0
+      },
+      "OTHER_GENERAL_INCIDENT": {
+        "FLOOD_FLASH_FLOOD": 0,
+        "FIRE_WILDFIRE_EXPLOSION": 0,
+        "STRUCTURAL_COLLAPSE": 0,
+        "EARTHQUAKE_LANDSLIDE": 0,
+        "SEVERE_WEATHER_STORM": 0,
+        "MEDICAL_EMERGENCY": 0,
+        "CIVIL_UNREST_ACTIVE_THREAT": 0,
+        "UTILITY_INFRASTRUCTURE_FAILURE": 0,
+        "OTHER_GENERAL_INCIDENT": 7
+      }
+    },
+    "elapsed_seconds": 4.009,
+    "misclassifications": [
+      {
+        "id": "flood_01",
+        "expected": "FLOOD_FLASH_FLOOD",
+        "predicted": "OTHER_GENERAL_INCIDENT",
+        "confidence": 0.34,
+        "text_snippet": "Storm runoff overwhelmed the drainage ditch along Highway 16, several sedans sta..."
+      },
+      {
+        "id": "collapse_01",
+        "expected": "STRUCTURAL_COLLAPSE",
+        "predicted": "OTHER_GENERAL_INCIDENT",
+        "confidence": 0.2,
+        "text_snippet": "Old parking garage structure gave way on Market St, two concrete decks pancaked ..."
+      },
+      {
+        "id": "storm_01",
+        "expected": "SEVERE_WEATHER_STORM",
+        "predicted": "OTHER_GENERAL_INCIDENT",
+        "confidence": 0.27,
+        "text_snippet": "Emergency spotters report a twister on the ground near County Line, sheet metal ..."
+      },
+      {
+        "id": "threat_03",
+        "expected": "CIVIL_UNREST_ACTIVE_THREAT",
+        "predicted": "OTHER_GENERAL_INCIDENT",
+        "confidence": 0.3,
+        "text_snippet": "Protest turned hostile on 3rd St, demonstrators throwing pavers and breaking sto..."
+      }
+    ]
+  },
+  "entity_extraction": {
+    "fixture_name": "NER_BENCHMARK_DATASET",
+    "sample_count": 30,
+    "positive_samples": 20,
+    "negative_samples": 10,
+    "location_subspan_metrics": {
+      "matching_rule": "normalized sub-span containment",
+      "tp": 20,
+      "fp": 0,
+      "fn": 0,
+      "tn": 10,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    "location_exact_metrics": {
+      "matching_rule": "exact_normalized",
+      "tp": 18,
+      "fp": 2,
+      "fn": 2,
+      "tn": 10,
+      "precision": 0.9,
+      "recall": 0.9,
+      "f1": 0.9,
+      "support": 20
+    },
+    "location_span_metrics": {
+      "matching_rule": "normalized sub-span containment",
+      "tp": 20,
+      "fp": 0,
+      "fn": 0,
+      "tn": 10,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20
+    },
+    "joint_entity_metrics": {
+      "matching_rule": "Joint span + taxonomy type match (greedy 1-to-1 alignment)",
+      "tp": 37,
+      "fp": 11,
+      "fn": 1,
+      "tn": 0,
+      "precision": 0.7708,
+      "recall": 0.9737,
+      "f1": 0.8605,
+      "support": 38
+    },
+    "span_only_entity_metrics": {
+      "matching_rule": "Span-only match ignoring entity category (greedy 1-to-1 alignment)",
+      "tp": 37,
+      "fp": 11,
+      "fn": 1,
+      "tn": 0,
+      "precision": 0.7708,
+      "recall": 0.9737,
+      "f1": 0.8605,
+      "support": 38
+    },
+    "per_entity_type_metrics": {
+      "FACILITY": {
+        "matching_rule": "Joint type=FACILITY and span match",
+        "tp": 7,
+        "fp": 1,
+        "fn": 0,
+        "tn": 0,
+        "precision": 0.875,
+        "recall": 1.0,
+        "f1": 0.9333,
+        "support": 7
+      },
+      "INFRASTRUCTURE": {
+        "matching_rule": "Joint type=INFRASTRUCTURE and span match",
+        "tp": 6,
+        "fp": 0,
+        "fn": 1,
+        "tn": 0,
+        "precision": 1.0,
+        "recall": 0.8571,
+        "f1": 0.9231,
+        "support": 7
+      },
+      "LANDMARK": {
+        "matching_rule": "Joint type=LANDMARK and span match",
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "tn": 0,
+        "precision": 0.6667,
+        "recall": 1.0,
+        "f1": 0.8,
+        "support": 2
+      },
+      "LOCATION": {
+        "matching_rule": "Joint type=LOCATION and span match",
+        "tp": 9,
+        "fp": 0,
+        "fn": 0,
+        "tn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 9
+      },
+      "ORGANIZATION": {
+        "matching_rule": "Joint type=ORGANIZATION and span match",
+        "tp": 0,
+        "fp": 1,
+        "fn": 0,
+        "tn": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "ROAD": {
+        "matching_rule": "Joint type=ROAD and span match",
+        "tp": 4,
+        "fp": 0,
+        "fn": 0,
+        "tn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 4
+      },
+      "TRAPPED": {
+        "matching_rule": "Joint type=TRAPPED and span match",
+        "tp": 0,
+        "fp": 4,
+        "fn": 0,
+        "tn": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "UNCONSCIOUS": {
+        "matching_rule": "Joint type=UNCONSCIOUS and span match",
+        "tp": 0,
+        "fp": 1,
+        "fn": 0,
+        "tn": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "VEHICLE": {
+        "matching_rule": "Joint type=VEHICLE and span match",
+        "tp": 9,
+        "fp": 0,
+        "fn": 0,
+        "tn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 9
+      },
+      "VICTIM": {
+        "matching_rule": "Joint type=VICTIM and span match",
+        "tp": 0,
+        "fp": 3,
+        "fn": 0,
+        "tn": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      }
+    },
+    "elapsed_seconds": 1.786,
+    "mismatches": []
+  },
+  "urgency": {
+    "fixture_name": "CURATED_URGENCY_BENCHMARK",
+    "sample_count": 41,
+    "accuracy": 0.7805,
+    "macro_precision": 0.7756,
+    "macro_recall": 0.7864,
+    "macro_f1": 0.7736,
+    "critical_recall": 0.7692,
+    "critical_false_negative_rate": 0.2308,
+    "canonical_tiers": [
+      "CRITICAL",
+      "HIGH",
+      "MEDIUM",
+      "LOW"
+    ],
+    "per_tier": {
+      "CRITICAL": {
+        "tier": "CRITICAL",
+        "tp": 10,
+        "fp": 0,
+        "fn": 3,
+        "tn": 28,
+        "precision": 1.0,
+        "recall": 0.7692,
+        "f1": 0.8695,
+        "support": 13
+      },
+      "HIGH": {
+        "tier": "HIGH",
+        "tp": 6,
+        "fp": 3,
+        "fn": 1,
+        "tn": 31,
+        "precision": 0.6667,
+        "recall": 0.8571,
+        "f1": 0.75,
+        "support": 7
+      },
+      "MEDIUM": {
+        "tier": "MEDIUM",
+        "tp": 6,
+        "fp": 3,
+        "fn": 2,
+        "tn": 30,
+        "precision": 0.6667,
+        "recall": 0.75,
+        "f1": 0.7059,
+        "support": 8
+      },
+      "LOW": {
+        "tier": "LOW",
+        "tp": 10,
+        "fp": 3,
+        "fn": 3,
+        "tn": 25,
+        "precision": 0.7692,
+        "recall": 0.7692,
+        "f1": 0.7692,
+        "support": 13
+      }
+    },
+    "confusion_matrix": {
+      "CRITICAL": {
+        "CRITICAL": 10,
+        "HIGH": 1,
+        "MEDIUM": 0,
+        "LOW": 2
+      },
+      "HIGH": {
+        "CRITICAL": 0,
+        "HIGH": 6,
+        "MEDIUM": 0,
+        "LOW": 1
+      },
+      "MEDIUM": {
+        "CRITICAL": 0,
+        "HIGH": 2,
+        "MEDIUM": 6,
+        "LOW": 0
+      },
+      "LOW": {
+        "CRITICAL": 0,
+        "HIGH": 0,
+        "MEDIUM": 3,
+        "LOW": 10
+      }
+    },
+    "elapsed_seconds": 2.925,
+    "notice": "Engineering reference benchmark evaluation only. CrisiText does NOT provide operational urgency labels.",
+    "mismatches": [
+      {
+        "id": "amb_01",
+        "expected": "MEDIUM",
+        "predicted": "HIGH",
+        "confidence": 0.61,
+        "scenario": "ambiguous",
+        "text_snippet": "Someone said there might possibly be people trapped near the old mill, not sure ..."
+      },
+      {
+        "id": "hist_01",
+        "expected": "LOW",
+        "predicted": "MEDIUM",
+        "confidence": 0.95,
+        "scenario": "historical/non-active",
+        "text_snippet": "Warehouse burned yesterday evening; fire is fully extinguished and area is now s..."
+      },
+      {
+        "id": "hist_02",
+        "expected": "LOW",
+        "predicted": "MEDIUM",
+        "confidence": 0.92,
+        "scenario": "historical/non-active",
+        "text_snippet": "Old pedestrian bridge collapsed yesterday afternoon; barriers in place and river..."
+      },
+      {
+        "id": "neg_02",
+        "expected": "MEDIUM",
+        "predicted": "HIGH",
+        "confidence": 0.85,
+        "scenario": "negated",
+        "text_snippet": "Basement flooded with water but all occupants evacuated safely, no reports of pe..."
+      },
+      {
+        "id": "vuln_02",
+        "expected": "CRITICAL",
+        "predicted": "HIGH",
+        "confidence": 0.87,
+        "scenario": "vulnerable_populations",
+        "text_snippet": "Nursing home lost electrical power for medical ventilators, eight bedridden elde..."
+      },
+      {
+        "id": "vel_01",
+        "expected": "CRITICAL",
+        "predicted": "LOW",
+        "confidence": 0.74,
+        "scenario": "high_hazard_velocity",
+        "text_snippet": "Irrigation dam breach in progress, wall of water rushing rapidly toward low-lyin..."
+      },
+      {
+        "id": "coll_01",
+        "expected": "CRITICAL",
+        "predicted": "LOW",
+        "confidence": 0.74,
+        "scenario": "structural_collapse",
+        "text_snippet": "Market canopy collapsing right now under weight of storm debris, vendors scrambl..."
+      },
+      {
+        "id": "flood_01",
+        "expected": "HIGH",
+        "predicted": "LOW",
+        "confidence": 0.82,
+        "scenario": "flooding",
+        "text_snippet": "River embankment overflowed, floodwaters entering residential compound with dept..."
+      },
+      {
+        "id": "flood_02",
+        "expected": "LOW",
+        "predicted": "MEDIUM",
+        "confidence": 0.82,
+        "scenario": "flooding",
+        "text_snippet": "Ditch overflow causing minor water pooling on bicycle path, easily passable on f..."
+      }
+    ]
+  },
+  "embeddings": {
+    "fixture_name": "CURATED_SEMANTIC_PAIRS",
+    "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+    "embedding_dimension": 384,
+    "total_pairs_evaluated": 14,
+    "positive_pair_count": 5,
+    "negative_pair_count": 9,
+    "roc_auc": 0.8444,
+    "configured_threshold": 0.75,
+    "metrics_at_threshold": {
+      "threshold": 0.75,
+      "tp": 4,
+      "fp": 3,
+      "fn": 1,
+      "tn": 6,
+      "precision": 0.5714,
+      "recall": 0.8,
+      "f1": 0.6666,
+      "accuracy": 0.7143,
+      "total_pairs": 14
+    },
+    "roc_curve": {
+      "fpr": [
+        0.0,
+        0.1111,
+        0.1111,
+        0.1111,
+        0.1111,
+        0.1111,
+        0.2222,
+        0.3333,
+        0.3333,
+        0.4444,
+        0.5556,
+        0.6667,
+        0.7778,
+        0.8889,
+        1.0
+      ],
+      "tpr": [
+        0.0,
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        0.8,
+        0.8,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "thresholds": [
+        0.924,
+        0.914,
+        0.8655,
+        0.8495,
+        0.828,
+        0.8241,
+        0.7976,
+        0.758,
+        0.732,
+        0.6161,
+        0.2382,
+        0.227,
+        0.2199,
+        0.1942,
+        0.1515
+      ]
+    },
+    "norm_invariance_passed": true,
+    "self_similarity_passed": true,
+    "symmetry_passed": true,
+    "mean_positive_similarity": 0.8198,
+    "mean_negative_similarity": 0.4574,
+    "semantic_margin": 0.3624,
+    "elapsed_seconds": 1.964,
+    "pair_details": [
+      {
+        "pair_id": "high_fire_01",
+        "category": "high_similarity",
+        "domain": "fire",
+        "similarity": 0.8655,
+        "is_positive": true,
+        "predicted_positive_at_threshold": true
+      },
+      {
+        "pair_id": "high_collapse_02",
+        "category": "high_similarity",
+        "domain": "structural",
+        "similarity": 0.732,
+        "is_positive": true,
+        "predicted_positive_at_threshold": false
+      },
+      {
+        "pair_id": "high_flood_03",
+        "category": "high_similarity",
+        "domain": "flood",
+        "similarity": 0.8241,
+        "is_positive": true,
+        "predicted_positive_at_threshold": true
+      },
+      {
+        "pair_id": "high_gas_04",
+        "category": "high_similarity",
+        "domain": "hazmat",
+        "similarity": 0.8495,
+        "is_positive": true,
+        "predicted_positive_at_threshold": true
+      },
+      {
+        "pair_id": "high_storm_05",
+        "category": "high_similarity",
+        "domain": "storm",
+        "similarity": 0.828,
+        "is_positive": true,
+        "predicted_positive_at_threshold": true
+      },
+      {
+        "pair_id": "low_fire_medical_01",
+        "category": "lower_similarity",
+        "domain": "cross_domain",
+        "similarity": 0.2199,
+        "is_positive": false,
+        "predicted_positive_at_threshold": false
+      },
+      {
+        "pair_id": "low_collapse_power_02",
+        "category": "lower_similarity",
+        "domain": "cross_domain",
+        "similarity": 0.227,
+        "is_positive": false,
+        "predicted_positive_at_threshold": false
+      },
+      {
+        "pair_id": "low_flood_traffic_03",
+        "category": "lower_similarity",
+        "domain": "cross_domain",
+        "similarity": 0.1515,
+        "is_positive": false,
+        "predicted_positive_at_threshold": false
+      },
+      {
+        "pair_id": "low_gas_weather_04",
+        "category": "lower_similarity",
+        "domain": "cross_domain",
+        "similarity": 0.2382,
+        "is_positive": false,
+        "predicted_positive_at_threshold": false
+      },
+      {
+        "pair_id": "low_structural_tree_05",
+        "category": "lower_similarity",
+        "domain": "cross_domain",
+        "similarity": 0.1942,
+        "is_positive": false,
+        "predicted_positive_at_threshold": false
+      },
+      {
+        "pair_id": "adv_negation_fire_01",
+        "category": "adversarial_negation",
+        "domain": "fire",
+        "similarity": 0.914,
+        "is_positive": false,
+        "predicted_positive_at_threshold": true
+      },
+      {
+        "pair_id": "adv_state_trapped_02",
+        "category": "adversarial_state",
+        "domain": "structural",
+        "similarity": 0.6161,
+        "is_positive": false,
+        "predicted_positive_at_threshold": false
+      },
+      {
+        "pair_id": "adv_negation_flood_03",
+        "category": "adversarial_negation",
+        "domain": "flood",
+        "similarity": 0.7976,
+        "is_positive": false,
+        "predicted_positive_at_threshold": true
+      },
+      {
+        "pair_id": "adv_state_gas_04",
+        "category": "adversarial_state",
+        "domain": "hazmat",
+        "similarity": 0.758,
+        "is_positive": false,
+        "predicted_positive_at_threshold": true
+      }
+    ]
+  },
+  "performance": {
+    "fixture_name": "INCIDENT_BENCHMARK_DATASET",
+    "environment": {
+      "python_version": "3.13.5",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "operating_system": "Windows",
+      "architecture": "AMD64",
+      "processor": "Intel64 Family 6 Model 186 Stepping 3, GenuineIntel",
+      "process_pid": 18288,
+      "model_version": "all-MiniLM-L6-v2+heuristic-v1"
+    },
+    "cold_start": {
+      "methodology": "fresh subprocess first full inference",
+      "definition": "Time from fresh subprocess execution immediately before ML initialization through completion of first full inference_engine.analyze(...) call.",
+      "latency_ms": 33912.0,
+      "unit": "milliseconds",
+      "memory": {
+        "methodology": "Fresh subprocess Resident Set Size (RSS) and peak working set via psutil",
+        "initial_rss_mb": 17.64,
+        "post_inference_rss_mb": 664.19,
+        "rss_delta_mb": 646.55,
+        "peak_working_set_mb": 666.83,
+        "limitation_notice": "Process RSS reflects operating system virtual memory pages resident in RAM (Python runtime, PyTorch/ONNX runtime allocations, shared libraries). It represents process-level memory rather than isolated neural-network parameter weights."
+      }
+    },
+    "cold_start_latency_ms": 33912.0,
+    "warm_latency": {
+      "unit": "milliseconds",
+      "warmup_samples": 2,
+      "timed_samples": 25,
+      "p50_ms": 66.17,
+      "p90_ms": 75.92,
+      "p95_ms": 83.48,
+      "p99_ms": 153.71,
+      "mean_ms": 68.74,
+      "min_ms": 47.2,
+      "max_ms": 175.43,
+      "std_ms": 23.53,
+      "throughput_items_per_sec": 14.55,
+      "sample_count": 25,
+      "definition": "Latency of inference_engine.analyze(...) after model/runtime initialization and untimed warm-up have completed."
+    },
+    "memory": {
+      "methodology": "Fresh subprocess Resident Set Size (RSS) and peak working set via psutil",
+      "initial_rss_mb": 17.64,
+      "post_inference_rss_mb": 664.19,
+      "rss_delta_mb": 646.55,
+      "peak_working_set_mb": 666.83,
+      "limitation_notice": "Process RSS reflects operating system virtual memory pages resident in RAM (Python runtime, PyTorch/ONNX runtime allocations, shared libraries). It represents process-level memory rather than isolated neural-network parameter weights."
+    },
+    "elapsed_seconds": 70.185
+  },
+  "findings": [
+    {
+      "category": "measured_results",
+      "title": "Incident Classification Accuracy & Macro F1",
+      "details": "Measured accuracy of 0.9365 and macro F1 of 0.9411 across 63 curated benchmark samples."
+    },
+    {
+      "category": "measured_results",
+      "title": "Urgency Critical Recall & Safety",
+      "details": "Critical recall measured at 0.7692 with Critical false-negative rate of 0.2308."
+    },
+    {
+      "category": "measured_results",
+      "title": "Semantic Embedding Separation",
+      "details": "ROC-AUC measured at 0.8444 with a semantic separation margin of 0.3624 between positive and negative pairs."
+    },
+    {
+      "category": "limitations",
+      "title": "Reference Benchmark vs Real-World Distribution",
+      "details": "Evaluation is conducted against curated engineering benchmarks designed for determinism, boundary checking, and regression testing. It is NOT evidence of real-world 100% field accuracy under noisy, unconstrained disaster distributions."
+    },
+    {
+      "category": "limitations",
+      "title": "CrisiText Ground Truth Clarification",
+      "details": "CrisiText does NOT provide operational urgency labels or fine-grained token NER spans. Urgency labels in the benchmark are engineering reference labels derived from domain feature extraction rules."
+    },
+    {
+      "category": "engineering_observations",
+      "title": "Cold-Start Subprocess Isolation",
+      "details": "Cold-start latency measured at 33912.0 ms in a dedicated fresh Python subprocess immediately before ML initialization, observing a process RSS delta of 646.55 MB without in-process model cache contamination."
+    },
+    {
+      "category": "engineering_observations",
+      "title": "Fail-Soft Pipeline Degradation",
+      "details": "The inference pipeline gracefully degrades to PARTIAL or NEEDS_REVIEW status upon individual component failures while preserving surviving component outputs and schema validity."
+    },
+    {
+      "category": "engineering_observations",
+      "title": "Process Memory Interpretation",
+      "details": "Reported memory usage reflects OS process RSS and peak working set via psutil, which includes runtime overhead and memory pools rather than isolated tensor weights."
+    },
+    {
+      "category": "engineering_observations",
+      "title": "Warm Latency & Untimed Warm-Up",
+      "details": "Warm latency distribution measured across 25 timed inference iterations following 2 untimed warm-up calls, isolating model and runtime initialization from warm execution metrics."
+    }
+  ]
+}

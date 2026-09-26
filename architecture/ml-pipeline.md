@@ -112,7 +112,8 @@ Return ML Output Payload
 
 ### 3.5 Step 2D: People-at-Risk Extraction
 * **Logic:** Pattern extraction for cardinal numbers and victim entity references (e.g., *"3 children"*, *"family of 5"*, *"at least 20 passengers"*).
-* If ambiguous (e.g., *"multiple people trapped"*), count is set to estimated baseline (e.g. `2`) with confidence penalty, or left `null` with risk flag set in metadata.
+* **Strict No-Hallucination Policy:** Qualitative quantities (e.g., *"multiple people trapped"*, *"several injured"*) MUST NEVER be converted to an estimated numeric baseline (such as 2). Count strictly remains `null` with `confidence = null`, preserving qualitative risk signals (e.g., `MULTIPLE_PEOPLE`, `TRAPPED`) separately.
+* Qualitative quantity != numeric quantity. Only explicit or contextually verified numeric counts are extracted into `count`.
 * **Output Contract:**
   ```json
   "people_at_risk": {
@@ -140,20 +141,95 @@ Return ML Output Payload
 * **Model:** `sentence-transformers/all-MiniLM-L6-v2`.
 * **Dimension:** 384 floats.
 * **Normalization:** Unit L2 norm ($\|v\|_2 = 1.0$), enabling cosine similarity computation via fast dot product:
-  $$\text{Cosine Similarity}(u, v) = u \cdot v$$
+  $$\text{Cosine Similarity}(u, v) = u \cdot v \quad (\in [-1.0, 1.0])$$
+* **Model Loading:** Lazy loading on first inference; thread-safe process-level cache reuses loaded weights across calls and instances without reload latency.
+* **Batch Support:** Native vectorized batch encoding with strict input order preservation and output shape $(N, 384)$.
+* **Architectural Boundary & Responsibility:**
+  * **ML Responsibility (Aryan):** Produces normalized 384-d vector embeddings and scalar semantic similarity signals. Provides representation and similarity only.
+  * **Backend Responsibility (Daksh):** Fuses semantic similarity signals with spatial proximity (Haversine/gazetteer), temporal decay, and incident metadata to perform actual clustering, deduplication, and corroboration decisions.
+  * **Strict Negative Invariants:** The embedding engine MUST NOT decide duplicate status, create incident IDs, merge reports, or assign backend priority/urgency.
 * **Benchmark Baseline:** Phase 2 measured **9.68 ms** per text inference on local CPU.
 * **Storage:** Embedding vectors are stored in memory or PostgreSQL array for fast incident correlation.
 
 ---
 
 ## 4. Confidence & Quality Calibration
-1. **Component-Level Confidence:** Every extracted field carries an individual confidence score in $[0.0, 1.0]$.
-2. **Overall Model Confidence:** Calculated as the weighted harmonic mean of component confidences.
-3. **Threshold for Review (`NEEDS_REVIEW`):** If overall confidence $< 0.60$ or if critical conflicts are detected (e.g., urgency reported `CRITICAL` but text contains joke tokens), `processing_status` is set to `NEEDS_REVIEW`.
-4. **Resilience Invariant:** The pipeline NEVER throws an uncaught exception that halts execution. If an extraction step fails, it emits `null` for that field, appends a descriptive item to `warnings`, and sets `processing_status = "PARTIAL"`.
+1. **Component-Level Confidence:** Every extracted field carries an individual proxy confidence score strictly bounded in $[0.0, 1.0]$. Unextracted, undetermined, or non-applicable fields emit `null`; the engine strictly prohibits fabricating default or fallback confidence scores.
+2. **Overall Model Confidence (Weighted Harmonic Mean):**
+   Overall ML confidence is aggregated across active confidence-bearing components $S$ via a weighted harmonic mean:
+   $$C_{\text{overall}} = \frac{\sum_{i \in S} w_i}{\sum_{i \in S} \frac{w_i}{c_i}}$$
+   where $c_i \in (0.0, 1.0]$ and $w_i > 0$.
+3. **Component Weights Specification & Provisional Policy:**
+   * **Architectural Gap Notice:** While earlier architecture specified a weighted harmonic mean for overall confidence, the exact component weights were *not* previously defined in repository ADRs, contracts, or schemas.
+   * **Provisional Baseline Policy (Feature 9):** To ensure deterministic, operational triage, the pipeline establishes a documented provisional baseline:
+     * `incident_type` ($w = 0.30$): Primary hazard category classification.
+     * `urgency` ($w = 0.25$): Operational life-safety criticality tier.
+     * `location` ($w = 0.20$): Physical spatial grounding.
+     * `people_at_risk` ($w = 0.15$): Direct human life-threat count certainty.
+     * `required_response` ($w = 0.10$): Tactical capability routing.
+   * **Configurability:** All weights are externalized in `MLConfig` and environment variables (`CONFIDENCE_WEIGHT_<COMPONENT>`) and can be overridden programmatically without altering engine logic.
+4. **Zero, Null, and Embedding Semantics:**
+   * **Zero Confidence ($c_i = 0.0$):** In accordance with the mathematical limit $\lim_{c_i \to 0^+} H = 0.0$, if any active component has confidence 0.0, overall confidence collapses strictly to `0.0` without division-by-zero error, and triggers `NEEDS_REVIEW`.
+   * **Null / Missing Components:** If a component is absent or not applicable (e.g. no location mentioned), it is cleanly excluded from $S$; it does not penalize overall confidence to 0.0, nor does it fabricate 1.0.
+   * **Embeddings (Feature 8):** Dense semantic vectors have no intrinsic confidence score. They are explicitly excluded from the harmonic mean aggregation.
+5. **Deterministic Status Resolution Precedence:**
+   * **1. `FAILED`:** All inference components failed or zero meaningful inferences occurred.
+   * **2. `NEEDS_REVIEW`:** Overall confidence $< 0.60$ (or explicit critical conflict flag, e.g., hoax tokens). Requires human dispatcher review.
+   * **3. `PARTIAL`:** One or more components failed extraction, but remaining evidence achieves overall confidence $\ge 0.60$. Usable intelligence is preserved.
+   * **4. `SUCCESS`:** All components executed without failure and overall confidence $\ge 0.60$.
+6. **Decoupling Invariants & Calibration Scope:**
+   * **ML Confidence $\ne$ Backend Priority:** Overall ML confidence measures evidence reliability, NOT incident importance or priority score (ADR-004).
+   * **Urgency Confidence $\ne$ Urgency Score:** Urgency confidence reflects feature extraction certainty, not severity points (Feature 7).
+   * **Proxy Confidence $\ne$ Calibrated Probability:** Scores reflect engineering quality aggregation over correlated text evidence; they are not claimed as statistical posterior probabilities.
+7. **Resilience Invariant:** The pipeline NEVER throws an uncaught exception that halts execution. If an extraction step fails, it emits `null` for that field, appends descriptive diagnostics to `warnings`, and degrades gracefully according to the deterministic precedence hierarchy.
 
 ---
 
 ## 5. Model Strategy & Independent Evolution
 * The ML architecture decouples the embedding generator from the entity extractor and urgency model.
 * **Aryan's Domain:** Aryan can independently swap or upgrade the embedding backbone (e.g., benchmarking `crisistransformers/CT-M1-Complete-SE` against `all-MiniLM-L6-v2`) without touching backend ingestion or database schemas, provided the output conforms to the canonical contract.
+
+---
+
+## 6. Unified Inference Pipeline Orchestration (Feature 10)
+
+### 6.1 Public Entry Point
+The unified ML pipeline provides exactly ONE canonical public orchestration entry point:
+```python
+from ml.pipeline import inference_engine
+
+result = inference_engine.analyze(report, report_id="...", location_hint=...)
+```
+Or equivalently via instance instantiation:
+```python
+from ml.pipeline import InferenceEngine
+
+engine = InferenceEngine()
+result = engine.analyze(report, report_id="...", location_hint=...)
+```
+
+### 6.2 Sequential Stage Order
+Execution proceeds in fixed, deterministic order:
+1. **Preprocessing (`TextCleaner`):** Unicode normalization, sanitization, length validation.
+2. **Incident Classification (`IncidentClassifier`):** Crisis hazard categorization (`predict`).
+3. **Entity Extraction (`LocationEntityExtractor` & `PeopleRiskExtractor`):** Verbatim location phrasing, victim counts, and named entity tokens.
+4. **Required Response Mapping (`RequiredResponseExtractor`):** Tactical agency capability routing.
+5. **Operational Urgency (`UrgencyEngine`):** Life-safety, hazard velocity, and vulnerability scoring.
+6. **Dense Semantic Embedding (`SentenceTransformerEmbedder`):** 384-dimensional unit vector generation.
+7. **Confidence Calibration & Quality Gating (`ConfidenceEngine`):** Weighted harmonic mean confidence and deterministic operational status resolution.
+8. **Final Assembly & Canonical Sorting:** Merges entities and response needs with deterministic ordering; deduplicates warnings.
+9. **Final Schema Validation Gate (`SchemaValidator`):** Validates final output against `ml/schemas/incident_output.json`.
+
+### 6.3 Fail-Fast vs. Fail-Soft Policy
+* **Fail-Fast Stages:**
+  * **Input Validation & Preprocessing:** If input is not a string/dict/context, or contains empty/whitespace-only text, raises `MLInputError` immediately. Downstream components cannot proceed without valid text.
+  * **Final Schema Validation:** If the assembled ML output violates `ml/schemas/incident_output.json`, raises `MLSchemaValidationError`. Malformed payloads are never returned to callers.
+* **Fail-Soft Stages (Recoverable Component Failures):**
+  * Failure in any individual inference component (`classification`, `location`, `people_at_risk`, `required_response`, `urgency`, `embeddings`, or `confidence_engine`) is isolated via exception containment.
+  * Recoverable failures set the component's output to null/empty, append diagnostic warnings, and degrade `processing_status` to `PARTIAL` or `NEEDS_REVIEW` according to Feature 9 precedence rules.
+  * Complete failure of all inference components degrades strictly to `FAILED`.
+
+### 6.4 Embedding Reference & Coordinate Policies
+* **Embedding Reference:** The canonical output provides `"embedding_reference": "emb-{report_id}"` on successful embedding generation. If embedding fails or is absent, `"embedding_reference"` is strictly `null` (never fabricated). The raw 384-dimensional vector is omitted from the canonical contract by default and only included if explicitly requested (`include_embedding=True`).
+* **Coordinates (ADR-009):** `latitude` and `longitude` are strictly `null` unless verified via controlled gazetteer lookup. The pipeline never invents or hallucinates coordinates.
+
