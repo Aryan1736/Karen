@@ -185,6 +185,15 @@
       "type": ["string", "null"],
       "description": "Identifier or key referencing the 384-dimensional dense semantic embedding."
     },
+    "embedding": {
+      "type": "array",
+      "description": "Normalized 384-dimensional dense semantic embedding vector (all-MiniLM-L6-v2) for cosine similarity calculation. Optional internal ML-to-backend payload.",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 384,
+      "maxItems": 384
+    },
     "processing_status": {
       "type": "string",
       "enum": ["SUCCESS", "PARTIAL", "FAILED", "NEEDS_REVIEW"],
