@@ -8,6 +8,14 @@ Responsible for:
 - People-at-risk count extraction
 """
 
+from ml.extraction.location_entity_extractor import (
+    EntityMention,
+    GazetteerConfig,
+    LocationEntityExtractor,
+    LocationEntityResult,
+    LocationPrediction,
+    extract_location_and_entities,
+)
 from ml.extraction.people_risk_extractor import (
     PeopleRiskExtractor,
     PeopleRiskResult,
@@ -16,6 +24,12 @@ from ml.extraction.people_risk_extractor import (
 )
 
 __all__: list[str] = [
+    "EntityMention",
+    "GazetteerConfig",
+    "LocationEntityExtractor",
+    "LocationEntityResult",
+    "LocationPrediction",
+    "extract_location_and_entities",
     "PeopleRiskExtractor",
     "PeopleRiskResult",
     "RiskEvidence",
