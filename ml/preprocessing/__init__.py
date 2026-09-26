@@ -7,4 +7,16 @@ sanitizing control characters/null bytes, while strictly preserving
 punctuation and casing signals critical for distress and urgency scoring.
 """
 
-__all__: list[str] = []
+from ml.preprocessing.text_cleaner import (
+    PreprocessedText,
+    TextCleaner,
+    clean_text,
+    preprocess_report,
+)
+
+__all__: list[str] = [
+    "PreprocessedText",
+    "TextCleaner",
+    "clean_text",
+    "preprocess_report",
+]
