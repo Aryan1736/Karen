@@ -140,7 +140,13 @@ class InferenceEngine:
 
         # Component instances (support dependency injection for testing and failure injection)
         self.text_cleaner = text_cleaner or TextCleaner(config=self.config)
-        self.classifier = classifier or IncidentClassifier(config=self.config)
+        self.classifier = classifier or IncidentClassifier(
+            config=self.config,
+            mode="keyword" if self.config.lightweight_mode else "hybrid",
+        )
+        if self.config.lightweight_mode and hasattr(self.classifier, "mode"):
+            if getattr(self.classifier, "mode") in ("hybrid", "semantic"):
+                self.classifier.mode = "keyword"
         self.location_extractor = location_extractor or LocationEntityExtractor(config=self.config)
         self.people_extractor = people_extractor or PeopleRiskExtractor(config=self.config)
         self.response_extractor = response_extractor or RequiredResponseExtractor(config=self.config)
@@ -523,6 +529,9 @@ class InferenceEngine:
         effective_report_id: str,
         all_warnings: list[str],
     ) -> tuple[list[float] | None, str | None, float]:
+        if self.config.lightweight_mode:
+            return None, None, 0.0
+
         t0 = time.perf_counter()
         embedding_vec: list[float] | None = None
         embedding_reference: str | None = None
@@ -708,9 +717,20 @@ _default_inference_engine: InferenceEngine | None = None
 def get_inference_engine(config: MLConfig | None = None) -> InferenceEngine:
     """Returns the process-level singleton InferenceEngine instance."""
     global _default_inference_engine
-    if _default_inference_engine is None or config is not None:
-        _default_inference_engine = InferenceEngine(config=config)
+    active_config = config or get_ml_config()
+    if (
+        _default_inference_engine is None
+        or config is not None
+        or _default_inference_engine.config.lightweight_mode != active_config.lightweight_mode
+    ):
+        _default_inference_engine = InferenceEngine(config=active_config)
     return _default_inference_engine
+
+
+def reset_inference_engine() -> None:
+    """Resets the process-level singleton InferenceEngine instance."""
+    global _default_inference_engine
+    _default_inference_engine = None
 
 
 # Public module-level instance for direct import
@@ -720,5 +740,6 @@ __all__: list[str] = [
     "InferenceEngine",
     "inference_engine",
     "get_inference_engine",
+    "reset_inference_engine",
 ]
 

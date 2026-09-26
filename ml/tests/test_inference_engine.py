@@ -696,3 +696,39 @@ class TestPrivacyAndLogging:
                 for k, v in extra.items():
                     assert sensitive_text not in str(v)
                     assert "John Doe" not in str(v)
+
+
+# ==============================================================================
+# 8. Lightweight Mode (Memory-Constrained Deployments)
+# ==============================================================================
+
+
+class TestLightweightMode:
+    """Verifies that ML_LIGHTWEIGHT_MODE=true runs without neural models and complies with schema."""
+
+    def test_36_lightweight_mode_omits_embedding_and_validates(
+        self, canonical_schema: dict
+    ) -> None:
+        """Verifies lightweight mode runs without embedding generation and strictly validates."""
+        cfg = MLConfig(lightweight_mode=True)
+        engine = InferenceEngine(config=cfg)
+
+        text = "Flash flood rising fast near Nayapalli, two people stranded"
+        res = engine.analyze(text, report_id="rep-lw-test-01")
+
+        assert "embedding" not in res
+        assert res["embedding_reference"] is None
+        assert res["incident_type"]["label"] == "FLOOD_FLASH_FLOOD"
+        assert res["location"]["latitude"] is None
+        assert res["location"]["longitude"] is None
+        jsonschema.validate(instance=res, schema=canonical_schema)
+
+    def test_37_lightweight_mode_uses_keyword_classification(self) -> None:
+        """Verifies classifier in lightweight mode operates with keyword method."""
+        cfg = MLConfig(lightweight_mode=True)
+        engine = InferenceEngine(config=cfg)
+
+        assert engine.classifier.mode == "keyword"
+        res = engine.classifier.predict("Building fire and smoke near Kalpana square")
+        assert res.method == "keyword"
+        assert res.label == "FIRE_WILDFIRE_EXPLOSION"

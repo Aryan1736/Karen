@@ -97,6 +97,9 @@ class Settings(BaseSettings):
     # Operational Engine Settings
     DUPLICATE_SIMILARITY_THRESHOLD: float = 0.85
 
+    # ML Pipeline Runtime Mode
+    ML_LIGHTWEIGHT_MODE: bool = False
+
     @field_validator("CORS_ORIGINS")
     @classmethod
     def assemble_cors_origins(cls, v: Any) -> list[str]:
