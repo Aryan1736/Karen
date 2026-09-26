@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export type NavigationView = 
+  | 'landing'
   | 'command-deck' 
   | 'incident-streams' 
   | 'investigation' 
@@ -24,6 +25,7 @@ export interface NavigationContextValue {
 }
 
 const VIEW_HASH_MAP: Record<NavigationView, string> = {
+  'landing': '#landing',
   'command-deck': '#deck',
   'incident-streams': '#streams',
   'investigation': '#investigation',
@@ -32,6 +34,7 @@ const VIEW_HASH_MAP: Record<NavigationView, string> = {
 };
 
 const HASH_VIEW_MAP: Record<string, NavigationView> = {
+  '#landing': 'landing',
   '#deck': 'command-deck',
   '#streams': 'incident-streams',
   '#investigation': 'investigation',
@@ -40,14 +43,18 @@ const HASH_VIEW_MAP: Record<string, NavigationView> = {
 };
 
 const getViewFromHash = (hash: string): NavigationView => {
-  return HASH_VIEW_MAP[hash.toLowerCase()] || 'command-deck';
+  const normalized = hash.toLowerCase();
+  if (!normalized || normalized === '#' || normalized === '#landing') {
+    return 'landing';
+  }
+  return HASH_VIEW_MAP[normalized] || 'landing';
 };
 
 const NavigationContext = createContext<NavigationContextValue | undefined>(undefined);
 
 export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeView, setActiveViewState] = useState<NavigationView>(() => 
-    typeof window !== 'undefined' ? getViewFromHash(window.location.hash) : 'command-deck'
+    typeof window !== 'undefined' ? getViewFromHash(window.location.hash) : 'landing'
   );
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<IncidentPriorityFilter>('ALL');

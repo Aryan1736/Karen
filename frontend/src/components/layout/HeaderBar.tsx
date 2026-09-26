@@ -40,7 +40,20 @@ export const HeaderBar: React.FC = () => {
   return (
     <header className="header-bar" role="banner">
       <div className="header-left">
-        <div className="header-brand-group">
+        <div
+          className="header-brand-group clickable"
+          onClick={() => setActiveView('landing')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setActiveView('landing');
+            }
+          }}
+          title="Return to Tingle Landing Page"
+          aria-label="Return to Tingle Landing Page"
+        >
           <span className="brand-logo-badge">TINGLE</span>
           <Badge variant="p2-medium" size="sm">TAC-OPS</Badge>
         </div>

@@ -27,6 +27,23 @@
   box-shadow: 2px 2px 0 var(--color-void-dark);
 }
 
+.header-brand-group.clickable {
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--transition-tactical);
+}
+
+.header-brand-group.clickable:hover {
+  background-color: var(--color-spider-red-bright);
+  box-shadow: 3px 3px 0 var(--color-void-dark);
+  transform: translate(-1px, -1px);
+}
+
+.header-brand-group.clickable:active {
+  box-shadow: 1px 1px 0 var(--color-void-dark);
+  transform: translate(1px, 1px);
+}
+
 .brand-logo-badge {
   font-family: var(--font-display);
   font-size: 20px;

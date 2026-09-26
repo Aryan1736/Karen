@@ -3,6 +3,7 @@ import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import { WebSocketProvider } from './context/WebSocketContext';
 import { SimulationStrip, HeaderBar, FooterBar } from './components/layout';
 import {
+  LandingPageView,
   CommandDeckView,
   IncidentStreamsView,
   InvestigationView,
@@ -13,6 +14,10 @@ import './App.css';
 
 const AppViewport: React.FC = () => {
   const { activeView } = useNavigation();
+
+  if (activeView === 'landing') {
+    return <LandingPageView />;
+  }
 
   return (
     <div className="command-center">
