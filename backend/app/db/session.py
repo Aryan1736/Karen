@@ -32,3 +32,11 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+def dispose_engine() -> None:
+    """
+    Dispose of the connection pool used by the SQLAlchemy engine.
+    Ensures all checked-in connections are closed cleanly on shutdown.
+    """
+    engine.dispose()

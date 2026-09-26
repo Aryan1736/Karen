@@ -6,7 +6,9 @@ DO NOT call Base.metadata.create_all() on startup.
 import asyncio
 from contextlib import asynccontextmanager
 import logging
+import os
 from fastapi import Depends, FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -19,9 +21,12 @@ from .core.envelope import (
     success_response,
 )
 from .core.exceptions import setup_exception_handlers
-from .db.session import get_db
+from .core.logging import configure_logging
+from .db.session import dispose_engine, get_db
 from .services.websocket_manager import connection_manager
 
+# Configure application logging level and formatting from settings.LOG_LEVEL
+configure_logging()
 logger = logging.getLogger("karen.backend")
 
 
@@ -29,10 +34,25 @@ logger = logging.getLogger("karen.backend")
 async def lifespan(app: FastAPI):
     """
     Application lifespan context manager:
+    - Verifies single-worker deployment invariant for in-memory WebSocket manager.
     - Registers running ASGI event loop for thread-safe WebSocket broadcasts.
     - Initiates 30-second server keepalive heartbeat loop.
     - Cleanly cancels heartbeat task and closes active sockets on shutdown.
+    - Disposes of SQLAlchemy database engine connection pool on shutdown.
     """
+    web_concurrency = os.getenv("WEB_CONCURRENCY")
+    if web_concurrency:
+        try:
+            if int(web_concurrency) > 1:
+                logger.warning(
+                    "WEB_CONCURRENCY is set to %s. Karen's Ear uses an in-memory WebSocket "
+                    "ConnectionManager and must be deployed with exactly 1 worker (--workers 1) "
+                    "to prevent isolated client registries across processes.",
+                    web_concurrency,
+                )
+        except ValueError:
+            pass
+
     loop = asyncio.get_running_loop()
     connection_manager.set_event_loop(loop)
     heartbeat_task = asyncio.create_task(connection_manager.heartbeat_loop(interval=30.0))
@@ -46,6 +66,8 @@ async def lifespan(app: FastAPI):
             pass
         await connection_manager.close_all()
         connection_manager.set_event_loop(None)
+        dispose_engine()
+        logger.info("Database engine pool disposed.")
 
 
 app = FastAPI(
@@ -55,6 +77,17 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan,
 )
+
+# CORS middleware for cross-origin frontend communication
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["X-Request-Id"],
+)
+
 
 
 @app.middleware("http")
@@ -110,7 +143,11 @@ def health_check(request: Request, db: Session = Depends(get_db)):
             request_id=req_id,
         )
     except Exception as exc:
-        logger.error("Health check database probe failed: %s", exc)
+        logger.error(
+            "[%s] Health check database probe failed: %s",
+            req_id,
+            type(exc).__name__,
+        )
         return error_response(
             code="DATABASE_UNAVAILABLE",
             message="Database connection failed",

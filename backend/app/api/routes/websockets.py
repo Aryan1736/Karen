@@ -31,7 +31,7 @@ async def websocket_events_endpoint(websocket: WebSocket) -> None:
         while True:
             # Read incoming frames from client (e.g. keepalive PONG)
             try:
-                raw_text = await websocket.receive_text()
+                client_frame = await websocket.receive_text()
             except WebSocketDisconnect:
                 break
             except Exception as recv_err:
@@ -39,10 +39,14 @@ async def websocket_events_endpoint(websocket: WebSocket) -> None:
                 break
 
             try:
-                message = json.loads(raw_text)
+                message = json.loads(client_frame)
             except Exception:
-                # Do not send ERROR events for malformed client frames. Ignore/log safely.
-                logger.warning("Malformed non-JSON client frame received over WebSocket: %s", raw_text)
+                # Do not send ERROR events for malformed client frames.
+                # Safe operational log: log frame length only, never raw payload.
+                logger.warning(
+                    "Malformed non-JSON client frame received over WebSocket (length: %d)",
+                    len(client_frame),
+                )
                 continue
 
             if isinstance(message, dict):
@@ -50,9 +54,9 @@ async def websocket_events_endpoint(websocket: WebSocket) -> None:
                 if msg_type == "PONG":
                     connection_manager.record_pong(websocket)
                 else:
-                    logger.debug("Received unhandled client message: %s", message)
+                    logger.debug("Received unhandled client message type: %s", msg_type)
             else:
-                logger.debug("Received non-dict JSON client frame: %s", message)
+                logger.debug("Received non-dict JSON client frame of type: %s", type(message).__name__)
     except Exception as exc:
         logger.warning("WebSocket connection encountered unhandled error: %s", exc)
     finally:

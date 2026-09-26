@@ -1,8 +1,11 @@
 """
 Karen's Ear — Application Configuration & Settings
 """
+import json
 from pathlib import Path
+from typing import Any, Union
 from urllib.parse import urlparse
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -51,6 +54,14 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
 
+    # CORS Configuration
+    CORS_ORIGINS: Union[list[str], str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ]
+
     # Database
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/postgres"
 
@@ -60,6 +71,44 @@ class Settings(BaseSettings):
 
     # Operational Engine Settings
     DUPLICATE_SIMILARITY_THRESHOLD: float = 0.85
+
+    @field_validator("CORS_ORIGINS")
+    @classmethod
+    def assemble_cors_origins(cls, v: Any) -> list[str]:
+        origins: list[str] = []
+        if isinstance(v, str):
+            s = v.strip()
+            if not s:
+                return []
+            if s.startswith("[") and s.endswith("]"):
+                try:
+                    parsed = json.loads(s)
+                    if isinstance(parsed, list):
+                        origins = [str(item).strip() for item in parsed if str(item).strip()]
+                except Exception:
+                    origins = [part.strip() for part in s.split(",") if part.strip()]
+            else:
+                origins = [part.strip() for part in s.split(",") if part.strip()]
+        elif isinstance(v, (list, tuple, set)):
+            origins = [str(item).strip() for item in v if str(item).strip()]
+        else:
+            return v
+
+        if "*" in origins:
+            raise ValueError(
+                "Wildcard origin '*' is not permitted when credentials are enabled. "
+                "Specify explicit origins instead."
+            )
+        return [o.rstrip("/") for o in origins]
+
+    @field_validator("LOG_LEVEL")
+    @classmethod
+    def validate_log_level(cls, v: str) -> str:
+        valid_levels = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"}
+        upper = v.strip().upper()
+        if upper not in valid_levels:
+            return "INFO"
+        return upper
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
@@ -92,6 +141,7 @@ class Settings(BaseSettings):
             f"DATABASE_URL={self.get_masked_db_url()!r}, "
             f"BACKEND_URL={self.BACKEND_URL!r}, "
             f"FRONTEND_URL={self.FRONTEND_URL!r}, "
+            f"CORS_ORIGINS={self.CORS_ORIGINS!r}, "
             f"DUPLICATE_SIMILARITY_THRESHOLD={self.DUPLICATE_SIMILARITY_THRESHOLD}, "
             f"LOG_LEVEL={self.LOG_LEVEL!r})"
         )
