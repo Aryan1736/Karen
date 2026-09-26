@@ -51,6 +51,9 @@ async def request_tracing_middleware(request: Request, call_next):
 # Register global canonical error envelope handlers
 setup_exception_handlers(app)
 
+from .api.routes.reports import router as reports_router
+app.include_router(reports_router)
+
 
 @app.get("/health", status_code=status.HTTP_200_OK)
 def health_check(request: Request, db: Session = Depends(get_db)):

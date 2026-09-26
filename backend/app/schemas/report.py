@@ -69,6 +69,17 @@ class RawReportCreate(KarenBaseModel):
     def ensure_report_id(self) -> "RawReportCreate":
         if not self.report_id or not self.report_id.strip():
             self.report_id = f"rep-{uuid.uuid4()}"
+        else:
+            self.report_id = self.report_id.strip()
+        return self
+
+    @model_validator(mode="after")
+    def validate_synthetic_guardrail(self) -> "RawReportCreate":
+        src = self.source.value if hasattr(self.source, "value") else str(self.source)
+        if src == "simulator" and not self.is_synthetic:
+            raise ValueError("Reports with source 'simulator' must have is_synthetic set to True.")
+        if src == "manual" and self.is_synthetic:
+            raise ValueError("Reports with source 'manual' must have is_synthetic set to False.")
         return self
 
 
