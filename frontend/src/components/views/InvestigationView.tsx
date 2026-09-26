@@ -1,50 +1,93 @@
-import React from 'react';
-import { Search, ArrowLeft, ShieldAlert, AlertTriangle, Radio, RotateCcw } from 'lucide-react';
-import { Badge, Button } from '../ui';
+import React, { useCallback } from 'react';
+import { 
+  Search, 
+  ArrowLeft, 
+  ShieldAlert, 
+  AlertTriangle, 
+  Radio, 
+  WifiOff,
+  RotateCcw
+} from 'lucide-react';
+import { Button } from '../ui';
 import { useNavigation } from '../../context/NavigationContext';
 import { useIncidentDetail } from '../../hooks/useIncidentDetail';
+import { useBackendHealth } from '../../hooks/useBackendHealth';
+import {
+  InvestigationHeader,
+  IncidentFactPanel,
+  EvidenceReportList,
+  IncidentTimeline,
+  AuditTracePanel
+} from './investigation';
 import './InvestigationView.css';
 
 export const InvestigationView: React.FC = () => {
-  const { selectedIncidentId, setSelectedIncidentId, setActiveView } = useNavigation();
+  const { 
+    selectedIncidentId, 
+    setSelectedIncidentId, 
+    setActiveView 
+  } = useNavigation();
+
+  const { isOnline, checkHealth } = useBackendHealth();
   const { data, isLoading, error, refetch } = useIncidentDetail(selectedIncidentId);
 
+  const handleBackToDeck = useCallback(() => {
+    setActiveView('command-deck');
+  }, [setActiveView]);
+
+  const handleNavigateToStreams = useCallback(() => {
+    setActiveView('incident-streams');
+  }, [setActiveView]);
+
+  const handleNavigateToAudit = useCallback(() => {
+    setActiveView('audit-trail');
+  }, [setActiveView]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedIncidentId(null);
+  }, [setSelectedIncidentId]);
+
+  // STATE 1: No Incident Selected
   if (!selectedIncidentId) {
     return (
       <div className="investigation-view" role="region" aria-label="Investigation Evidence Board">
-        <div className="investigation-header">
-          <div className="investigation-title-group">
-            <Search size={18} color="var(--color-multiverse-cyan)" />
-            <h2 className="investigation-title">INCIDENT INVESTIGATION & EVIDENCE BOARD</h2>
+        <header className="investigation-empty-header">
+          <div className="investigation-empty-title-group">
+            <Search size={18} className="text-cyan" />
+            <h1 className="investigation-empty-heading">INCIDENT INVESTIGATION & EVIDENCE BOARD</h1>
           </div>
           <Button 
+            type="button"
             variant="secondary" 
             size="sm" 
-            onClick={() => setActiveView('command-deck')}
+            onClick={handleBackToDeck}
+            aria-label="Return to Command Deck"
           >
             <ArrowLeft size={14} style={{ marginRight: 6 }} />
             BACK TO COMMAND DECK
           </Button>
-        </div>
+        </header>
 
-        <div className="investigation-empty-container">
+        <main className="investigation-empty-container">
           <div className="investigation-empty-card">
             <div className="investigation-empty-icon">
               <ShieldAlert size={48} color="var(--color-hazard-orange)" />
             </div>
-            <h3 className="investigation-empty-title">No Incident Selected</h3>
+            <h2 className="investigation-empty-title">NO INCIDENT SELECTED</h2>
             <p className="investigation-empty-text">
-              Select an active incident from the Command Deck queue to examine multi-source signal triangulation, explainable priority factors, and fused dispatch timelines.
+              Select an active incident from the Command Deck triage queue or tactical map to examine multi-source signal triangulation, explainable priority factors, fused raw dispatches, and chronological incident timelines.
             </p>
             <Button 
+              type="button"
               variant="primary" 
               size="md" 
-              onClick={() => setActiveView('command-deck')}
+              onClick={handleBackToDeck}
+              aria-label="Open Command Deck Queue"
             >
               OPEN COMMAND DECK QUEUE
             </Button>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -54,174 +97,92 @@ export const InvestigationView: React.FC = () => {
   const auditTrail = data?.audit_trail || [];
 
   return (
-    <div className="investigation-view" role="region" aria-label="Investigation Evidence Board">
-      <div className="investigation-header">
-        <div className="investigation-title-group">
-          <Search size={18} color="var(--color-multiverse-cyan)" />
-          <h2 className="investigation-title">
-            INVESTIGATION // EVIDENCE BOARD [{selectedIncidentId}]
-          </h2>
-          {incident && (
-            <Badge variant={incident.priority?.level === 'CRITICAL' ? 'p0-critical' : 'p1-high'} size="sm">
-              {incident.status} // {incident.priority?.level} ({Math.round(incident.priority?.score ?? 0)} PTS)
-            </Badge>
-          )}
-        </div>
-        <div className="investigation-actions">
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            onClick={() => refetch()}
-            title="Refresh incident details"
+    <div className="investigation-view" role="region" aria-label={`Investigation Evidence Board for ${selectedIncidentId}`}>
+      {/* Backend Disconnected Warning Banner */}
+      {isOnline === false && (
+        <aside className="inv-offline-banner" role="alert" aria-live="assertive">
+          <WifiOff size={16} className="inv-offline-icon" />
+          <span className="font-mono inv-offline-msg">
+            BACKEND SERVICE DISCONNECTED — REAL-TIME TELEMETRY UNREACHABLE
+          </span>
+          <button
+            type="button"
+            className="inv-offline-reconnect-btn font-headline"
+            onClick={() => { checkHealth(); refetch(); }}
           >
-            <RotateCcw size={14} style={{ marginRight: 6 }} />
-            REFETCH
-          </Button>
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            onClick={() => setSelectedIncidentId(null)}
-          >
-            CLEAR SELECTION
-          </Button>
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            onClick={() => setActiveView('command-deck')}
-          >
-            <ArrowLeft size={14} style={{ marginRight: 6 }} />
-            BACK TO DECK
-          </Button>
-        </div>
-      </div>
+            RECONNECT
+          </button>
+        </aside>
+      )}
 
-      {isLoading && (
-        <div className="investigation-empty-container">
-          <Radio size={36} color="var(--color-multiverse-cyan)" className="rotating" />
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, marginTop: 12 }}>
+      {/* Investigation Header */}
+      <InvestigationHeader
+        incident={incident || null}
+        selectedIncidentId={selectedIncidentId}
+        onBackToDeck={handleBackToDeck}
+        onNavigateToStreams={handleNavigateToStreams}
+        onNavigateToAudit={handleNavigateToAudit}
+        onRefetch={refetch}
+        onClearSelection={handleClearSelection}
+        isLoading={isLoading}
+      />
+
+      {/* STATE 2: Loading State */}
+      {isLoading && !data && (
+        <main className="investigation-empty-container">
+          <Radio size={40} className="text-cyan spinning" />
+          <p className="font-mono text-sm mt-3">
             FETCHING INCIDENT EVIDENCE [{selectedIncidentId}]...
           </p>
-        </div>
+        </main>
       )}
 
-      {error && (
-        <div className="investigation-empty-container">
-          <div className="investigation-empty-card" style={{ borderColor: 'var(--color-hazard-crimson)' }}>
-            <AlertTriangle size={36} color="var(--color-hazard-crimson)" />
-            <h3 className="investigation-empty-title" style={{ color: 'var(--color-hazard-crimson)', marginTop: 12 }}>
-              FETCH FAILURE
-            </h3>
-            <p className="investigation-empty-text">{error}</p>
-            <Button variant="secondary" size="md" onClick={() => refetch()}>
-              RETRY FETCH
-            </Button>
+      {/* STATE 3: API Error State */}
+      {!isLoading && error && !data && (
+        <main className="investigation-empty-container">
+          <div className="investigation-empty-card card-error">
+            <AlertTriangle size={42} className="text-crimson" />
+            <h2 className="investigation-empty-title text-crimson mt-2">
+              EVIDENCE FETCH FAILURE
+            </h2>
+            <p className="investigation-empty-text font-mono">
+              {error}
+            </p>
+            <div className="flex gap-2">
+              <Button type="button" variant="primary" size="md" onClick={() => refetch()}>
+                <RotateCcw size={14} style={{ marginRight: 6 }} />
+                RETRY FETCH
+              </Button>
+              <Button type="button" variant="secondary" size="md" onClick={handleBackToDeck}>
+                RETURN TO DECK
+              </Button>
+            </div>
           </div>
-        </div>
+        </main>
       )}
 
-      {!isLoading && !error && incident && (
-        <div className="investigation-grid">
-          {/* Section 1: Signal Triangulation & Corroboration */}
-          <div className="investigation-section-card">
-            <div className="section-card-title">
-              <span>SIGNAL TRIANGULATION & CORROBORATION</span>
-              <Badge variant="neutral" size="sm">
-                SCORE: {Math.round((incident.corroboration?.score ?? 0) * 100)}%
-              </Badge>
+      {/* STATE 4: Populated Evidence Workspace */}
+      {incident && (
+        <main className="investigation-workspace-body">
+          {/* Fact Panel & Priority Dossier */}
+          <IncidentFactPanel incident={incident} />
+
+          {/* Dual Evidence & Chronological Timeline Matrix */}
+          <div className="investigation-dual-matrix">
+            <div className="matrix-col">
+              <EvidenceReportList reports={reports} />
             </div>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--color-text-secondary)' }}>
-              {incident.corroboration?.explanation || 'Awaiting multi-signal corroboration analysis.'}
-            </p>
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-              <div className="factor-item" style={{ flex: 1 }}>
-                <span className="factor-label">LINKED DISPATCHES</span>
-                <span className="factor-points">{incident.corroboration?.report_count ?? 1}</span>
-              </div>
-              <div className="factor-item" style={{ flex: 1 }}>
-                <span className="factor-label">DISTINCT SOURCES</span>
-                <span className="factor-points">{incident.corroboration?.independent_source_count ?? 1}</span>
-              </div>
+            <div className="matrix-col">
+              <IncidentTimeline incidentId={selectedIncidentId} />
             </div>
           </div>
 
-          {/* Section 2: Explainable Priority Factors */}
-          <div className="investigation-section-card">
-            <div className="section-card-title">
-              <span>EXPLAINABLE PRIORITY FACTORS</span>
-              <Badge variant="p0-critical" size="sm">
-                {incident.priority?.score} POINTS
-              </Badge>
-            </div>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--color-text-secondary)' }}>
-              {incident.priority?.explanation}
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-              {incident.priority?.factors && incident.priority.factors.length > 0 ? (
-                incident.priority.factors.map((factor, idx) => (
-                  <div key={idx} className="factor-item">
-                    <span className="factor-label">{factor.factor}</span>
-                    <span className="factor-value">{String(factor.value)}</span>
-                    <span className="factor-points">+{factor.contribution.toFixed(1)}</span>
-                  </div>
-                ))
-              ) : (
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-text-muted)' }}>
-                  No factor weights available.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Section 3: Linked Raw Citizen Reports */}
-          <div className="investigation-section-card" style={{ gridColumn: '1 / -1' }}>
-            <div className="section-card-title">
-              <span>FUSED CITIZEN DISPATCHES & RAW CALL TIMELINE</span>
-              <Badge variant="neutral" size="sm">{reports.length} LINKED</Badge>
-            </div>
-            {reports.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {reports.map((report) => (
-                  <div key={report.report_id} className="source-report-item">
-                    <div className="source-report-header">
-                      <span>ID: {report.report_id} // SOURCE: {report.source.toUpperCase()}</span>
-                      <span>{report.reported_at ? report.reported_at.substring(11, 19) + ' UTC' : ''}</span>
-                    </div>
-                    <div className="source-report-text">"{report.text}"</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--color-text-muted)' }}>
-                No raw reports recorded for this incident.
-              </p>
-            )}
-          </div>
-
-          {/* Section 4: Human Sovereign Review Ledger */}
-          <div className="investigation-section-card" style={{ gridColumn: '1 / -1' }}>
-            <div className="section-card-title">
-              <span>HUMAN SOVEREIGN REVIEW & AUDIT TRAIL</span>
-              <Badge variant={incident.human_override?.active ? 'p0-critical' : 'neutral'} size="sm">
-                {incident.human_override?.active ? 'OVERRIDE ACTIVE' : 'NO OVERRIDES'}
-              </Badge>
-            </div>
-            {auditTrail.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {auditTrail.map((audit) => (
-                  <div key={audit.override_id} className="audit-entry-item">
-                    <span>OP: {audit.operator_id} // FIELD: {audit.field}</span>
-                    <span style={{ color: 'var(--color-dispatch-yellow)' }}>"{audit.reason}"</span>
-                    <span>{audit.created_at ? audit.created_at.substring(11, 19) + ' UTC' : ''}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--color-text-muted)' }}>
-                No human overrides applied to this incident. Sovereign state intact.
-              </p>
-            )}
-          </div>
-        </div>
+          {/* Traceability & Immutable Audit Trail */}
+          <AuditTracePanel
+            auditTrail={auditTrail}
+            humanOverride={incident.human_override}
+          />
+        </main>
       )}
     </div>
   );

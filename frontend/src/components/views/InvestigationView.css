@@ -7,7 +7,50 @@
   background-color: var(--color-void-dark);
 }
 
-.investigation-header {
+/* Offline Hazard Banner */
+.inv-offline-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px;
+  background-color: var(--color-p0-critical);
+  color: var(--color-newsprint-white);
+  border-bottom: 2px solid var(--color-void-dark);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.inv-offline-icon {
+  color: var(--color-newsprint-white);
+  flex-shrink: 0;
+}
+
+.inv-offline-msg {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  flex: 1;
+}
+
+.inv-offline-reconnect-btn {
+  background-color: var(--color-void-dark);
+  color: var(--color-newsprint-white);
+  border: 1px solid var(--color-newsprint-white);
+  box-shadow: 2px 2px 0 var(--color-newsprint-white);
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.inv-offline-reconnect-btn:hover {
+  background-color: var(--color-dispatch-yellow);
+  color: var(--color-void-dark);
+  border-color: var(--color-void-dark);
+}
+
+/* Empty Header when no incident selected */
+.investigation-empty-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -20,13 +63,13 @@
   flex-wrap: wrap;
 }
 
-.investigation-title-group {
+.investigation-empty-title-group {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.investigation-title {
+.investigation-empty-heading {
   font-family: var(--font-headline);
   font-size: 18px;
   letter-spacing: 0.04em;
@@ -34,12 +77,7 @@
   color: var(--color-newsprint-white);
 }
 
-.investigation-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+/* Empty Container (No selection / loading / error) */
 .investigation-empty-container {
   flex: 1;
   display: flex;
@@ -50,10 +88,11 @@
   text-align: center;
   background-image: var(--texture-halftone);
   background-size: 6px 6px;
+  min-height: 400px;
 }
 
 .investigation-empty-card {
-  max-width: 520px;
+  max-width: 540px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -61,6 +100,11 @@
   padding: 40px 32px;
   background-color: var(--color-surface-dark);
   box-shadow: 6px 6px 0 var(--color-void-dark);
+}
+
+.investigation-empty-card.card-error {
+  border-color: var(--color-p0-critical);
+  box-shadow: 6px 6px 0 var(--color-p0-critical);
 }
 
 .investigation-empty-icon {
@@ -78,105 +122,68 @@
 
 .investigation-empty-text {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 1.6;
   color: var(--color-text-secondary);
   margin-bottom: 24px;
 }
 
-/* Incident detail grid */
-.investigation-grid {
+/* Main Workspace Body */
+.investigation-workspace-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  max-width: 1720px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Dual Column Matrix: Evidence on Left, Timeline on Right */
+.investigation-dual-matrix {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  padding: 20px;
+  align-items: start;
 }
 
-.investigation-section-card {
-  border: 2px solid var(--color-void-dark);
-  background-color: var(--color-surface-dark);
-  box-shadow: 4px 4px 0 var(--color-void-dark);
-  padding: 20px;
+.matrix-col {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  width: 100%;
 }
 
-.section-card-title {
-  font-family: var(--font-headline);
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-newsprint-white);
-  border-bottom: 2px solid var(--color-surface-container-highest);
-  padding-bottom: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* Common Text Helpers */
+.text-cyan {
+  color: var(--color-multiverse-cyan) !important;
 }
 
-.factor-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background-color: var(--color-surface-container-high);
-  border: 1px solid var(--color-void-dark);
-  font-family: var(--font-mono);
-  font-size: 12px;
+.text-crimson {
+  color: var(--color-p0-critical) !important;
 }
 
-.factor-label {
-  color: var(--color-text-primary);
-  font-weight: 700;
+.text-green {
+  color: var(--color-system-green) !important;
 }
 
-.factor-value {
-  color: var(--color-multiverse-cyan);
+.text-muted {
+  color: var(--color-text-muted) !important;
 }
 
-.factor-points {
-  background-color: var(--color-void-dark);
-  padding: 2px 6px;
-  color: var(--color-dispatch-yellow);
+.text-secondary {
+  color: var(--color-text-secondary) !important;
 }
 
-.source-report-item {
-  background-color: var(--color-surface-container-high);
-  border: 1px solid var(--color-void-dark);
-  padding: 10px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.source-report-header {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--color-text-muted);
-}
-
-.source-report-text {
-  font-family: var(--font-body);
-  font-size: 13px;
-  color: var(--color-text-primary);
-  line-height: 1.4;
-}
-
-.audit-entry-item {
-  background-color: var(--color-surface-container-high);
-  border: 1px solid var(--color-void-dark);
-  padding: 8px 12px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  display: flex;
-  justify-content: space-between;
-}
-
-@media (max-width: 900px) {
-  .investigation-grid {
+/* Responsive Collapse */
+@media (max-width: 1100px) {
+  .investigation-dual-matrix {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .investigation-workspace-body {
+    padding: 12px;
+    gap: 14px;
   }
 }
