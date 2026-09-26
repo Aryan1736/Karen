@@ -1,37 +1,96 @@
 import React from 'react';
-import { Radio, Rss } from 'lucide-react';
-import { Badge } from '../ui';
+import { Radio, Rss, Trash2, RefreshCw } from 'lucide-react';
+import { Badge, Button } from '../ui';
+import { useWebSocket } from '../../context/WebSocketContext';
 import './IncidentStreamsView.css';
 
 export const IncidentStreamsView: React.FC = () => {
+  const { status, events, reconnect, clearEvents } = useWebSocket();
+
+  const getEventBadgeVariant = (event: string) => {
+    switch (event) {
+      case 'INCIDENT_CREATED': return 'p0-critical';
+      case 'INCIDENT_UPDATED': return 'p1-high';
+      case 'INCIDENT_STATUS_CHANGED': return 'p2-medium';
+      case 'SIMULATION_PULSE': return 'needs-review';
+      case 'PING': return 'neutral';
+      default: return 'neutral';
+    }
+  };
+
+  const formatPayloadSummary = (event: string, payload: any): string => {
+    if (event === 'PING') return 'Heartbeat PING keepalive frame received from server';
+    if (event === 'INCIDENT_CREATED') return `New Incident Created: ${payload.incident_id || 'ID Unknown'} [${payload.incident_type || 'Unclassified'}]`;
+    if (event === 'INCIDENT_UPDATED') return `Incident Updated: ${payload.incident_id || 'ID Unknown'} (Score: ${payload.priority?.score ?? payload.new_priority_score ?? 'N/A'})`;
+    if (event === 'INCIDENT_STATUS_CHANGED') return `Status Transition: ${payload.incident_id} [${payload.old_status} → ${payload.new_status}]`;
+    if (event === 'SIMULATION_PULSE') return `Simulation Pulse: Injected ${payload.injected_count}, Total ${payload.total_simulated} (${payload.scenario})`;
+    return `Payload: ${JSON.stringify(payload).substring(0, 80)}`;
+  };
+
   return (
     <div className="incident-streams-view" role="region" aria-label="Incident Streams View">
       <div className="streams-header">
         <div className="streams-title-group">
           <Rss size={18} color="var(--color-multiverse-cyan)" />
           <h2 className="streams-title">INCIDENT STREAMS // LIVE INGESTION CHANNELS</h2>
-          <Badge variant="neutral" size="sm">0 ACTIVE STREAMS</Badge>
+          <Badge variant="neutral" size="sm">{events.length} FRAMES CAPTURED</Badge>
         </div>
-        <div className="streams-status">
-          <Badge variant="p2-medium" size="sm">CHANNEL MONITOR: STANDBY</Badge>
+        <div className="streams-status" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Badge variant={status === 'CONNECTED' ? 'p1-high' : 'neutral'} size="sm">
+            CHANNEL MONITOR: {status}
+          </Badge>
+          {events.length > 0 && (
+            <Button variant="secondary" size="sm" onClick={clearEvents} title="Clear stream events">
+              <Trash2 size={13} style={{ marginRight: 4 }} />
+              CLEAR
+            </Button>
+          )}
+          {status !== 'CONNECTED' && (
+            <Button variant="secondary" size="sm" onClick={reconnect} title="Reconnect WebSocket">
+              <RefreshCw size={13} style={{ marginRight: 4 }} />
+              RECONNECT
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="streams-body">
-        <div className="streams-empty-box">
-          <div className="streams-empty-icon">
-            <Radio size={48} color="var(--color-multiverse-cyan)" />
+        {events.length > 0 ? (
+          <div className="streams-event-list">
+            {events.map((evt, idx) => (
+              <div key={`${evt.timestamp}-${idx}`} className="stream-event-item">
+                <div className="stream-event-left">
+                  <Badge variant={getEventBadgeVariant(evt.event)} size="sm">
+                    {evt.event}
+                  </Badge>
+                  <span className="stream-event-summary">
+                    {formatPayloadSummary(evt.event, evt.payload)}
+                  </span>
+                </div>
+                <span className="stream-event-timestamp">
+                  {evt.timestamp ? evt.timestamp.substring(11, 19) + ' UTC' : ''}
+                </span>
+              </div>
+            ))}
           </div>
-          <h3 className="streams-empty-heading">Ingestion Streams Standby</h3>
-          <p className="streams-empty-desc">
-            Raw incoming emergency reports, RF dispatch transcripts, and simulated sensor events will appear in this synchronized multi-channel stream.
-          </p>
-          <div className="streams-meta-pills">
-            <Badge variant="neutral" size="sm">AUDIO_TRANSCRIPTS: READY</Badge>
-            <Badge variant="neutral" size="sm">CITIZEN_DISPATCHES: STANDBY</Badge>
-            <Badge variant="neutral" size="sm">SENSOR_TELEMETRY: STANDBY</Badge>
+        ) : (
+          <div className="streams-empty-container">
+            <div className="streams-empty-box">
+              <div className="streams-empty-icon">
+                <Radio size={48} color="var(--color-multiverse-cyan)" />
+              </div>
+              <h3 className="streams-empty-heading">Ingestion Streams Standby</h3>
+              <p className="streams-empty-desc">
+                Raw incoming emergency reports, RF dispatch transcripts, and simulated sensor events will appear in this synchronized multi-channel stream.
+              </p>
+              <div className="streams-meta-pills">
+                <Badge variant="neutral" size="sm">WS_STATUS: {status}</Badge>
+                <Badge variant="neutral" size="sm">RF_AUDIO: STANDBY</Badge>
+                <Badge variant="neutral" size="sm">DISPATCH_BUS: READY</Badge>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

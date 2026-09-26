@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
+import { WebSocketProvider } from './context/WebSocketContext';
 import { SimulationStrip, HeaderBar, FooterBar } from './components/layout';
 import {
   CommandDeckView,
@@ -39,7 +40,9 @@ const AppViewport: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <NavigationProvider>
-      <AppViewport />
+      <WebSocketProvider>
+        <AppViewport />
+      </WebSocketProvider>
     </NavigationProvider>
   );
 };

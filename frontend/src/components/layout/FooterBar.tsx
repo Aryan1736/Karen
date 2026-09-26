@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Wifi } from 'lucide-react';
+import { useWebSocket } from '../../context/WebSocketContext';
 import './FooterBar.css';
 
 export const FooterBar: React.FC = () => {
   const [currentTime, setCurrentTime] = useState<string>(() => 
     new Date().toISOString().substring(11, 19) + ' UTC'
   );
+  const { status: wsStatus } = useWebSocket();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -28,7 +30,7 @@ export const FooterBar: React.FC = () => {
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <Wifi size={12} />
-          WS STANDBY
+          WS {wsStatus}
         </span>
       </div>
     </footer>

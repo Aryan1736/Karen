@@ -84,10 +84,10 @@
   margin-bottom: 24px;
 }
 
-/* Scaffolding Layout for when incident is selected in future phases */
-.investigation-scaffold-grid {
+/* Incident detail grid */
+.investigation-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   padding: 20px;
 }
@@ -97,28 +97,86 @@
   background-color: var(--color-surface-dark);
   box-shadow: 4px 4px 0 var(--color-void-dark);
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .section-card-title {
   font-family: var(--font-headline);
-  font-size: 16px;
+  font-size: 14px;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--color-newsprint-white);
-  border-bottom: 2px solid var(--color-void-dark);
+  border-bottom: 2px solid var(--color-surface-container-highest);
   padding-bottom: 8px;
-  margin-bottom: 16px;
-  letter-spacing: 0.04em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.section-card-placeholder {
+.factor-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: var(--color-surface-container-high);
+  border: 1px solid var(--color-void-dark);
   font-family: var(--font-mono);
   font-size: 12px;
-  color: var(--color-text-muted);
-  line-height: 1.6;
 }
 
-@media (max-width: 1024px) {
-  .investigation-scaffold-grid {
+.factor-label {
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+
+.factor-value {
+  color: var(--color-multiverse-cyan);
+}
+
+.factor-points {
+  background-color: var(--color-void-dark);
+  padding: 2px 6px;
+  color: var(--color-dispatch-yellow);
+}
+
+.source-report-item {
+  background-color: var(--color-surface-container-high);
+  border: 1px solid var(--color-void-dark);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.source-report-header {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.source-report-text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.audit-entry-item {
+  background-color: var(--color-surface-container-high);
+  border: 1px solid var(--color-void-dark);
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+}
+
+@media (max-width: 900px) {
+  .investigation-grid {
     grid-template-columns: 1fr;
   }
 }

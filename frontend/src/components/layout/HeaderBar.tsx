@@ -5,6 +5,9 @@ import {
   AudioVisualizerBar
 } from '../ui';
 import { useNavigation, NavigationView } from '../../context/NavigationContext';
+import { useBackendHealth } from '../../hooks/useBackendHealth';
+import { useWebSocket } from '../../context/WebSocketContext';
+import { getOperatorId } from '../../api/client';
 import './HeaderBar.css';
 
 interface NavItem {
@@ -22,6 +25,17 @@ const NAV_ITEMS: NavItem[] = [
 
 export const HeaderBar: React.FC = () => {
   const { activeView, setActiveView } = useNavigation();
+  const { isOnline } = useBackendHealth();
+  const { status: wsStatus } = useWebSocket();
+  const operatorId = getOperatorId();
+
+  // Map API health probe state truthfully
+  const engineIndicatorStatus = isOnline === true ? 'online' : isOnline === false ? 'offline' : 'standby';
+  const engineIndicatorLabel = isOnline === true ? 'API ONLINE' : isOnline === false ? 'API OFFLINE' : 'CHECKING...';
+
+  // Map WebSocket connection state truthfully
+  const wsIndicatorStatus = wsStatus === 'CONNECTED' ? 'online' : (wsStatus === 'DISCONNECTED' || wsStatus === 'ERROR') ? 'offline' : 'standby';
+  const wsIndicatorLabel = `WS ${wsStatus}`;
 
   return (
     <header className="header-bar" role="banner">
@@ -31,8 +45,8 @@ export const HeaderBar: React.FC = () => {
           <Badge variant="p2-medium" size="sm">TAC-OPS</Badge>
         </div>
         <div className="header-hud-metrics">
-          <StatusIndicator status="online" label="ENGINE ONLINE" />
-          <StatusIndicator status="standby" label="WS STANDBY" />
+          <StatusIndicator status={engineIndicatorStatus} label={engineIndicatorLabel} />
+          <StatusIndicator status={wsIndicatorStatus} label={wsIndicatorLabel} />
         </div>
       </div>
 
@@ -60,7 +74,7 @@ export const HeaderBar: React.FC = () => {
           <span className="channel-freq">STANDBY</span>
         </div>
         <div className="operator-badge">
-          OP: SRINIVASH
+          OP: {operatorId.toUpperCase()}
         </div>
       </div>
     </header>
