@@ -1,0 +1,106 @@
+/**
+ * Karen's Ear — Tactical Dark-Mode Design Tokens
+ * Authority: architecture/frontend.md Section 4
+ */
+
+:root {
+  /* Color Palette — Backgrounds */
+  --color-bg-canvas: #0B0F17;
+  --color-bg-surface: #131B2E;
+  --color-bg-surface-hover: #192338;
+  --color-bg-surface-secondary: #1A2234;
+  --color-bg-overlay: rgba(11, 15, 23, 0.85);
+
+  /* Borders & Dividers */
+  --color-border: #1E293B;
+  --color-border-bright: #334155;
+  --color-border-accent: #38BDF8;
+
+  /* Text Colors */
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+  --color-text-inverse: #0B0F17;
+
+  /* Severity / Priority Tiers */
+  --color-critical: #EF4444;
+  --color-critical-bg: rgba(239, 68, 68, 0.12);
+  --color-critical-glow: rgba(239, 68, 68, 0.35);
+
+  --color-high: #F97316;
+  --color-high-bg: rgba(249, 115, 22, 0.12);
+  --color-high-glow: rgba(249, 115, 22, 0.35);
+
+  --color-medium: #F59E0B;
+  --color-medium-bg: rgba(245, 158, 11, 0.12);
+  --color-medium-glow: rgba(245, 158, 11, 0.35);
+
+  --color-low: #64748B;
+  --color-low-bg: rgba(100, 116, 139, 0.15);
+  --color-low-glow: rgba(100, 116, 139, 0.3);
+
+  /* Special Indicators */
+  --color-cyan-corroboration: #06B6D4;
+  --color-cyan-bg: rgba(6, 182, 212, 0.12);
+  --color-purple-synthetic: #A855F7;
+  --color-purple-bg: rgba(168, 85, 247, 0.15);
+  --color-success: #10B981;
+  --color-success-bg: rgba(16, 185, 129, 0.12);
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "JetBrains Mono", monospace;
+
+  /* Elevations / Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.6);
+  --shadow-glow-critical: 0 0 16px var(--color-critical-glow);
+
+  /* Transitions & Animation Durations */
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+  --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-canvas);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-bright);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
