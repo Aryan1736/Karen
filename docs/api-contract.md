@@ -123,13 +123,19 @@ Used by the Frontend (manual entry), Simulator (Pankaj), or external dispatch ch
 
 Within Daksh's backend and Aryan's ML pipeline:
 
-### 4.1 Backend $\to$ ML Request Function Contract
+### 4.1 Backend $\to$ ML Request Contract
 ```python
-def analyze_report(text: str, report_id: str, location_hint: dict | None = None) -> dict:
-    """
-    Invokes Aryan's ML/NLP pipeline.
-    Must return a dictionary strictly adhering to ml/schemas/incident_output.json.
-    """
+from ml.pipeline import inference_engine
+
+result = inference_engine.analyze(
+    report=text,
+    report_id=report_id,
+    location_hint=location_hint,
+)
+"""
+Invokes Aryan's ML/NLP pipeline via the sole canonical public entry point.
+Must return a dictionary strictly adhering to ml/schemas/incident_output.json.
+"""
 ```
 
 ### 4.2 ML $\to$ Backend Response Payload

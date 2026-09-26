@@ -35,11 +35,19 @@ from ml.exceptions import (
     MLInferenceError,
     MLInputError,
     MLModelError,
+    MLSchemaValidationError,
 )
 from ml.logging_utils import (
     MLJsonFormatter,
     MLLoggerAdapter,
     get_ml_logger,
+)
+from ml.pipeline import (
+    InferenceEngine,
+    SchemaValidator,
+    get_inference_engine,
+    inference_engine,
+    validate_incident_output,
 )
 
 __version__ = "0.1.0"
@@ -67,8 +75,15 @@ __all__ = [
     "MLInputError",
     "MLInferenceError",
     "MLModelError",
+    "MLSchemaValidationError",
     # Observability
     "get_ml_logger",
     "MLLoggerAdapter",
     "MLJsonFormatter",
+    # Pipeline Orchestration
+    "InferenceEngine",
+    "inference_engine",
+    "get_inference_engine",
+    "SchemaValidator",
+    "validate_incident_output",
 ]

@@ -40,3 +40,9 @@ class MLInferenceError(MLBaseError):
 class MLModelError(MLBaseError):
     """Raised when model loading, weight resolution, or runtime device allocation fails."""
     pass
+
+
+class MLSchemaValidationError(MLInferenceError):
+    """Raised when an ML output payload fails validation against the canonical schema."""
+    pass
+

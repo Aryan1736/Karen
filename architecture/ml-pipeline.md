@@ -188,3 +188,48 @@ Return ML Output Payload
 ## 5. Model Strategy & Independent Evolution
 * The ML architecture decouples the embedding generator from the entity extractor and urgency model.
 * **Aryan's Domain:** Aryan can independently swap or upgrade the embedding backbone (e.g., benchmarking `crisistransformers/CT-M1-Complete-SE` against `all-MiniLM-L6-v2`) without touching backend ingestion or database schemas, provided the output conforms to the canonical contract.
+
+---
+
+## 6. Unified Inference Pipeline Orchestration (Feature 10)
+
+### 6.1 Public Entry Point
+The unified ML pipeline provides exactly ONE canonical public orchestration entry point:
+```python
+from ml.pipeline import inference_engine
+
+result = inference_engine.analyze(report, report_id="...", location_hint=...)
+```
+Or equivalently via instance instantiation:
+```python
+from ml.pipeline import InferenceEngine
+
+engine = InferenceEngine()
+result = engine.analyze(report, report_id="...", location_hint=...)
+```
+
+### 6.2 Sequential Stage Order
+Execution proceeds in fixed, deterministic order:
+1. **Preprocessing (`TextCleaner`):** Unicode normalization, sanitization, length validation.
+2. **Incident Classification (`IncidentClassifier`):** Crisis hazard categorization (`predict`).
+3. **Entity Extraction (`LocationEntityExtractor` & `PeopleRiskExtractor`):** Verbatim location phrasing, victim counts, and named entity tokens.
+4. **Required Response Mapping (`RequiredResponseExtractor`):** Tactical agency capability routing.
+5. **Operational Urgency (`UrgencyEngine`):** Life-safety, hazard velocity, and vulnerability scoring.
+6. **Dense Semantic Embedding (`SentenceTransformerEmbedder`):** 384-dimensional unit vector generation.
+7. **Confidence Calibration & Quality Gating (`ConfidenceEngine`):** Weighted harmonic mean confidence and deterministic operational status resolution.
+8. **Final Assembly & Canonical Sorting:** Merges entities and response needs with deterministic ordering; deduplicates warnings.
+9. **Final Schema Validation Gate (`SchemaValidator`):** Validates final output against `ml/schemas/incident_output.json`.
+
+### 6.3 Fail-Fast vs. Fail-Soft Policy
+* **Fail-Fast Stages:**
+  * **Input Validation & Preprocessing:** If input is not a string/dict/context, or contains empty/whitespace-only text, raises `MLInputError` immediately. Downstream components cannot proceed without valid text.
+  * **Final Schema Validation:** If the assembled ML output violates `ml/schemas/incident_output.json`, raises `MLSchemaValidationError`. Malformed payloads are never returned to callers.
+* **Fail-Soft Stages (Recoverable Component Failures):**
+  * Failure in any individual inference component (`classification`, `location`, `people_at_risk`, `required_response`, `urgency`, `embeddings`, or `confidence_engine`) is isolated via exception containment.
+  * Recoverable failures set the component's output to null/empty, append diagnostic warnings, and degrade `processing_status` to `PARTIAL` or `NEEDS_REVIEW` according to Feature 9 precedence rules.
+  * Complete failure of all inference components degrades strictly to `FAILED`.
+
+### 6.4 Embedding Reference & Coordinate Policies
+* **Embedding Reference:** The canonical output provides `"embedding_reference": "emb-{report_id}"` on successful embedding generation. If embedding fails or is absent, `"embedding_reference"` is strictly `null` (never fabricated). The raw 384-dimensional vector is omitted from the canonical contract by default and only included if explicitly requested (`include_embedding=True`).
+* **Coordinates (ADR-009):** `latitude` and `longitude` are strictly `null` unless verified via controlled gazetteer lookup. The pipeline never invents or hallucinates coordinates.
+
