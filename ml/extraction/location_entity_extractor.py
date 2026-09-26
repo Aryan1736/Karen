@@ -346,7 +346,7 @@ class LocationEntityExtractor:
         self._ner_loaded = True
         ner_model = self.config.ner_model_name
 
-        if not ner_model:
+        if self.config.lightweight_mode or not ner_model:
             return None
 
         try:

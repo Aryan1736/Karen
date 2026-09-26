@@ -121,6 +121,12 @@ class SentenceTransformerEmbedder:
         """
         cache_key = (self.config.embedding_model_name, self.config.device.lower())
 
+        if self.config.lightweight_mode:
+            raise MLModelError(
+                "Dense embedding neural runtime is disabled in lightweight mode (ML_LIGHTWEIGHT_MODE=true)",
+                details={"library": "sentence-transformers", "lightweight_mode": True},
+            )
+
         # Fast read outside lock
         if cache_key in _MODEL_CACHE:
             return _MODEL_CACHE[cache_key]
