@@ -491,12 +491,10 @@ export const IncidentStreamsView: React.FC = () => {
               >
                 {/* 1. Time */}
                 <div className="col-time">
-                  <span className="row-timestamp">{evt.timestampFormatted}</span>
                   {evt.isLatest && (
-                    <span className="row-latest-tag" title="Most recent event">
-                      <span className="pip" /> NEW
-                    </span>
+                    <span className="latest-live-pip" title="Latest stream event" />
                   )}
+                  <span className="row-timestamp">{evt.timestampFormatted}</span>
                 </div>
 
                 {/* 2. Event Type */}
