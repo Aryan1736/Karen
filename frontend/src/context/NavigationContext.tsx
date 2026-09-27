@@ -56,7 +56,7 @@ const getIncidentIdFromHash = (hash: string): string | null => {
   try {
     const queryPart = hash.split('?')[1];
     const params = new URLSearchParams(queryPart);
-    const id = params.get('id') || params.get('incident_id');
+    const id = params.get('id') || params.get('incident_id') || params.get('incidentId');
     return id ? id.trim() : null;
   } catch {
     return null;
