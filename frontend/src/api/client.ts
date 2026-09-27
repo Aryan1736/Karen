@@ -8,6 +8,10 @@ export const getApiBaseUrl = (): string => {
   const envUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
                  (import.meta.env.VITE_API_URL as string | undefined);
   if (!envUrl || !envUrl.trim()) {
+    // If running in production on a remote host (e.g. Vercel), default to production Render backend
+    if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
+      return 'https://tingle-backend.onrender.com';
+    }
     // Default to local development Vite proxy prefix
     return '/api';
   }

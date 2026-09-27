@@ -34,6 +34,11 @@ export function getWebSocketUrl(): string {
     }
   }
 
+  // If running in production on a remote host (e.g. Vercel) and no env var was set, fallback to live Render backend
+  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
+    return 'wss://tingle-backend.onrender.com/ws/events';
+  }
+
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
   const protocol = isHttps ? 'wss:' : 'ws:';
   const host = typeof window !== 'undefined' ? window.location.host : 'localhost:5173';

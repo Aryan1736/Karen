@@ -42,6 +42,8 @@ def test_cors_default_allowed_origins(client: TestClient):
         "http://localhost:5173",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
+        "https://tingle.vercel.app",
+        "https://karen-frontend-git-feature.vercel.app",
     ]
     for origin in dev_origins:
         response = client.get("/health", headers={"Origin": origin})
