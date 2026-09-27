@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import L from 'leaflet';
 import { 
-  Radar, 
   AlertTriangle, 
   RotateCcw, 
   ChevronDown, 
@@ -14,7 +13,6 @@ import {
   PlusCircle
 } from 'lucide-react';
 import { Incident, ReportSource } from '../../../types/incident';
-import { useWebSocketStatus } from '../../../context/WebSocketContext';
 import { useNavigation } from '../../../context/NavigationContext';
 import { submitReport } from '../../../api/reports';
 import { 
@@ -61,7 +59,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [tacticalToast, setTacticalToast] = useState<string | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
   
-  const { status: wsStatus } = useWebSocketStatus();
   const { setActiveView, navigateToIncident } = useNavigation();
 
   const triggerToast = useCallback((msg: string) => {
@@ -80,10 +77,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const leafletCirclesGroupRef = useRef<L.LayerGroup | null>(null);
 
   // Partition real data into mapped vs unmapped strictly without fabricating coordinates
-  const { mappedIncidents, unmappedIncidents, criticalIncidents } = useMemo(() => {
+  const { mappedIncidents, unmappedIncidents } = useMemo(() => {
     const mapped: Incident[] = [];
     const unmapped: Incident[] = [];
-    const critical: Incident[] = [];
 
     incidents.forEach((inc) => {
       const lat = inc.location?.latitude;
@@ -93,12 +89,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       } else {
         unmapped.push(inc);
       }
-      if (inc.priority?.level === 'CRITICAL') {
-        critical.push(inc);
-      }
     });
 
-    return { mappedIncidents: mapped, unmappedIncidents: unmapped, criticalIncidents: critical };
+    return { mappedIncidents: mapped, unmappedIncidents: unmapped };
   }, [incidents]);
 
   // =========================================================================
@@ -173,14 +166,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       const isReview = incident.status === 'NEEDS_REVIEW';
       const isApprox = incident.location?.precision === 'approximate';
 
-      let priorityClass = 'medium';
-      if (isReview) priorityClass = 'review';
-      else if (incident.priority?.level === 'CRITICAL') priorityClass = 'critical';
-      else if (incident.priority?.level === 'HIGH') priorityClass = 'high';
-      else if (incident.priority?.level === 'LOW') priorityClass = 'low';
-
-      const score = Math.round(incident.priority?.score ?? 0);
-      const levelShort = isReview ? 'REV' : (incident.priority?.level ? incident.priority.level.substring(0, 2) : 'P?');
 
       // If location is approximate, draw dashed uncertainty zone
       if (isApprox) {
@@ -196,27 +181,56 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         circle.addTo(circlesGroup);
       }
 
-      // Tactical incident marker inspired by the reference design
+      // Determine icon type matching Spider-Man tracker reference
+      const isHigh = incident.priority?.level === 'HIGH';
+      let badgeType = 'spidey-green';
+      let iconInnerSvg = `
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="#061a10">
+          <circle cx="12" cy="7.5" r="2.2" />
+          <ellipse cx="12" cy="13.5" rx="3.4" ry="4.5" />
+          <path d="M10 7.5 C6.5 4.5 4 4 3 6.5 M9.5 9.5 C5.5 8 3.5 9.5 2.5 12.5 M9.5 11.5 C5.5 12.5 3.5 15 3 18.5 M10 13.5 C6.5 16.5 5.5 19 5.5 22" fill="none" stroke="#061a10" stroke-width="1.6" stroke-linecap="round" />
+          <path d="M14 7.5 C17.5 4.5 20 4 21 6.5 M14.5 9.5 C18.5 8 20.5 9.5 21.5 12.5 M14.5 11.5 C18.5 12.5 20.5 15 21 18.5 M14 13.5 C17.5 16.5 18.5 19 18.5 22" fill="none" stroke="#061a10" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+      `;
+
+      if (isReview) {
+        badgeType = 'spidey-star';
+        iconInnerSvg = `
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="#ffffff">
+            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+          </svg>
+        `;
+      } else if (isP0 || isHigh) {
+        badgeType = 'spidey-red';
+        iconInnerSvg = `
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="#1f0606">
+            <circle cx="12" cy="7.5" r="2.2" />
+            <ellipse cx="12" cy="13.5" rx="3.4" ry="4.5" />
+            <path d="M10 7.5 C6.5 4.5 4 4 3 6.5 M9.5 9.5 C5.5 8 3.5 9.5 2.5 12.5 M9.5 11.5 C5.5 12.5 3.5 15 3 18.5 M10 13.5 C6.5 16.5 5.5 19 5.5 22" fill="none" stroke="#1f0606" stroke-width="1.6" stroke-linecap="round" />
+            <path d="M14 7.5 C17.5 4.5 20 4 21 6.5 M14.5 9.5 C18.5 8 20.5 9.5 21.5 12.5 M14.5 11.5 C18.5 12.5 20.5 15 21 18.5 M14 13.5 C17.5 16.5 18.5 19 18.5 22" fill="none" stroke="#1f0606" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+        `;
+      }
+
+      const hoverTitle = `${incident.incident_type?.replace(/_/g, ' ') || 'Incident'} (${incident.priority?.level || 'PRIO'}): ${incident.location?.text || 'Location'}`;
+
+      // Spidey tactical badge marker directly matching Reference Image 3
       const iconHtml = `
-        <div class="tactical-marker-root ${isSelected ? 'marker-selected' : ''} marker-prio-${priorityClass}">
-          ${isSelected ? '<div class="marker-star-halo"></div><div class="marker-radar-ping"></div>' : ''}
-          ${isP0 ? '<div class="marker-beacon-pulse"></div>' : ''}
-          <div class="marker-badge-box">
-            <span class="marker-badge-lvl">${levelShort}</span>
-            <span class="marker-badge-score">${score}</span>
-          </div>
-          <div class="marker-label-tag">
-            <span>${incident.incident_id.length > 14 ? incident.incident_id.substring(4, 12) : incident.incident_id}</span>
-            ${isApprox ? '<span class="marker-approx-pip">[APPROX]</span>' : ''}
+        <div class="spidey-marker-badge ${badgeType} ${isSelected ? 'selected' : ''}" title="${hoverTitle}">
+          ${isSelected ? '<div class="spidey-marker-halo"></div>' : ''}
+          ${isP0 ? '<div class="spidey-marker-pulse"></div>' : ''}
+          <div class="spidey-badge-disc">
+            ${iconInnerSvg}
           </div>
         </div>
       `;
 
       const customIcon = L.divIcon({
-        className: 'tactical-div-icon',
+        className: 'spidey-div-icon',
         html: iconHtml,
-        iconSize: [48, 48],
-        iconAnchor: [24, 24],
+        iconSize: [34, 34],
+        iconAnchor: [17, 17],
+        popupAnchor: [0, -17],
       });
 
       const marker = L.marker([lat, lng], { icon: customIcon });
@@ -259,21 +273,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     triggerToast('view reset to all active incidents');
   }, [mappedIncidents, triggerToast]);
 
-  const handleFocusCritical = useCallback(() => {
-    const map = leafletMapRef.current;
-    if (!map) return;
-    if (criticalIncidents.length > 0) {
-      const crit = criticalIncidents[0];
-      if (crit.location?.latitude != null && crit.location?.longitude != null) {
-        onSelectIncident(crit.incident_id);
-        map.setView([crit.location.latitude, crit.location.longitude], 15, { animate: true });
-        triggerToast(`focusing critical incident #${crit.incident_id.substring(4, 12)}`);
-        return;
-      }
-    }
-    handleResetView();
-  }, [criticalIncidents, onSelectIncident, handleResetView, triggerToast]);
-
   const handleZoomIn = () => {
     leafletMapRef.current?.zoomIn();
   };
@@ -283,7 +282,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   };
 
   const selectedIncident = incidents.find((i) => i.incident_id === selectedIncidentId);
-  const selectedHasCoords = selectedIncident && selectedIncident.location?.latitude != null && selectedIncident.location?.longitude != null;
 
   const handleGlobalView = useCallback(() => {
     const map = leafletMapRef.current;
@@ -337,39 +335,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
   return (
     <div className={`tactical-map-pane ${className}`} role="region" aria-label="Tactical Cartographic Map">
-      {/* Top Tactical HUD Framing Bar */}
-      <div className="map-hud-strip">
-        <div className="map-hud-left">
-          <div className="map-hud-brand-pill">
-            <Radar size={13} className="hud-radar-icon" />
-            <span className="brand-pill-text">TINGLE RADAR</span>
-          </div>
-          <span className="hud-divider">|</span>
-          <span className="map-hud-grid">
-            {selectedHasCoords 
-              ? `FOCUS: ${Math.abs(selectedIncident.location.latitude!).toFixed(4)}° ${selectedIncident.location.latitude! >= 0 ? 'N' : 'S'}, ${Math.abs(selectedIncident.location.longitude!).toFixed(4)}° ${selectedIncident.location.longitude! >= 0 ? 'E' : 'W'}`
-              : `GRID REF: ${DEFAULT_MAP_CENTER.lat.toFixed(4)}° N, ${DEFAULT_MAP_CENTER.lng.toFixed(4)}° E`}
-          </span>
-          <span className="hud-divider">|</span>
-          <span className="map-hud-sync">
-            <span className="radar-sweep-dot" />
-            LIVE TELEMETRY
-          </span>
-        </div>
-
-        <div className="map-hud-right">
-          <button 
-            type="button" 
-            className="hud-btn-reset" 
-            onClick={handleResetView}
-            title="Fit all mapped incidents in view"
-          >
-            <RotateCcw size={11} style={{ marginRight: 4 }} />
-            RESET VIEW
-          </button>
-        </div>
-      </div>
-
       {/* Main Map Viewport with Tactical HUD Bezel */}
       <div className="map-canvas-container">
         {/* The Host Container for Leaflet */}
@@ -419,26 +384,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             </div>
           )}
         </button>
-
-        {/* Left Quick Severity Tab Pills (Reference Image 2) */}
-        <div className="spider-rail-tabs" aria-label="Quick priority triggers">
-          <button
-            type="button"
-            className="spider-rail-tab tab-active"
-            onClick={handleResetView}
-            title={`Fit all active incidents (${mappedIncidents.length})`}
-          >
-            <span className="spider-tab-icon">🌐</span>
-          </button>
-          <button
-            type="button"
-            className={`spider-rail-tab tab-critical ${criticalIncidents.length > 0 ? 'pulse' : ''}`}
-            onClick={handleFocusCritical}
-            title={`Focus critical P0 incident (${criticalIncidents.length} active)`}
-          >
-            <span className="spider-tab-icon">🚨</span>
-          </button>
-        </div>
 
         {/* Slide-Out Navigation Drawer Navbar (Reference Image 3) */}
         <div className={`spider-slide-drawer ${isNavDrawerOpen ? 'open' : ''}`} aria-hidden={!isNavDrawerOpen}>
@@ -546,33 +491,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
               <span>RESET MAP VIEW</span>
             </button>
           </nav>
-
-          {/* Drawer Footer: Telemetry tucked away from main screen */}
-          <div className="drawer-footer-telemetry">
-            <div className="drawer-telemetry-heading">SYSTEM TELEMETRY</div>
-            <div className="drawer-telemetry-row">
-              <span className="tel-label">ACTIVE QUEUE</span>
-              <span className="tel-value">{incidents.length} INCIDENTS</span>
-            </div>
-            <div className="drawer-telemetry-row">
-              <span className="tel-label">GEO-LOCKED</span>
-              <span className="tel-value tel-cyan">{mappedIncidents.length} VERIFIED</span>
-            </div>
-            <div className="drawer-telemetry-row">
-              <span className="tel-label">UNMAPPED</span>
-              <span className={`tel-value ${unmappedIncidents.length > 0 ? 'tel-orange' : 'tel-green'}`}>
-                {unmappedIncidents.length} HELD
-              </span>
-            </div>
-            <div className="drawer-telemetry-row">
-              <span className="tel-label">SYNC STREAM</span>
-              <span className="tel-value tel-green">WS {wsStatus}</span>
-            </div>
-            <div className="drawer-telemetry-row">
-              <span className="tel-label">LOCATION HONESTY</span>
-              <span className="tel-value tel-green">ENFORCED</span>
-            </div>
-          </div>
         </div>
 
         {/* Drawer Backdrop Overlay */}
@@ -604,6 +522,15 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             aria-label="Zoom Out"
           >
             -
+          </button>
+          <button
+            type="button"
+            className="zoom-btn zoom-btn-reset"
+            onClick={handleResetView}
+            title="Reset map view (fit all incidents)"
+            aria-label="Reset map view"
+          >
+            <RotateCcw size={12} />
           </button>
         </div>
 

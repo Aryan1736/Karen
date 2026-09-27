@@ -8,7 +8,7 @@ import {
   Clock,
   ShieldCheck
 } from 'lucide-react';
-import { Badge, Button, ConfidenceGauge } from '../../ui';
+import { Badge, Button } from '../../ui';
 import { Incident } from '../../../types/incident';
 import './SelectedIncidentCard.css';
 
@@ -108,14 +108,6 @@ export const SelectedIncidentCard: React.FC<SelectedIncidentCardProps> = ({
         )}
       </div>
 
-      {/* Correlation Confidence Gauge */}
-      <div className="deep-card-gauge-box">
-        <ConfidenceGauge 
-          value={incident.ml_confidence?.overall}
-          label="TRIAGE CONFIDENCE"
-          color={isReview ? 'magenta' : badgeVariant === 'p0-critical' ? 'cyan' : 'yellow'}
-        />
-      </div>
 
       {/* Corroboration & Witness Signal Feeds */}
       <div className="deep-card-corroboration">

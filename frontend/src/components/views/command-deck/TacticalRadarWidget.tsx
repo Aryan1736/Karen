@@ -276,36 +276,43 @@ export const TacticalRadarWidget: React.FC<TacticalRadarWidgetProps> = ({
             />
           ))}
 
-          {/* Active Bearing Vector Ray (Points accurately to selected target) */}
-          {sweepAngle != null ? (
-            <g>
+          {/* Continuous 360° Rotating Radar Sweep Beam (Always rotating in circles) */}
+          <g>
+            <line
+              x1={cx}
+              y1={cy}
+              x2={cx}
+              y2={cy - outerR}
+              stroke="#00f0ff"
+              strokeWidth="2.2"
+              filter="url(#cyanGlow)"
+              strokeLinecap="round"
+            />
+            <path
+              d={`M ${cx} ${cy} L ${cx} ${cy - outerR} A ${outerR} ${outerR} 0 0 0 ${cx - outerR * 0.45} ${cy - outerR * 0.89} Z`}
+              fill="rgba(0, 240, 255, 0.14)"
+            />
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              from={`0 ${cx} ${cy}`}
+              to={`360 ${cx} ${cy}`}
+              dur="2.8s"
+              repeatCount="indefinite"
+            />
+          </g>
+
+          {/* Locked Target Vector Line if incident selected */}
+          {sweepAngle != null && (
+            <g opacity="0.65">
               <line
                 x1={cx}
                 y1={cy}
                 x2={cx + outerR * Math.cos(((sweepAngle - 90) * Math.PI) / 180)}
                 y2={cy + outerR * Math.sin(((sweepAngle - 90) * Math.PI) / 180)}
-                stroke="#00f0ff"
-                strokeWidth="2.2"
-                filter="url(#cyanGlow)"
-              />
-              <circle
-                cx={cx + outerR * Math.cos(((sweepAngle - 90) * Math.PI) / 180)}
-                cy={cy + outerR * Math.sin(((sweepAngle - 90) * Math.PI) / 180)}
-                r="3"
-                fill="#00f0ff"
-              />
-            </g>
-          ) : (
-            /* Ambient 360° Live Radar Sweep when no incident is explicitly locked */
-            <g className="radar-ambient-sweep">
-              <line
-                x1={cx}
-                y1={cy}
-                x2={cx}
-                y2={cy - outerR}
-                stroke="#00f0ff"
-                strokeWidth="1.8"
-                filter="url(#cyanGlow)"
+                stroke="#38bdf8"
+                strokeWidth="1.2"
+                strokeDasharray="2, 3"
               />
             </g>
           )}
@@ -367,27 +374,6 @@ export const TacticalRadarWidget: React.FC<TacticalRadarWidgetProps> = ({
         >
           <Crosshair size={13} className="radar-btn-icon" />
         </button>
-      </div>
-
-      {/* Real Mathematical Telemetry Readout Below Radar (Zero Hallucinated Numbers) */}
-      <div className="radar-telemetry-readout">
-        {selectedTelemetry && selectedIncident ? (
-          <div className="radar-telemetry-locked">
-            <span className="telemetry-pill-target">TRK: {selectedIncident.incident_id}</span>
-            <span className="telemetry-vals">
-              BRG: {selectedTelemetry.bearing}° {selectedTelemetry.compassDir} // RNG: {selectedTelemetry.distanceKm} KM
-            </span>
-          </div>
-        ) : (
-          <div className="radar-telemetry-idle">
-            <span className="telemetry-pill-idle">
-              SCOPE: {maxDistanceKm.toFixed(0)} KM
-            </span>
-            <span className="telemetry-vals">
-              {mappedIncidents.length} TARGETS GEO-LOCKED
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
