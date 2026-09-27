@@ -115,10 +115,12 @@ setup_exception_handlers(app)
 
 from .api.routes.incidents import router as incidents_router
 from .api.routes.reports import router as reports_router
+from .api.routes.simulation import router as simulation_router
 from .api.routes.websockets import router as websockets_router
 
 app.include_router(reports_router)
 app.include_router(incidents_router)
+app.include_router(simulation_router)
 app.include_router(websockets_router)
 
 

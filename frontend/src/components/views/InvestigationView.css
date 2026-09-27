@@ -1,3 +1,8 @@
+/* ==========================================================================
+   TINGLE — Investigation View (Spider-Verse Tactical Evidence Room)
+   Aesthetic: Forensic Crime Dossier Board · Hard Ink Borders · Halftone Screentone
+   ========================================================================== */
+
 .investigation-view {
   display: flex;
   flex-direction: column;
@@ -15,7 +20,7 @@
   padding: 8px 20px;
   background-color: var(--color-p0-critical);
   color: var(--color-newsprint-white);
-  border-bottom: 2px solid var(--color-void-dark);
+  border-bottom: 3px solid var(--color-void-dark);
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -35,23 +40,444 @@
 .inv-offline-reconnect-btn {
   background-color: var(--color-void-dark);
   color: var(--color-newsprint-white);
-  border: 1px solid var(--color-newsprint-white);
-  padding: 3px 10px;
-  font-size: 11px;
+  border: 2px solid var(--color-newsprint-white);
+  padding: 4px 12px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
   cursor: pointer;
-  border-radius: 3px;
   text-transform: uppercase;
+  transition: transform 0.1s ease;
 }
 
 .inv-offline-reconnect-btn:hover {
   background-color: var(--color-dispatch-yellow);
   color: var(--color-void-dark);
+  border-color: var(--color-void-dark);
+  transform: translate(-1px, -1px);
 }
 
-/* Sub-Navigation Bar / Tabs */
+/* --------------------------------------------------------------------------
+   Top Header (Dossier Archive & Selection View)
+   -------------------------------------------------------------------------- */
+.investigation-top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: 8px 24px;
+  background-color: var(--color-surface-dark);
+  border-bottom: 2px solid var(--color-void-dark);
+  box-shadow: 0 2px 0 var(--color-void-dark);
+  flex-shrink: 0;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.investigation-header-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.inv-badge-tape {
+  font-family: var(--font-headline);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  background-color: var(--color-dispatch-yellow);
+  color: var(--color-void-dark);
+  padding: 3px 8px;
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 2px 2px 0 var(--color-void-dark);
+  transform: rotate(-1.5deg);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.investigation-title-combo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.investigation-main-heading {
+  font-family: var(--font-headline);
+  font-size: 22px;
+  letter-spacing: 0.05em;
+  color: var(--color-newsprint-white);
+  margin: 0;
+  line-height: 1;
+}
+
+.inv-count-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-multiverse-cyan);
+  background-color: var(--color-surface-container);
+  border: 1px solid var(--color-multiverse-cyan);
+  padding: 2px 8px;
+  letter-spacing: 0.05em;
+}
+
+.investigation-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   Dossier Workspace & Forensic Case Directory
+   -------------------------------------------------------------------------- */
+.investigation-dossier-workspace {
+  flex: 1;
+  padding: 24px;
+  max-width: 1720px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dossier-filter-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background-color: var(--color-surface-dark);
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 3px 3px 0 var(--color-void-dark);
+  padding: 10px 14px;
+  flex-wrap: wrap;
+}
+
+.dossier-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-surface-container-low);
+  border: 1px solid var(--color-border-bright);
+  padding: 6px 12px;
+  flex: 1;
+  min-width: 260px;
+  max-width: 580px;
+}
+
+.dossier-search-bar:focus-within {
+  border-color: var(--color-multiverse-cyan);
+  box-shadow: 0 0 0 1px var(--color-multiverse-cyan);
+}
+
+.dossier-search-icon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.dossier-search-input {
+  background: none;
+  border: none;
+  color: var(--color-newsprint-white);
+  font-size: 11.5px;
+  width: 100%;
+  outline: none;
+  letter-spacing: 0.04em;
+}
+
+.dossier-search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.dossier-search-clear {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 12px;
+}
+
+.dossier-search-clear:hover {
+  color: var(--color-p0-critical);
+}
+
+.dossier-filter-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dossier-filter-btn {
+  background-color: var(--color-surface-container);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-subtle);
+  padding: 6px 12px;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.1s ease;
+}
+
+.dossier-filter-btn:hover {
+  background-color: var(--color-surface-container-high);
+  color: var(--color-newsprint-white);
+  border-color: var(--color-newsprint-white);
+}
+
+.dossier-filter-btn.is-active {
+  background-color: var(--color-multiverse-cyan);
+  color: var(--color-void-dark);
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 2px 2px 0 var(--color-void-dark);
+  font-weight: 700;
+}
+
+/* Dossier Grid */
+.dossier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+}
+
+.dossier-card {
+  background-color: var(--color-surface-dark);
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 4px 4px 0 var(--color-void-dark);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.dossier-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--color-void-dark);
+  border-color: var(--color-multiverse-cyan);
+}
+
+.dossier-card.dossier-critical {
+  border-color: var(--color-p0-critical);
+  box-shadow: 4px 4px 0 var(--color-p0-critical);
+}
+
+.dossier-card.dossier-critical:hover {
+  box-shadow: 6px 6px 0 var(--color-p0-critical);
+}
+
+.dossier-card-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: var(--color-surface-dim);
+  border-bottom: 2px solid var(--color-void-dark);
+  gap: 8px;
+}
+
+.dossier-file-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.dossier-badges-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dossier-status-pill {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border: 1px solid var(--color-border-subtle);
+  background-color: var(--color-surface-container);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.dossier-status-pill.status-active,
+.dossier-status-pill.status-verified {
+  border-color: var(--color-system-green);
+  color: var(--color-system-green);
+}
+
+.dossier-status-pill.status-needs_review {
+  border-color: var(--color-hazard-orange);
+  color: var(--color-hazard-orange);
+}
+
+.dossier-tier-pill {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+}
+
+.dossier-tier-pill.tier-critical {
+  background-color: var(--color-p0-critical);
+  color: var(--color-newsprint-white);
+  border-color: var(--color-void-dark);
+}
+
+.dossier-tier-pill.tier-high {
+  background-color: var(--color-hazard-orange);
+  color: var(--color-void-dark);
+}
+
+.dossier-tier-pill.tier-medium {
+  background-color: var(--color-dispatch-yellow);
+  color: var(--color-void-dark);
+}
+
+.dossier-tier-pill.tier-low {
+  background-color: var(--color-multiverse-cyan);
+  color: var(--color-void-dark);
+}
+
+.dossier-card-content {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.dossier-incident-type {
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  color: var(--color-newsprint-white);
+  margin: 0;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.dossier-location-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+}
+
+.dossier-loc-pin {
+  font-size: 12px;
+}
+
+.dossier-loc-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dossier-metrics-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px 10px;
+  background-color: var(--color-surface-container-low);
+  border: 1px solid var(--color-border-subtle);
+  margin-top: 4px;
+}
+
+.dossier-metric-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dossier-metric-block .metric-tag {
+  font-size: 9.5px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.dossier-metric-block .metric-data {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-newsprint-white);
+}
+
+.dossier-progress-track {
+  height: 4px;
+  background-color: var(--color-surface-container);
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.dossier-progress-bar {
+  height: 100%;
+}
+
+.dossier-progress-bar.bar-critical { background-color: var(--color-p0-critical); }
+.dossier-progress-bar.bar-high { background-color: var(--color-hazard-orange); }
+.dossier-progress-bar.bar-medium { background-color: var(--color-dispatch-yellow); }
+.dossier-progress-bar.bar-low { background-color: var(--color-multiverse-cyan); }
+
+.dossier-card-footer {
+  padding: 10px 16px;
+  background-color: var(--color-surface-dim);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.dossier-open-btn {
+  width: 100%;
+  background-color: var(--color-surface-container);
+  color: var(--color-newsprint-white);
+  border: 1px solid var(--color-border-bright);
+  padding: 8px 12px;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.15s ease;
+}
+
+.dossier-open-btn:hover {
+  background-color: var(--color-dispatch-yellow);
+  color: var(--color-void-dark);
+  border-color: var(--color-void-dark);
+  box-shadow: 2px 2px 0 var(--color-void-dark);
+}
+
+.dossier-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background-color: var(--color-surface-dark);
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 4px 4px 0 var(--color-void-dark);
+  max-width: 580px;
+  margin: 40px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dossier-empty-title {
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  color: var(--color-newsprint-white);
+  margin-bottom: 8px;
+}
+
+.dossier-empty-text {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+/* --------------------------------------------------------------------------
+   Sub-Navigation Bar / Tabs (When Incident is Active)
+   -------------------------------------------------------------------------- */
 .inv-subnav-bar {
   background-color: var(--color-surface-dim);
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 2px solid var(--color-void-dark);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -60,8 +486,8 @@
 .inv-subnav-inner {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 24px;
+  gap: 8px;
+  padding: 8px 24px;
   max-width: 1720px;
   margin: 0 auto;
   overflow-x: auto;
@@ -70,203 +496,52 @@
 .inv-tab-btn {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 12px 14px;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--color-surface-container);
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 2px 2px 0 var(--color-void-dark);
   color: var(--color-text-secondary);
-  font-family: var(--font-headline);
-  font-size: 12px;
-  letter-spacing: 0.03em;
+  font-size: 14px;
+  letter-spacing: 0.05em;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
   white-space: nowrap;
 }
 
 .inv-tab-btn:hover {
   color: var(--color-newsprint-white);
-  background-color: var(--color-surface-container-low);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--color-void-dark);
 }
 
 .inv-tab-btn.is-active {
-  color: var(--color-newsprint-white);
-  border-bottom-color: var(--color-multiverse-cyan);
-  background-color: var(--color-surface-container-low);
+  background-color: var(--color-dispatch-yellow);
+  color: var(--color-void-dark);
+  border-color: var(--color-void-dark);
+  box-shadow: 3px 3px 0 var(--color-void-dark);
 }
 
 .inv-tab-count {
-  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 8px;
-  background-color: var(--color-surface-container-high);
-  color: var(--color-text-secondary);
+  padding: 1px 6px;
+  background-color: var(--color-void-dark);
+  color: var(--color-newsprint-white);
 }
 
 .inv-tab-btn.is-active .inv-tab-count {
-  background-color: var(--color-multiverse-cyan);
-  color: var(--color-void-dark);
-}
-
-/* Empty Header when no incident selected */
-.investigation-empty-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 52px;
-  padding: 0 20px;
-  background-color: var(--color-surface-dark);
-  border-bottom: 1px solid var(--color-border-subtle);
-  flex-shrink: 0;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.investigation-empty-title-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.investigation-empty-heading {
-  font-family: var(--font-headline);
-  font-size: 16px;
-  letter-spacing: 0.03em;
-  color: var(--color-newsprint-white);
-  margin: 0;
-}
-
-/* Empty Container (No selection / loading / error) */
-.investigation-empty-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
-  text-align: center;
-  min-height: 400px;
-}
-
-.investigation-empty-card {
-  max-width: 520px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 8px;
-  padding: 36px 28px;
-  background-color: var(--color-surface-dark);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-}
-
-.investigation-empty-card.card-error {
-  border-color: var(--color-p0-critical);
-}
-
-.investigation-empty-icon {
-  margin-bottom: 14px;
-}
-
-.investigation-empty-title {
-  font-family: var(--font-headline);
-  font-size: 19px;
-  letter-spacing: 0.02em;
-  color: var(--color-newsprint-white);
-  margin-bottom: 8px;
-}
-
-.investigation-empty-text {
-  font-family: var(--font-body);
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--color-text-secondary);
-  margin-bottom: 20px;
-}
-
-.investigation-quick-select {
-  margin-top: 24px;
-  width: 100%;
-  max-width: 480px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  text-align: left;
-}
-
-.quick-select-label {
-  font-family: var(--font-headline);
-  font-size: 11px;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.quick-select-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.quick-select-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background-color: var(--color-surface-container);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  gap: 8px;
-}
-
-.quick-select-item:hover {
-  background-color: var(--color-surface-container-high);
-  border-color: var(--color-multiverse-cyan);
-}
-
-.quick-id {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--color-newsprint-white);
-  background-color: var(--color-surface-dim);
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.quick-type {
-  font-family: var(--font-headline);
-  font-size: 12px;
-  color: var(--color-multiverse-cyan);
-  text-transform: uppercase;
-}
-
-.quick-loc {
-  font-family: var(--font-body);
-  font-size: 11.5px;
-  color: var(--color-text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 140px;
-}
-
-.quick-action {
-  font-family: var(--font-headline);
-  font-size: 11px;
+  background-color: var(--color-void-dark);
   color: var(--color-dispatch-yellow);
-  white-space: nowrap;
 }
 
-/* Main Workspace Body */
+/* --------------------------------------------------------------------------
+   Main Workspace Body
+   -------------------------------------------------------------------------- */
 .investigation-workspace-body {
   display: flex;
   flex-direction: column;
-  padding: 20px 24px;
+  padding: 24px;
   max-width: 1720px;
   width: 100%;
   margin: 0 auto;
@@ -275,7 +550,7 @@
 .tab-pane-fade {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
   animation: fadeIn 0.15s ease-in-out;
 }
 
@@ -294,13 +569,13 @@
 
 .shortcut-card {
   background-color: var(--color-surface-dark);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 6px;
-  padding: 16px;
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 4px 4px 0 var(--color-void-dark);
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  gap: 10px;
+  position: relative;
 }
 
 .shortcut-header {
@@ -310,9 +585,8 @@
 }
 
 .shortcut-header h4 {
-  font-family: var(--font-headline);
-  font-size: 13.5px;
-  letter-spacing: 0.02em;
+  font-size: 16px;
+  letter-spacing: 0.04em;
   color: var(--color-newsprint-white);
   margin: 0;
 }
@@ -322,52 +596,103 @@
   font-size: 12.5px;
   color: var(--color-text-secondary);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 .shortcut-link-btn {
   align-self: flex-start;
-  background: none;
-  border: none;
+  background: var(--color-surface-container);
+  border: 1px solid var(--color-border-bright);
   color: var(--color-multiverse-cyan);
-  font-family: var(--font-headline);
-  font-size: 12px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
   cursor: pointer;
-  padding: 0;
-  margin-top: 4px;
-  transition: opacity 0.15s ease;
+  padding: 6px 12px;
+  margin-top: 6px;
+  transition: all 0.12s ease;
 }
 
 .shortcut-link-btn:hover {
-  text-decoration: underline;
+  background-color: var(--color-multiverse-cyan);
+  color: var(--color-void-dark);
+  border-color: var(--color-void-dark);
+  box-shadow: 2px 2px 0 var(--color-void-dark);
+}
+
+.shortcut-link-btn.text-dispatch-yellow {
+  color: var(--color-dispatch-yellow);
+}
+
+.shortcut-link-btn.text-dispatch-yellow:hover {
+  background-color: var(--color-dispatch-yellow);
+  color: var(--color-void-dark);
+  border-color: var(--color-void-dark);
+}
+
+/* Empty / Loading / Error Containers */
+.investigation-empty-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  min-height: 400px;
+}
+
+.investigation-empty-card {
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 2px solid var(--color-void-dark);
+  box-shadow: 4px 4px 0 var(--color-void-dark);
+  padding: 36px 28px;
+  background-color: var(--color-surface-dark);
+}
+
+.investigation-empty-card.card-error {
+  border-color: var(--color-p0-critical);
+  box-shadow: 4px 4px 0 var(--color-p0-critical);
+}
+
+.investigation-empty-icon {
+  margin-bottom: 14px;
+}
+
+.investigation-empty-title {
+  font-family: var(--font-headline);
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  color: var(--color-newsprint-white);
+  margin-bottom: 8px;
+}
+
+.investigation-empty-text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
 }
 
 /* Common Text Helpers */
-.text-cyan {
-  color: var(--color-multiverse-cyan) !important;
-}
-
-.text-crimson {
-  color: var(--color-p0-critical) !important;
-}
-
-.text-green {
-  color: var(--color-system-green) !important;
-}
-
-.text-muted {
-  color: var(--color-text-muted) !important;
-}
-
-.text-secondary {
-  color: var(--color-text-secondary) !important;
-}
+.text-cyan { color: var(--color-multiverse-cyan) !important; }
+.text-crimson { color: var(--color-p0-critical) !important; }
+.text-green { color: var(--color-system-green) !important; }
+.text-muted { color: var(--color-text-muted) !important; }
+.text-secondary { color: var(--color-text-secondary) !important; }
+.text-dispatch-yellow { color: var(--color-dispatch-yellow) !important; }
 
 @media (max-width: 768px) {
   .investigation-workspace-body {
     padding: 12px;
   }
   .overview-shortcuts-grid {
+    grid-template-columns: 1fr;
+  }
+  .dossier-grid {
     grid-template-columns: 1fr;
   }
 }

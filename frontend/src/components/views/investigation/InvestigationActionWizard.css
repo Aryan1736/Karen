@@ -1,9 +1,9 @@
 .action-wizard-card {
   background-color: var(--color-surface-dark);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 6px;
+  border: 2px solid var(--color-void-dark);
+  border-radius: 0px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 4px 4px 0 var(--color-void-dark);
 }
 
 .wizard-header {
@@ -12,7 +12,7 @@
   justify-content: space-between;
   padding: 14px 20px;
   background-color: var(--color-surface-container-low);
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 2px solid var(--color-void-dark);
   flex-wrap: wrap;
   gap: 12px;
 }

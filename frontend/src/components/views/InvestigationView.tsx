@@ -42,6 +42,8 @@ export const InvestigationView: React.FC = () => {
   const { data, isLoading, error, refetch } = useIncidentDetail(selectedIncidentId);
 
   const [activeTab, setActiveTab] = useState<InvestigationTab>('overview');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filterSeverity, setFilterSeverity] = useState<'ALL' | 'CRITICAL' | 'HIGH' | 'NEEDS_REVIEW' | 'VERIFIED'>('ALL');
 
   const handleBackToDeck = useCallback(() => {
     setActiveView('command-deck');
@@ -52,76 +54,197 @@ export const InvestigationView: React.FC = () => {
     await refetch();
   }, [refetch]);
 
-  // STATE 1: No Incident Selected
+  // Filter available incidents for forensic case directory
+  const filteredIncidents = availableIncidents.filter((inc) => {
+    const matchesSearch = !searchQuery.trim() || 
+      inc.incident_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (inc.location?.text && inc.location.text.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (inc.incident_type && inc.incident_type.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    if (filterSeverity === 'CRITICAL') return inc.priority?.level === 'CRITICAL' || inc.urgency === 'CRITICAL';
+    if (filterSeverity === 'HIGH') return inc.priority?.level === 'HIGH' || inc.urgency === 'HIGH';
+    if (filterSeverity === 'NEEDS_REVIEW') return inc.status === 'NEEDS_REVIEW';
+    if (filterSeverity === 'VERIFIED') return inc.status === 'VERIFIED';
+    return true;
+  });
+
+  // STATE 1: No Incident Selected — Render Forensic Evidence Board & Dossier Directory
   if (!selectedIncidentId) {
     return (
-      <div className="investigation-view" role="region" aria-label="Investigation Evidence Board">
-        <header className="investigation-empty-header">
-          <div className="investigation-empty-title-group">
-            <Search size={18} className="text-cyan" />
-            <h1 className="investigation-empty-heading">Incident Investigation</h1>
-          </div>
-          <Button 
-            type="button"
-            variant="secondary" 
-            size="sm" 
-            onClick={handleBackToDeck}
-            aria-label="Return to Command Deck"
-          >
-            <ArrowLeft size={14} style={{ marginRight: 6 }} />
-            Back to Command Deck
-          </Button>
-        </header>
-
-        <main className="investigation-empty-container">
-          <div className="investigation-empty-card">
-            <div className="investigation-empty-icon">
-              <ShieldAlert size={42} color="var(--color-hazard-orange)" />
+      <div className="investigation-view pattern-halftone" role="region" aria-label="Investigation Evidence Board">
+        <header className="investigation-top-header">
+          <div className="investigation-header-badge-group">
+            <span className="inv-badge-tape">EVIDENCE ROOM</span>
+            <div className="investigation-title-combo">
+              <Search size={18} className="text-cyan" />
+              <h1 className="investigation-main-heading">INCIDENT FORENSIC DOSSIERS</h1>
             </div>
-            <h2 className="investigation-empty-title">Select an Incident to Investigate</h2>
-            <p className="investigation-empty-text">
-              Choose an active incident from the triage queue or map to inspect verified reports, priority factor contributions, timeline events, and operator review actions.
-            </p>
+            <span className="inv-count-pill font-mono">{availableIncidents.length} CASE FILES</span>
+          </div>
+          <div className="investigation-header-actions">
             <Button 
               type="button"
-              variant="primary" 
-              size="md" 
+              variant="secondary" 
+              size="sm" 
               onClick={handleBackToDeck}
-              aria-label="Open Command Deck Queue"
+              aria-label="Return to Command Deck"
             >
-              Open Command Deck Queue
+              <ArrowLeft size={14} style={{ marginRight: 6 }} />
+              RETURN TO COMMAND DECK
             </Button>
-
-            {availableIncidents.length > 0 && (
-              <div className="investigation-quick-select">
-                <span className="quick-select-label">Or Inspect Active Incident:</span>
-                <div className="quick-select-list">
-                  {availableIncidents.map((inc) => (
-                    <button
-                      key={inc.incident_id}
-                      type="button"
-                      className="quick-select-item"
-                      onClick={() => {
-                        setSelectedIncidentId(inc.incident_id);
-                        setActiveTab('overview');
-                      }}
-                    >
-                      <span className="quick-id" title={inc.incident_id}>
-                        {inc.incident_id.length > 14
-                          ? `#${inc.incident_id.replace(/^inc-/, '').substring(0, 8)}`
-                          : inc.incident_id}
-                      </span>
-                      <span className="quick-type">
-                        {inc.incident_type ? inc.incident_type.replace(/_/g, ' ') : 'Unclassified'}
-                      </span>
-                      <span className="quick-loc">{inc.location?.text || 'Bhubaneswar'}</span>
-                      <span className="quick-action">Inspect →</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
+        </header>
+
+        <main className="investigation-dossier-workspace">
+          {/* Dossier Control Filter Bar */}
+          <div className="dossier-filter-strip">
+            <div className="dossier-search-bar">
+              <Search size={14} className="dossier-search-icon" />
+              <input
+                type="text"
+                className="dossier-search-input font-mono"
+                placeholder="SEARCH DOSSIERS BY ID, LOCATION, OR DISPATCH TYPE..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search incident dossiers"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="dossier-search-clear"
+                  onClick={() => setSearchQuery('')}
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="dossier-filter-buttons">
+              {(['ALL', 'CRITICAL', 'HIGH', 'NEEDS_REVIEW', 'VERIFIED'] as const).map((sev) => (
+                <button
+                  key={sev}
+                  type="button"
+                  className={`dossier-filter-btn font-headline ${filterSeverity === sev ? 'is-active' : ''}`}
+                  onClick={() => setFilterSeverity(sev)}
+                >
+                  {sev.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Dossier Grid */}
+          {filteredIncidents.length > 0 ? (
+            <div className="dossier-grid">
+              {filteredIncidents.map((inc) => {
+                const priorityScore = inc.priority?.score != null ? Math.round(inc.priority.score) : 0;
+                const priorityLevel = inc.priority?.level || 'MEDIUM';
+                const reportsCount = inc.source_report_ids?.length || inc.corroboration?.report_count || 1;
+                const shortId = inc.incident_id.replace(/^inc-/, '').substring(0, 8).toUpperCase();
+                const isCritical = priorityLevel === 'CRITICAL' || inc.urgency === 'CRITICAL';
+
+                return (
+                  <article 
+                    key={inc.incident_id} 
+                    className={`dossier-card ${isCritical ? 'dossier-critical' : ''}`}
+                    onClick={() => {
+                      setSelectedIncidentId(inc.incident_id);
+                      setActiveTab('overview');
+                    }}
+                  >
+                    {/* Top Case Tape Header */}
+                    <div className="dossier-card-topbar">
+                      <div className="dossier-file-tag font-mono">
+                        <span>DOSSIER // #{shortId}</span>
+                      </div>
+                      <div className="dossier-badges-wrap">
+                        <span className={`dossier-status-pill status-${inc.status.toLowerCase()}`}>
+                          {inc.status}
+                        </span>
+                        <span className={`dossier-tier-pill tier-${priorityLevel.toLowerCase()}`}>
+                          P{priorityLevel === 'CRITICAL' ? '0' : priorityLevel === 'HIGH' ? '1' : priorityLevel === 'MEDIUM' ? '2' : '3'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="dossier-card-content">
+                      <h2 className="dossier-incident-type font-headline">
+                        {inc.incident_type ? inc.incident_type.replace(/_/g, ' ') : 'EMERGENCY INCIDENT'}
+                      </h2>
+
+                      <div className="dossier-location-row font-mono">
+                        <span className="dossier-loc-pin">📍</span>
+                        <span className="dossier-loc-text">{inc.location?.text || 'Bhubaneswar Central Sector'}</span>
+                      </div>
+
+                      {/* Tactical Metrics Bar */}
+                      <div className="dossier-metrics-strip font-mono">
+                        <div className="dossier-metric-block">
+                          <span className="metric-tag">PRIORITY</span>
+                          <span className="metric-data text-dispatch-yellow">{priorityScore}/100</span>
+                        </div>
+                        <div className="dossier-metric-block">
+                          <span className="metric-tag">DISPATCHES</span>
+                          <span className="metric-data text-cyan">{reportsCount} REPORTS</span>
+                        </div>
+                        <div className="dossier-metric-block">
+                          <span className="metric-tag">AT RISK</span>
+                          <span className="metric-data">{inc.people_at_risk?.count != null ? inc.people_at_risk.count : '—'}</span>
+                        </div>
+                      </div>
+
+                      {/* Progress Meter */}
+                      <div className="dossier-progress-track">
+                        <div 
+                          className={`dossier-progress-bar bar-${priorityLevel.toLowerCase()}`}
+                          style={{ width: `${Math.min(100, Math.max(5, priorityScore))}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Card Footer Button */}
+                    <div className="dossier-card-footer">
+                      <button 
+                        type="button" 
+                        className="dossier-open-btn font-headline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedIncidentId(inc.incident_id);
+                          setActiveTab('overview');
+                        }}
+                      >
+                        INSPECT EVIDENCE DOSSIER →
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="dossier-empty-state">
+              <ShieldAlert size={48} className="text-dispatch-yellow mb-3" />
+              <h2 className="dossier-empty-title font-headline">NO INCIDENT DOSSIERS FOUND</h2>
+              <p className="dossier-empty-text font-body">
+                {searchQuery 
+                  ? `No emergency cases matched "${searchQuery}". Clear your search query or reset filters.` 
+                  : 'All incident streams are currently synchronized. Awaiting new citizen radio calls or sensor signals.'}
+              </p>
+              {searchQuery && (
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => { setSearchQuery(''); setFilterSeverity('ALL'); }}
+                >
+                  RESET SEARCH FILTERS
+                </Button>
+              )}
+            </div>
+          )}
         </main>
       </div>
     );
@@ -166,50 +289,50 @@ export const InvestigationView: React.FC = () => {
           <div className="inv-subnav-inner">
             <button
               type="button"
-              className={`inv-tab-btn ${activeTab === 'overview' ? 'is-active' : ''}`}
+              className={`inv-tab-btn font-headline ${activeTab === 'overview' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('overview')}
             >
               <LayoutDashboard size={14} />
-              <span>Overview</span>
+              <span>EVIDENCE DOSSIER</span>
             </button>
 
             <button
               type="button"
-              className={`inv-tab-btn ${activeTab === 'reports' ? 'is-active' : ''}`}
+              className={`inv-tab-btn font-headline ${activeTab === 'reports' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('reports')}
             >
               <FileText size={14} />
-              <span>Reports & Evidence</span>
-              <span className="inv-tab-count">{reports.length}</span>
+              <span>CITIZEN DISPATCHES</span>
+              <span className="inv-tab-count font-mono">{reports.length}</span>
             </button>
 
             <button
               type="button"
-              className={`inv-tab-btn ${activeTab === 'timeline' ? 'is-active' : ''}`}
+              className={`inv-tab-btn font-headline ${activeTab === 'timeline' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('timeline')}
             >
               <History size={14} />
-              <span>Timeline</span>
+              <span>TIMELINE ENGINE</span>
             </button>
 
             <button
               type="button"
-              className={`inv-tab-btn ${activeTab === 'action' ? 'is-active' : ''}`}
+              className={`inv-tab-btn font-headline ${activeTab === 'action' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('action')}
             >
               <ShieldCheck size={14} />
-              <span>Take Action</span>
+              <span>COMMAND PROTOCOLS</span>
             </button>
 
             <button
               type="button"
-              className={`inv-tab-btn ${activeTab === 'audit' ? 'is-active' : ''}`}
+              className={`inv-tab-btn font-headline ${activeTab === 'audit' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('audit')}
             >
               <CheckCircle2 size={14} />
-              <span>Audit History</span>
+              <span>IMMUTABLE AUDIT LOG</span>
               {auditTrail.length > 0 && (
-                <span className="inv-tab-count">{auditTrail.length}</span>
+                <span className="inv-tab-count font-mono">{auditTrail.length}</span>
               )}
             </button>
           </div>
@@ -257,41 +380,41 @@ export const InvestigationView: React.FC = () => {
             <div className="tab-pane-fade">
               <IncidentFactPanel incident={incident} />
 
-              {/* Bottom Quick-Action Shortcuts */}
+              {/* Bottom Tactical Shortcuts */}
               <div className="overview-shortcuts-grid">
                 <div className="shortcut-card">
                   <div className="shortcut-header">
                     <FileText size={16} className="text-cyan" />
-                    <h4>Incoming Evidence</h4>
+                    <h4 className="font-headline">PINNED CITIZEN EVIDENCE ({reports.length})</h4>
                   </div>
                   <p>
                     {reports.length > 0 
-                      ? `${reports.length} citizen dispatch report(s) correlated with this incident.`
-                      : 'No source reports recorded yet.'}
+                      ? `${reports.length} citizen dispatch transcript(s) correlated with this incident.`
+                      : 'No raw source transcripts recorded yet.'}
                   </p>
                   <button 
                     type="button" 
-                    className="shortcut-link-btn"
+                    className="shortcut-link-btn font-headline"
                     onClick={() => setActiveTab('reports')}
                   >
-                    View All Reports ({reports.length}) →
+                    INSPECT DISPATCH EVIDENCE ({reports.length}) →
                   </button>
                 </div>
 
                 <div className="shortcut-card">
                   <div className="shortcut-header">
                     <ShieldCheck size={16} className="text-dispatch-yellow" />
-                    <h4>Operator Verification</h4>
+                    <h4 className="font-headline">SOVEREIGN COMMAND ACTION</h4>
                   </div>
                   <p>
-                    Current status: <strong>{incident.status}</strong>. Verify details, escalate urgency, or override parameters.
+                    Current Status: <strong>{incident.status}</strong> · Urgency: <strong>{incident.urgency}</strong>. Escalate units, adjust severity, or execute operator field overrides.
                   </p>
                   <button 
                     type="button" 
-                    className="shortcut-link-btn text-dispatch-yellow"
+                    className="shortcut-link-btn text-dispatch-yellow font-headline"
                     onClick={() => setActiveTab('action')}
                   >
-                    Open Action Wizard →
+                    LAUNCH ACTION WIZARD →
                   </button>
                 </div>
               </div>

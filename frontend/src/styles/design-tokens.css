@@ -105,10 +105,10 @@
      5. TYPOGRAPHY FONT STACKS & SCALE (Engineered with Inter & JetBrains Mono)
      ========================================================================== */
   --font-brush: 'Permanent Marker', cursive;
-  --font-comic-display: 'Anton', sans-serif;
+  --font-comic-display: 'Bebas Neue', sans-serif;
   --font-bangers: 'Bangers', cursive;
-  --font-display: 'Anton', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-headline: 'Anton', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: 'Bebas Neue', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-headline: 'Bebas Neue', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-body: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;

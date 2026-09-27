@@ -149,13 +149,19 @@
 .timeline-step-content {
   flex: 1;
   background-color: var(--color-surface-dark);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 6px;
+  border: 2px solid var(--color-void-dark);
+  border-radius: 0px;
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 3px 3px 0 var(--color-void-dark);
+  transition: transform 0.12s ease;
+}
+
+.timeline-step-content:hover {
+  transform: translate(-1px, -1px);
+  border-color: var(--color-multiverse-cyan);
 }
 
 .step-header {

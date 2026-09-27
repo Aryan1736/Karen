@@ -25,6 +25,7 @@ class SimulationRunResponse(KarenBaseModel):
 class SimulationStartRequest(KarenBaseModel):
     """Configuration to start a simulated emergency scenario."""
     scenario_id: str = Field(..., min_length=1, description="Scenario template identifier")
+    speed: Optional[str] = Field(default="burst", description="Playback speed: 1x, 2x, 5x, 10x, burst")
     rate_per_minute: int = Field(default=15, ge=1, le=1000, description="Report injection rate")
     total_reports: int = Field(default=30, ge=1, le=10000, description="Total reports to inject")
     duplicate_probability: float = Field(

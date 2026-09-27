@@ -10,13 +10,19 @@ import {
   AuditTrailView,
   BriefingView
 } from './components/views';
+import { SimulationModal } from './components/simulator/SimulationModal';
 import './App.css';
 
 const AppViewport: React.FC = () => {
   const { activeView } = useNavigation();
 
   if (activeView === 'landing') {
-    return <LandingPageView />;
+    return (
+      <>
+        <LandingPageView />
+        <SimulationModal />
+      </>
+    );
   }
 
   return (
@@ -35,6 +41,9 @@ const AppViewport: React.FC = () => {
 
       {/* Footer Telemetry & Status Bar */}
       <FooterBar />
+
+      {/* Global Interactive Disaster Simulator Modal */}
+      <SimulationModal />
     </div>
   );
 };

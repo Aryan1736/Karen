@@ -104,7 +104,7 @@ Depth in TINGLE is purely tactile, directional, and physical—no blurred glow a
 ## 5. Reusable Component Rules
 
 ### 5.1 Tactical Buttons (`Button`)
-- **Visual:** Solid structural fills (`#E61937`, `#FF5C00`, `#FFE600`, `#1f1f24`), solid 2px–3px `#08080C` ink border, all-caps Anton or Space Grotesk typography.
+- **Visual:** Solid structural fills (`#E61937`, `#FF5C00`, `#FFE600`, `#1f1f24`), solid 2px–3px `#08080C` ink border, all-caps Bebas Neue or Space Grotesk typography.
 - **Interaction Physics:**
   - Base: `box-shadow: 3px 3px 0 #08080C;` (or `4px 4px 0 #08080C`)
   - Hover: `transform: translate(-1px, -1px); box-shadow: 5px 5px 0 #08080C;`
@@ -132,7 +132,7 @@ Depth in TINGLE is purely tactile, directional, and physical—no blurred glow a
 ## 6. Anti-Patterns (Banned in TINGLE)
 
 1. **NO Emojis in production UI:** Use SVG/Lucide icons or technical glyphs.
-2. **NO Wide/Distorted Fonts or Anton/Space Grotesk:** Exclusively use `Inter` (sans) and `JetBrains Mono` (tabular monospace) to prevent character width blowout.
+2. **NO Wide/Distorted Fonts or Anton:** Exclusively use `Bebas Neue` (condensed display/headline), `Space Grotesk` / `Inter` (sans), and `JetBrains Mono` (tabular monospace) to prevent character width blowout.
 3. **NO Rounded Corners:** No `rounded-md`, `rounded-xl`, or `rounded-2xl` on cards, panels, or buttons. All corners are crisp 90° (`0px`).
 4. **NO Blur / Translucent Glass Shadows:** Never use blurry `box-shadow: 0 10px 30px rgba(0,0,0,0.2)`. Shadows must be hard, crisp, and directional (`Xpx Ypx 0 #08080C`).
 5. **NO Neon Gradient Bubbles:** No purple/blue gradient backgrounds or glowing aura spheres.

@@ -54,13 +54,13 @@ export const IncidentFactPanel: React.FC<IncidentFactPanelProps> = ({ incident }
         {/* Metric 1: Priority */}
         <div className="metric-card metric-priority">
           <div className="metric-header">
-            <span className="metric-label">Priority Rating</span>
+            <span className="metric-label font-headline">SEVERITY RATING</span>
             <Sliders size={14} className="text-dispatch-yellow" />
           </div>
           <div className="metric-value-row">
-            <span className="metric-number">{priorityScore}</span>
-            <span className="metric-denom">/ 100</span>
-            <span className={`metric-tier-tag tier-${priorityLevel.toLowerCase()}`}>
+            <span className="metric-number font-headline">{priorityScore}</span>
+            <span className="metric-denom font-mono">/ 100 PTS</span>
+            <span className={`metric-tier-tag tier-${priorityLevel.toLowerCase()} font-mono`}>
               {priorityLevel}
             </span>
           </div>
@@ -75,52 +75,52 @@ export const IncidentFactPanel: React.FC<IncidentFactPanelProps> = ({ incident }
         {/* Metric 2: Urgency */}
         <div className="metric-card metric-urgency">
           <div className="metric-header">
-            <span className="metric-label">Urgency Level</span>
+            <span className="metric-label font-headline">URGENCY CLASSIFICATION</span>
             <Flame size={14} className={isCritical ? 'text-crimson' : 'text-hazard'} />
           </div>
           <div className="metric-value-row">
-            <span className={`metric-urgency-val urgency-${urgency.toLowerCase()}`}>
+            <span className={`metric-urgency-val urgency-${urgency.toLowerCase()} font-headline`}>
               {urgency}
             </span>
           </div>
           <span className="metric-subtext">
-            {isCritical ? 'Immediate life-safety threat' : isHigh ? 'High risk situation' : 'Standard triage urgency'}
+            {isCritical ? 'Immediate life-safety escalation' : isHigh ? 'High threat level' : 'Standard triage urgency'}
           </span>
         </div>
 
         {/* Metric 3: People at Risk */}
         <div className="metric-card metric-risk">
           <div className="metric-header">
-            <span className="metric-label">People at Risk</span>
+            <span className="metric-label font-headline">CASUALTIES / TRAPPED</span>
             <Users size={14} className="text-cyan" />
           </div>
           <div className="metric-value-row">
-            <span className="metric-number">
+            <span className="metric-number font-headline">
               {peopleRiskCount != null ? peopleRiskCount : '—'}
             </span>
             {peopleRiskCount != null && (
-              <span className="metric-unit">{peopleRiskCount === 1 ? 'Person' : 'Individuals'}</span>
+              <span className="metric-unit font-mono">{peopleRiskCount === 1 ? 'PERSON' : 'INDIVIDUALS'}</span>
             )}
           </div>
           <span className="metric-subtext">
-            {peopleRiskCount != null && peopleRiskCount > 0 ? 'Assessed casualties or trapped' : 'No confirmed trapped reported'}
+            {peopleRiskCount != null && peopleRiskCount > 0 ? 'Assessed casualties or trapped reported' : 'No confirmed trapped casualties'}
           </span>
         </div>
 
         {/* Metric 4: Corroboration */}
         <div className="metric-card metric-corroboration">
           <div className="metric-header">
-            <span className="metric-label">Source Verification</span>
+            <span className="metric-label font-headline">CITIZEN CORROBORATION</span>
             <Radio size={14} className="text-cyan" />
           </div>
           <div className="metric-value-row">
-            <span className="metric-number">
+            <span className="metric-number font-headline">
               {corroborationScore != null ? `${corroborationScore}%` : '—'}
             </span>
-            <span className="metric-unit">{corroborationReports} {corroborationReports === 1 ? 'Dispatch' : 'Dispatches'}</span>
+            <span className="metric-unit font-mono">{corroborationReports} {corroborationReports === 1 ? 'DISPATCH' : 'DISPATCHES'}</span>
           </div>
           <span className="metric-subtext">
-            {corroborationReports > 1 ? 'Corroborated by multi-source telemetry' : 'Single eyewitness report'}
+            {corroborationReports > 1 ? 'Multi-source verified signal consensus' : 'Single eyewitness dispatch report'}
           </span>
         </div>
       </div>
@@ -131,43 +131,43 @@ export const IncidentFactPanel: React.FC<IncidentFactPanelProps> = ({ incident }
         <div className="detail-card">
           <div className="detail-card-header">
             <MapPin size={15} className="text-cyan" />
-            <h3>Incident Location & Response</h3>
+            <h3 className="font-headline">GEOSPATIAL GROUND ZERO & DEPLOYED UNITS</h3>
           </div>
 
           <div className="detail-list">
             <div className="detail-item">
-              <span className="item-label">Location</span>
+              <span className="item-label font-mono">INCIDENT LOCATION</span>
               <div className="item-value-wrap">
                 <span className="item-value font-bold">{locationText}</span>
                 {coordinatesStr && (
                   <span className="item-coords font-mono">{coordinatesStr}</span>
                 )}
-                <span className="item-precision">Precision: <strong>{locationPrecision}</strong></span>
+                <span className="item-precision font-mono">GPS LOCK: <strong>{locationPrecision.toUpperCase()}</strong></span>
               </div>
             </div>
 
             <div className="detail-item">
-              <span className="item-label">Required Response</span>
+              <span className="item-label font-mono">REQUIRED EMERGENCY UNITS</span>
               <div className="response-pills-wrap">
                 {incident.required_response && incident.required_response.length > 0 ? (
                   incident.required_response.map((resp, i) => (
-                    <span key={i} className="response-pill">
+                    <span key={i} className="response-pill font-mono">
                       {resp.replace(/_/g, ' ')}
                     </span>
                   ))
                 ) : (
-                  <span className="text-muted">Standard incident response protocols</span>
+                  <span className="text-muted font-mono">Standard CAD response units</span>
                 )}
               </div>
             </div>
 
             <div className="detail-item time-row">
               <div>
-                <span className="item-label">First Detected</span>
+                <span className="item-label font-mono">FIRST SIGNAL DETECTED</span>
                 <span className="item-time font-mono">{createdAtFormatted}</span>
               </div>
               <div>
-                <span className="item-label">Last Updated</span>
+                <span className="item-label font-mono">LAST TELEMETRY UPDATE</span>
                 <span className="item-time font-mono">{updatedAtFormatted}</span>
               </div>
             </div>
@@ -178,7 +178,7 @@ export const IncidentFactPanel: React.FC<IncidentFactPanelProps> = ({ incident }
         <div className="detail-card">
           <div className="detail-card-header">
             <Sliders size={15} className="text-dispatch-yellow" />
-            <h3>Priority Factor Breakdown</h3>
+            <h3 className="font-headline">DETERMINISTIC FACTOR ATTRIBUTION</h3>
           </div>
 
           <div className="factors-list">
@@ -190,21 +190,21 @@ export const IncidentFactPanel: React.FC<IncidentFactPanelProps> = ({ incident }
                 return (
                   <div key={idx} className="factor-row">
                     <div className="factor-info">
-                      <span className="factor-name">{f.factor}</span>
+                      <span className="factor-name font-mono">{f.factor}</span>
                       <span className="factor-val font-mono">{String(f.value)}</span>
                     </div>
                     <div className="factor-bar-wrap">
                       <div className="factor-bar-fill" style={{ width: `${percent}%` }} />
                     </div>
-                    <span className="factor-contrib font-mono">
+                    <span className="factor-contrib font-mono text-dispatch-yellow">
                       +{contribNum.toFixed(1)} pts
                     </span>
                   </div>
                 );
               })
             ) : (
-              <div className="empty-factors text-muted font-body text-sm">
-                Default triage calculation applied.
+              <div className="empty-factors text-muted font-mono text-xs">
+                Deterministic baseline triage factors applied.
               </div>
             )}
           </div>
@@ -212,7 +212,7 @@ export const IncidentFactPanel: React.FC<IncidentFactPanelProps> = ({ incident }
           {/* Model Confidence Chips */}
           {confidenceComponents.length > 0 && (
             <div className="confidence-footer">
-              <span className="conf-label">Model Confidence:</span>
+              <span className="conf-label font-headline">SIGNAL EXTRACTION CONFIDENCE:</span>
               <div className="conf-chips">
                 {confidenceComponents.map(([k, v]) => (
                   <span key={k} className="conf-chip font-mono">
