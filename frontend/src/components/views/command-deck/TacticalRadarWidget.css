@@ -1,0 +1,184 @@
+/**
+ * TINGLE Tactical Radar Widget — Styles & Layout
+ * 
+ * Direct visual implementation of the Spidey Tracker Reference Radar:
+ * - 12-sided spiderweb geometry with curved concentric web rings
+ * - Cyan center hub and real bearing vector line
+ * - Attached perimeter action buttons: Globe (Fit All) & Crosshair (Focus Target)
+ * - Real geodetic bearing, distance (km), and compass telemetry
+ */
+
+.tactical-radar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 90;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.radar-web-frame {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.75));
+}
+
+.radar-web-svg {
+  overflow: visible;
+}
+
+/* Ambient 360° Radar Sweep Animation when no incident is selected */
+.radar-ambient-sweep {
+  transform-origin: 65px 65px;
+  animation: radar-sweep-360 4s linear infinite;
+}
+
+@keyframes radar-sweep-360 {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Radar Target Pip Pulse */
+.radar-pip-pulse {
+  animation: pip-pulse 1.8s ease-out infinite;
+  transform-origin: center;
+}
+
+@keyframes pip-pulse {
+  0% {
+    r: 3.5px;
+    opacity: 1;
+  }
+  100% {
+    r: 9px;
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+   PERIMETER BUTTONS (Globe & Target buttons from reference)
+   ========================================================================== */
+.radar-edge-btn {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #061527;
+  border: 1.8px solid #38bdf8;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(56, 189, 248, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10;
+}
+
+.radar-edge-btn:hover {
+  background-color: #0c253d;
+  border-color: #00f0ff;
+  color: #00f0ff;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 0 14px rgba(0, 240, 255, 0.6);
+}
+
+.radar-edge-btn:active {
+  transform: scale(0.95);
+}
+
+/* Globe Button sitting on the Right Edge */
+.radar-edge-btn.btn-globe {
+  top: 38px;
+  right: -6px;
+}
+
+/* Target Button sitting on the Lower-Right Edge */
+.radar-edge-btn.btn-target {
+  bottom: 0px;
+  right: 12px;
+}
+
+.radar-edge-btn.btn-target.locked {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  animation: target-locked-pulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes target-locked-pulse {
+  from {
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+  }
+  to {
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.85);
+  }
+}
+
+.radar-btn-icon {
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   REAL MATHEMATICAL TELEMETRY READOUT
+   ========================================================================== */
+.radar-telemetry-readout {
+  margin-top: 4px;
+  background-color: rgba(6, 19, 37, 0.94);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  text-align: center;
+}
+
+.radar-telemetry-locked {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.telemetry-pill-target {
+  background-color: rgba(0, 240, 255, 0.15);
+  color: #00f0ff;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.telemetry-pill-idle {
+  background-color: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.telemetry-vals {
+  color: var(--color-newsprint-white);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .tactical-radar-container {
+    display: none;
+  }
+}

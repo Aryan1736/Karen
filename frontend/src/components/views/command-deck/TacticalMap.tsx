@@ -6,8 +6,7 @@ import {
   RotateCcw, 
   ChevronDown, 
   ChevronUp,
-  Layers,
-  Compass
+  Layers
 } from 'lucide-react';
 import { Incident } from '../../../types/incident';
 import { useWebSocketStatus } from '../../../context/WebSocketContext';
@@ -19,6 +18,7 @@ import {
   TACTICAL_TILE_OPTIONS,
   TACTICAL_LABEL_OPTIONS
 } from './mapStyles';
+import { TacticalRadarWidget } from './TacticalRadarWidget';
 import './TacticalMap.css';
 
 export interface TacticalMapProps {
@@ -37,6 +37,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [isUnmappedDrawerOpen, setIsUnmappedDrawerOpen] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(DEFAULT_MAP_ZOOM);
+  const [mapCenter, setMapCenter] = useState(DEFAULT_MAP_CENTER);
   const { status: wsStatus } = useWebSocketStatus();
 
   // Leaflet instance and layer group refs
@@ -92,6 +93,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
       map.on('zoomend', () => {
         setCurrentZoom(map.getZoom());
+      });
+
+      map.on('moveend', () => {
+        const center = map.getCenter();
+        setMapCenter({ lat: center.lat, lng: center.lng });
       });
 
       const resizeObserver = new ResizeObserver(() => {
@@ -225,6 +231,18 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const selectedIncident = incidents.find((i) => i.incident_id === selectedIncidentId);
   const selectedHasCoords = selectedIncident && selectedIncident.location?.latitude != null && selectedIncident.location?.longitude != null;
 
+  const handleFocusSelected = useCallback(() => {
+    const map = leafletMapRef.current;
+    if (!map) return;
+    if (selectedIncident && selectedIncident.location?.latitude != null && selectedIncident.location?.longitude != null) {
+      map.setView([selectedIncident.location.latitude, selectedIncident.location.longitude], 15, { animate: true });
+    } else if (mappedIncidents.length > 0) {
+      const p0 = mappedIncidents.find((i) => i.priority?.level === 'CRITICAL') || mappedIncidents[0];
+      map.setView([p0.location.latitude!, p0.location.longitude!], 15, { animate: true });
+      onSelectIncident(p0.incident_id);
+    }
+  }, [selectedIncident, mappedIncidents, onSelectIncident]);
+
   return (
     <div className={`tactical-map-pane ${className}`} role="region" aria-label="Tactical Cartographic Map">
       {/* Top Tactical HUD Framing Bar */}
@@ -315,22 +333,15 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           </button>
         </div>
 
-        {/* Bottom-Right Tactical Compass & Target Radar Widget (from reference) */}
-        <div className="tac-radar-widget" aria-hidden="true">
-          <div className="radar-disc">
-            <div className="radar-grid-concentric c1" />
-            <div className="radar-grid-concentric c2" />
-            <div className="radar-grid-concentric c3" />
-            <div className="radar-crosshair-h" />
-            <div className="radar-crosshair-v" />
-            <div className="radar-sweep-beam" />
-            <span className="radar-target-dot" />
-          </div>
-          <div className="radar-meta-row">
-            <Compass size={11} className="text-cyan" />
-            <span>BEARING: 042° // SECTOR METRO</span>
-          </div>
-        </div>
+        {/* Bottom-Right Tactical Spiderweb Radar Widget (Reference Design with Real Telemetry) */}
+        <TacticalRadarWidget
+          incidents={incidents}
+          selectedIncidentId={selectedIncidentId}
+          mapCenter={mapCenter}
+          onSelectIncident={onSelectIncident}
+          onFitAll={handleResetView}
+          onFocusSelected={handleFocusSelected}
+        />
 
         {/* Bottom-Left: Strict Location Honesty Drawer (Unmapped Incidents) */}
         <div className={`unmapped-drawer ${isUnmappedDrawerOpen ? 'open' : 'collapsed'}`}>
