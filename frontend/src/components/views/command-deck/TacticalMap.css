@@ -126,11 +126,6 @@
   color: var(--color-multiverse-cyan);
 }
 
-.map-layer-tag.google-active {
-  background-color: rgba(0, 240, 255, 0.12);
-  border-color: var(--color-multiverse-cyan);
-  color: var(--color-multiverse-cyan);
-}
 
 .hud-btn-reset {
   display: inline-flex;

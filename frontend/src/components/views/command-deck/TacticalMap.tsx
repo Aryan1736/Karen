@@ -14,8 +14,8 @@ import { useWebSocketStatus } from '../../../context/WebSocketContext';
 import { 
   DEFAULT_MAP_CENTER, 
   DEFAULT_MAP_ZOOM, 
-  TACTICAL_DARK_GOOGLE_MAPS_STYLE, 
-  loadGoogleMapsScript 
+  TACTICAL_TILE_URL, 
+  TACTICAL_TILE_OPTIONS 
 } from './mapStyles';
 import './TacticalMap.css';
 
@@ -26,8 +26,6 @@ export interface TacticalMapProps {
   className?: string;
 }
 
-type MapProviderType = 'google' | 'leaflet';
-
 export const TacticalMap: React.FC<TacticalMapProps> = ({
   incidents,
   selectedIncidentId,
@@ -35,24 +33,14 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   className = '',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const [activeProvider, setActiveProvider] = useState<MapProviderType>('leaflet');
-  const [isGoogleApiReady, setIsGoogleApiReady] = useState(false);
   const [isUnmappedDrawerOpen, setIsUnmappedDrawerOpen] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(DEFAULT_MAP_ZOOM);
   const { status: wsStatus } = useWebSocketStatus();
 
-  // Leaflet refs
+  // Leaflet instance and layer group refs
   const leafletMapRef = useRef<L.Map | null>(null);
   const leafletMarkersGroupRef = useRef<L.LayerGroup | null>(null);
   const leafletCirclesGroupRef = useRef<L.LayerGroup | null>(null);
-
-  // Google Maps refs
-  const googleMapRef = useRef<any>(null);
-  const googleOverlaysRef = useRef<any[]>([]);
-  const googleCirclesRef = useRef<any[]>([]);
-
-  // Check for Google Maps API Key in environment
-  const googleMapsApiKey = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined)?.trim() || '';
 
   // Partition real data into mapped vs unmapped strictly without fabricating coordinates
   const { mappedIncidents, unmappedIncidents } = useMemo(() => {
@@ -72,43 +60,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     return { mappedIncidents: mapped, unmappedIncidents: unmapped };
   }, [incidents]);
 
-  // Attempt to load Google Maps if API key is supplied
-  useEffect(() => {
-    if (!googleMapsApiKey) {
-      setActiveProvider('leaflet');
-      return;
-    }
-
-    let isMounted = true;
-    loadGoogleMapsScript(googleMapsApiKey).then((loaded) => {
-      if (!isMounted) return;
-      if (loaded) {
-        setIsGoogleApiReady(true);
-        setActiveProvider('google');
-      } else {
-        setActiveProvider('leaflet');
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [googleMapsApiKey]);
-
   // =========================================================================
-  // LEAFLET ENGINE IMPLEMENTATION
+  // LEAFLET MAP INITIALIZATION & TEARDOWN
   // =========================================================================
   useEffect(() => {
-    if (activeProvider !== 'leaflet' || !mapContainerRef.current) return;
-
-    // Teardown Google Maps if previously active
-    if (googleMapRef.current) {
-      googleOverlaysRef.current.forEach((o) => o?.setMap?.(null));
-      googleOverlaysRef.current = [];
-      googleCirclesRef.current.forEach((c) => c?.setMap?.(null));
-      googleCirclesRef.current = [];
-      googleMapRef.current = null;
-    }
+    if (!mapContainerRef.current) return;
 
     if (!leafletMapRef.current) {
       const map = L.map(mapContainerRef.current, {
@@ -118,13 +74,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         attributionControl: false,
       });
 
-      // CartoDB Dark Matter tile layer with tactical navy grade
-      const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd',
-        className: 'tactical-leaflet-tiles',
-      });
-
+      // CartoDB Dark Matter tile layer with tactical navy chromatic styling
+      const tileLayer = L.tileLayer(TACTICAL_TILE_URL, TACTICAL_TILE_OPTIONS);
       tileLayer.addTo(map);
 
       const circlesGroup = L.layerGroup().addTo(map);
@@ -146,13 +97,16 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         resizeObserver.disconnect();
         map.remove();
         leafletMapRef.current = null;
+        leafletMarkersGroupRef.current = null;
+        leafletCirclesGroupRef.current = null;
       };
     }
-  }, [activeProvider]);
+  }, []);
 
-  // Update Leaflet markers & approximate radius circles
+  // =========================================================================
+  // UPDATE TACTICAL MARKERS & APPROXIMATE RADIUS CIRCLES
+  // =========================================================================
   useEffect(() => {
-    if (activeProvider !== 'leaflet') return;
     const map = leafletMapRef.current;
     const markersGroup = leafletMarkersGroupRef.current;
     const circlesGroup = leafletCirclesGroupRef.current;
@@ -192,7 +146,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         circle.addTo(circlesGroup);
       }
 
-      // Spidey-Tracker-inspired tactical marker
+      // Tactical incident marker inspired by the reference design
       const iconHtml = `
         <div class="tactical-marker-root ${isSelected ? 'marker-selected' : ''} marker-prio-${priorityClass}">
           ${isSelected ? '<div class="marker-star-halo"></div><div class="marker-radar-ping"></div>' : ''}
@@ -222,11 +176,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
       marker.addTo(markersGroup);
     });
-  }, [activeProvider, mappedIncidents, selectedIncidentId, onSelectIncident]);
+  }, [mappedIncidents, selectedIncidentId, onSelectIncident]);
 
-  // Center Leaflet on selected incident
+  // =========================================================================
+  // CENTER ON SELECTED INCIDENT
+  // =========================================================================
   useEffect(() => {
-    if (activeProvider !== 'leaflet') return;
     const map = leafletMapRef.current;
     if (!map || !selectedIncidentId) return;
 
@@ -234,232 +189,31 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     if (focused && focused.location.latitude != null && focused.location.longitude != null) {
       map.panTo([focused.location.latitude, focused.location.longitude], { animate: true, duration: 0.6 });
     }
-  }, [activeProvider, selectedIncidentId, mappedIncidents]);
-
-  // =========================================================================
-  // GOOGLE MAPS ENGINE IMPLEMENTATION
-  // =========================================================================
-  useEffect(() => {
-    if (activeProvider !== 'google' || !isGoogleApiReady || !mapContainerRef.current) return;
-
-    // Teardown Leaflet if active
-    if (leafletMapRef.current) {
-      leafletMapRef.current.remove();
-      leafletMapRef.current = null;
-    }
-
-    const gmaps = (window as any).google?.maps;
-    if (!gmaps) return;
-
-    if (!googleMapRef.current) {
-      const map = new gmaps.Map(mapContainerRef.current, {
-        center: DEFAULT_MAP_CENTER,
-        zoom: DEFAULT_MAP_ZOOM,
-        styles: TACTICAL_DARK_GOOGLE_MAPS_STYLE,
-        disableDefaultUI: true,
-        gestureHandling: 'greedy',
-        backgroundColor: '#050d18',
-      });
-
-      map.addListener('zoom_changed', () => {
-        const z = map.getZoom();
-        if (typeof z === 'number') setCurrentZoom(z);
-      });
-
-      googleMapRef.current = map;
-    }
-  }, [activeProvider, isGoogleApiReady]);
-
-  // Update Google Maps custom HTML overlays & circles
-  useEffect(() => {
-    if (activeProvider !== 'google') return;
-    const map = googleMapRef.current;
-    const gmaps = (window as any).google?.maps;
-    if (!map || !gmaps) return;
-
-    // Clear existing overlays
-    googleOverlaysRef.current.forEach((o) => o?.setMap?.(null));
-    googleOverlaysRef.current = [];
-    googleCirclesRef.current.forEach((c) => c?.setMap?.(null));
-    googleCirclesRef.current = [];
-
-    // Create custom OverlayView class for DOM-based tactical markers
-    class TacticalOverlay extends gmaps.OverlayView {
-      private containerDiv: HTMLDivElement | null = null;
-      private incident: Incident;
-      private isSelected: boolean;
-
-      constructor(incident: Incident, isSelected: boolean) {
-        super();
-        this.incident = incident;
-        this.isSelected = isSelected;
-      }
-
-      onAdd() {
-        const div = document.createElement('div');
-        div.style.position = 'absolute';
-        div.style.cursor = 'pointer';
-        div.style.zIndex = this.isSelected ? '1000' : '100';
-
-        const isP0 = this.incident.priority?.level === 'CRITICAL';
-        const isReview = this.incident.status === 'NEEDS_REVIEW';
-        const isApprox = this.incident.location?.precision === 'approximate';
-
-        let priorityClass = 'medium';
-        if (isReview) priorityClass = 'review';
-        else if (this.incident.priority?.level === 'CRITICAL') priorityClass = 'critical';
-        else if (this.incident.priority?.level === 'HIGH') priorityClass = 'high';
-        else if (this.incident.priority?.level === 'LOW') priorityClass = 'low';
-
-        const score = Math.round(this.incident.priority?.score ?? 0);
-        const levelShort = isReview ? 'REV' : (this.incident.priority?.level ? this.incident.priority.level.substring(0, 2) : 'P?');
-
-        div.innerHTML = `
-          <div class="tactical-marker-root ${this.isSelected ? 'marker-selected' : ''} marker-prio-${priorityClass}">
-            ${this.isSelected ? '<div class="marker-star-halo"></div><div class="marker-radar-ping"></div>' : ''}
-            ${isP0 ? '<div class="marker-beacon-pulse"></div>' : ''}
-            <div class="marker-badge-box">
-              <span class="marker-badge-lvl">${levelShort}</span>
-              <span class="marker-badge-score">${score}</span>
-            </div>
-            <div class="marker-label-tag">
-              <span>${this.incident.incident_id}</span>
-              ${isApprox ? '<span class="marker-approx-pip">[APPROX]</span>' : ''}
-            </div>
-          </div>
-        `;
-
-        div.addEventListener('click', (e) => {
-          e.stopPropagation();
-          onSelectIncident(this.incident.incident_id);
-        });
-
-        this.containerDiv = div;
-        const panes = this.getPanes();
-        panes?.overlayMouseTarget.appendChild(div);
-      }
-
-      draw() {
-        if (!this.containerDiv) return;
-        const projection = this.getProjection();
-        if (!projection) return;
-
-        const pos = new gmaps.LatLng(
-          this.incident.location.latitude!,
-          this.incident.location.longitude!
-        );
-        const point = projection.fromLatLngToDivPixel(pos);
-        if (point) {
-          this.containerDiv.style.left = `${point.x - 24}px`;
-          this.containerDiv.style.top = `${point.y - 24}px`;
-        }
-      }
-
-      onRemove() {
-        if (this.containerDiv?.parentNode) {
-          this.containerDiv.parentNode.removeChild(this.containerDiv);
-          this.containerDiv = null;
-        }
-      }
-    }
-
-    // Attach overlays and approximate circles
-    mappedIncidents.forEach((incident) => {
-      const lat = incident.location.latitude!;
-      const lng = incident.location.longitude!;
-      const isSelected = selectedIncidentId === incident.incident_id;
-      const isApprox = incident.location?.precision === 'approximate';
-
-      // Uncertainty circle for approximate coordinates
-      if (isApprox) {
-        const circle = new gmaps.Circle({
-          center: { lat, lng },
-          radius: 450,
-          strokeColor: '#00F0FF',
-          strokeOpacity: 0.7,
-          strokeWeight: 1.5,
-          fillColor: '#00F0FF',
-          fillOpacity: isSelected ? 0.16 : 0.08,
-          map,
-        });
-        googleCirclesRef.current.push(circle);
-      }
-
-      const overlay = new TacticalOverlay(incident, isSelected);
-      overlay.setMap(map);
-      googleOverlaysRef.current.push(overlay);
-    });
-  }, [activeProvider, mappedIncidents, selectedIncidentId, onSelectIncident]);
-
-  // Center Google Maps on selected incident
-  useEffect(() => {
-    if (activeProvider !== 'google') return;
-    const map = googleMapRef.current;
-    if (!map || !selectedIncidentId) return;
-
-    const focused = mappedIncidents.find((i) => i.incident_id === selectedIncidentId);
-    if (focused && focused.location.latitude != null && focused.location.longitude != null) {
-      map.panTo({ lat: focused.location.latitude, lng: focused.location.longitude });
-    }
-  }, [activeProvider, selectedIncidentId, mappedIncidents]);
+  }, [selectedIncidentId, mappedIncidents]);
 
   // =========================================================================
   // VIEWPORT CONTROLS
   // =========================================================================
   const handleResetView = useCallback(() => {
-    if (activeProvider === 'leaflet') {
-      const map = leafletMapRef.current;
-      if (!map) return;
-      if (mappedIncidents.length > 1) {
-        const bounds = L.latLngBounds(mappedIncidents.map((i) => [i.location.latitude!, i.location.longitude!]));
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-      } else if (mappedIncidents.length === 1) {
-        map.setView([mappedIncidents[0].location.latitude!, mappedIncidents[0].location.longitude!], 14, { animate: true });
-      } else {
-        map.setView([DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng], DEFAULT_MAP_ZOOM, { animate: true });
-      }
+    const map = leafletMapRef.current;
+    if (!map) return;
+
+    if (mappedIncidents.length > 1) {
+      const bounds = L.latLngBounds(mappedIncidents.map((i) => [i.location.latitude!, i.location.longitude!]));
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    } else if (mappedIncidents.length === 1) {
+      map.setView([mappedIncidents[0].location.latitude!, mappedIncidents[0].location.longitude!], 14, { animate: true });
     } else {
-      const map = googleMapRef.current;
-      const gmaps = (window as any).google?.maps;
-      if (!map || !gmaps) return;
-      if (mappedIncidents.length > 1) {
-        const bounds = new gmaps.LatLngBounds();
-        mappedIncidents.forEach((i) => bounds.extend({ lat: i.location.latitude!, lng: i.location.longitude! }));
-        map.fitBounds(bounds);
-      } else if (mappedIncidents.length === 1) {
-        map.setCenter({ lat: mappedIncidents[0].location.latitude!, lng: mappedIncidents[0].location.longitude! });
-        map.setZoom(14);
-      } else {
-        map.setCenter(DEFAULT_MAP_CENTER);
-        map.setZoom(DEFAULT_MAP_ZOOM);
-      }
+      map.setView([DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng], DEFAULT_MAP_ZOOM, { animate: true });
     }
-  }, [activeProvider, mappedIncidents]);
+  }, [mappedIncidents]);
 
   const handleZoomIn = () => {
-    if (activeProvider === 'leaflet') {
-      leafletMapRef.current?.zoomIn();
-    } else {
-      const map = googleMapRef.current;
-      if (map) map.setZoom(map.getZoom() + 1);
-    }
+    leafletMapRef.current?.zoomIn();
   };
 
   const handleZoomOut = () => {
-    if (activeProvider === 'leaflet') {
-      leafletMapRef.current?.zoomOut();
-    } else {
-      const map = googleMapRef.current;
-      if (map) map.setZoom(map.getZoom() - 1);
-    }
-  };
-
-  const toggleProvider = () => {
-    if (activeProvider === 'google') {
-      setActiveProvider('leaflet');
-    } else if (isGoogleApiReady) {
-      setActiveProvider('google');
-    }
+    leafletMapRef.current?.zoomOut();
   };
 
   const selectedIncident = incidents.find((i) => i.incident_id === selectedIncidentId);
@@ -488,15 +242,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </div>
 
         <div className="map-hud-right">
-          <button 
-            type="button" 
-            className={`map-layer-tag ${activeProvider === 'google' ? 'google-active' : ''}`}
-            onClick={toggleProvider}
-            title={isGoogleApiReady ? 'Click to toggle map provider' : 'Running on Leaflet zero-config dark tile engine'}
-          >
+          <div className="map-layer-tag">
             <Layers size={11} style={{ marginRight: 4 }} />
-            {activeProvider === 'google' ? 'ENGINE: GOOGLE TACTICAL' : 'ENGINE: LEAFLET DARK'}
-          </button>
+            ENGINE: LEAFLET TACTICAL
+          </div>
 
           <button 
             type="button" 
@@ -512,7 +261,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
       {/* Main Map Viewport with Tactical HUD Bezel */}
       <div className="map-canvas-container">
-        {/* The Host Container for Leaflet or Google Maps */}
+        {/* The Host Container for Leaflet */}
         <div ref={mapContainerRef} className="tactical-map-host" />
 
         {/* Tactical Coordinate Grid Overlay (Latitude & Longitude Gridlines inspired by reference) */}
