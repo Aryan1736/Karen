@@ -107,7 +107,11 @@ export const InvestigationView: React.FC = () => {
                       className="quick-select-item"
                       onClick={() => setSelectedIncidentId(inc.incident_id)}
                     >
-                      <span className="quick-id">{inc.incident_id.toUpperCase()}</span>
+                      <span className="quick-id" title={inc.incident_id}>
+                        {inc.incident_id.length > 14
+                          ? `#${inc.incident_id.replace(/^inc-/, '').substring(0, 8).toUpperCase()}`
+                          : inc.incident_id.toUpperCase()}
+                      </span>
                       <span className="quick-type">{inc.incident_type ? inc.incident_type.replace(/_/g, ' ') : 'UNCLASSIFIED'}</span>
                       <span className="quick-loc">{inc.location?.text || 'Bhubaneswar'}</span>
                       <span className="quick-action">INSPECT →</span>

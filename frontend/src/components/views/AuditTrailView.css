@@ -148,9 +148,10 @@
 }
 
 .audit-incident-id {
-  font-size: 18px;
+  font-size: 15px;
+  font-weight: 700;
   color: var(--color-multiverse-cyan);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .audit-card-meta {

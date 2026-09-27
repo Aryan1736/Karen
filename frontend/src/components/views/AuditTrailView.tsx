@@ -96,7 +96,7 @@ export const AuditTrailView: React.FC = () => {
                   <article key={incident.incident_id} className="audit-ledger-card">
                     <div className="audit-card-top">
                       <div className="audit-card-identity">
-                        <span className="audit-incident-id font-headline">{incident.incident_id}</span>
+                        <span className="audit-incident-id font-mono font-bold">{incident.incident_id}</span>
                         <Badge variant="p0-critical" size="sm">OVERRIDE ACTIVE</Badge>
                         <Badge variant="neutral" size="sm">STATUS: {incident.status}</Badge>
                         {incident.priority?.level && (

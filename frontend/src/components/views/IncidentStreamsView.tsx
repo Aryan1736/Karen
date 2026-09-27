@@ -646,9 +646,13 @@ export const IncidentStreamsView: React.FC = () => {
                 {/* 3. Target ID */}
                 <div className="col-id">
                   {evt.incidentId ? (
-                    <span className="id-chip">{evt.incidentId.toUpperCase()}</span>
+                    <span className="id-chip" title={evt.incidentId}>
+                      {evt.incidentId.length > 16
+                        ? `INC-#${evt.incidentId.replace(/^inc-/, '').substring(0, 8).toUpperCase()}`
+                        : evt.incidentId.toUpperCase()}
+                    </span>
                   ) : evt.scenario ? (
-                    <span className="scenario-chip">{evt.scenario}</span>
+                    <span className="scenario-chip" title={evt.scenario}>{evt.scenario}</span>
                   ) : (
                     <span className="dim-chip">—</span>
                   )}
@@ -681,8 +685,8 @@ export const IncidentStreamsView: React.FC = () => {
                     <div className="linked-reports">
                       <span className="reports-label">REPORTS:</span>
                       {evt.sourceReportIds.map((rid) => (
-                        <span key={rid} className="report-pip">
-                          {rid}
+                        <span key={rid} className="report-pip" title={rid}>
+                          {rid.length > 14 ? `rep-#${rid.replace(/^rep-/, '').substring(0, 8)}` : rid}
                         </span>
                       ))}
                     </div>

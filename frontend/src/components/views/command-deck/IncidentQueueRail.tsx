@@ -161,17 +161,21 @@ export const IncidentQueueRail: React.FC<IncidentQueueRailProps> = ({
                   }}
                   aria-label={`Select incident ${incident.incident_id}`}
                 >
-                  <div className="item-tape-row">
-                    <div className="item-prio-group">
-                      <Badge variant={badgeVariant} size="sm">
-                        {isReview ? 'NEEDS REVIEW' : `${incident.priority?.level || 'PRIO'} P${incident.priority?.level === 'CRITICAL' ? '0' : incident.priority?.level === 'HIGH' ? '1' : incident.priority?.level === 'MEDIUM' ? '2' : '3'}`}
-                      </Badge>
-                      <span className="item-id-text">{incident.incident_id}</span>
+                    <div className="item-tape-row">
+                      <div className="item-prio-group">
+                        <Badge variant={badgeVariant} size="sm">
+                          {isReview ? 'NEEDS REVIEW' : `${incident.priority?.level || 'PRIO'} P${incident.priority?.level === 'CRITICAL' ? '0' : incident.priority?.level === 'HIGH' ? '1' : incident.priority?.level === 'MEDIUM' ? '2' : '3'}`}
+                        </Badge>
+                        <span className="item-id-text" title={incident.incident_id}>
+                          {incident.incident_id.length > 14
+                            ? `#${incident.incident_id.replace(/^inc-/, '').substring(0, 8)}`
+                            : incident.incident_id}
+                        </span>
+                      </div>
+                      <span className="item-score-text">
+                        PTS: {Math.round(incident.priority?.score ?? 0)}
+                      </span>
                     </div>
-                    <span className="item-score-text">
-                      PTS: {Math.round(incident.priority?.score ?? 0)}
-                    </span>
-                  </div>
 
                   <div className="item-title-text">
                     {incident.incident_type ? incident.incident_type.replace(/_/g, ' ') : 'UNCLASSIFIED HAZARD'}

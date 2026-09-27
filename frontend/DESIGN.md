@@ -53,31 +53,31 @@ The palette operates on high-voltage ink-on-newsprint contrast against a deep mu
 
 ## 3. Typographic Architecture
 
-The typographic hierarchy balances dramatic comic book momentum with cold mathematical HUD readouts:
+The typographic hierarchy is engineered for high-density tactical mission consoles, emergency dispatch tables, and telemetry boards using `Inter` and `JetBrains Mono`:
 
-1. **Display & Primary Headlines (`Anton`, sans-serif):**
-   - Condensed, punchy, and aggressive.
-   - Applied in uppercase for maximum visual punch (`letter-spacing: 0.03em - 0.05em`).
-   - Evokes the physical force of screen-printed comic title blocks and tactical bulletins.
+1. **Display & Primary Headlines (`Inter`, sans-serif):**
+   - Clean, modern, high-contrast, and tightly tracked.
+   - Weights: 700 (Bold) and 800 (Extra Bold) with `-0.01em` to `-0.02em` tracking.
+   - Provides authoritative visual presence without excessive character width distortion or text collision.
    - Scale:
-     - `display-hero`: 64px / line-height 68px
-     - `headline-lg`: 36px / line-height 40px
-     - `headline-md`: 24px / line-height 28px
-2. **Body & Operational Narrative (`Space Grotesk`, sans-serif):**
-   - Modern, sharp, and highly legible with geometric quirks.
-   - Handles operational narratives, citizen dispatches, and explanation factor bars without visual fatigue.
+     - `display-hero`: 44px / line-height 48px
+     - `headline-lg`: 32px / line-height 36px
+     - `headline-md`: 22px / line-height 26px
+2. **Body & Operational Narrative (`Inter`, sans-serif):**
+   - High x-height, compact proportional widths, and maximum legibility across all viewport sizes.
+   - Handles operational narratives, citizen dispatches, and data grids without horizontal blowout.
    - Scale:
-     - `headline-sm`: 18px / line-height 24px (font-weight: 700)
-     - `body-lg`: 16px / line-height 24px (font-weight: 500)
-     - `body-md`: 14px / line-height 20px (font-weight: 400)
-     - `body-sm`: 12px / line-height 18px (font-weight: 400)
+     - `headline-sm`: 16px / line-height 22px (font-weight: 700)
+     - `body-lg`: 15px / line-height 22px (font-weight: 500)
+     - `body-md`: 13px / line-height 19px (font-weight: 400)
+     - `body-sm`: 12px / line-height 16px (font-weight: 400)
 3. **Telemetry & Tactical Metadata (`JetBrains Mono`, monospace):**
-   - Monospaced, razor-sharp technical figures.
+   - Monospaced, razor-sharp technical figures with `font-feature-settings: 'tnum' 1, 'zero' 1`.
    - Governs telemetry readouts, geo-coordinates, confidence percentages, RF frequencies, and UTC timestamps.
    - Scale:
-     - `label-lg`: 14px / line-height 18px (font-weight: 700, letter-spacing: 0.05em)
-     - `label-md`: 12px / line-height 16px (font-weight: 600, letter-spacing: 0.06em)
-     - `label-sm`: 10px / line-height 14px (font-weight: 500, letter-spacing: 0.08em)
+     - `label-lg`: 13px / line-height 18px (font-weight: 700, letter-spacing: 0.04em)
+     - `label-md`: 11px / line-height 15px (font-weight: 600, letter-spacing: 0.05em)
+     - `label-sm`: 10px / line-height 14px (font-weight: 500, letter-spacing: 0.06em)
 
 ---
 
@@ -132,7 +132,7 @@ Depth in TINGLE is purely tactile, directional, and physical—no blurred glow a
 ## 6. Anti-Patterns (Banned in TINGLE)
 
 1. **NO Emojis in production UI:** Use SVG/Lucide icons or technical glyphs.
-2. **NO `Inter` or generic system fonts:** Exclusively use `Anton`, `Space Grotesk`, and `JetBrains Mono`.
+2. **NO Wide/Distorted Fonts or Anton/Space Grotesk:** Exclusively use `Inter` (sans) and `JetBrains Mono` (tabular monospace) to prevent character width blowout.
 3. **NO Rounded Corners:** No `rounded-md`, `rounded-xl`, or `rounded-2xl` on cards, panels, or buttons. All corners are crisp 90° (`0px`).
 4. **NO Blur / Translucent Glass Shadows:** Never use blurry `box-shadow: 0 10px 30px rgba(0,0,0,0.2)`. Shadows must be hard, crisp, and directional (`Xpx Ypx 0 #08080C`).
 5. **NO Neon Gradient Bubbles:** No purple/blue gradient backgrounds or glowing aura spheres.
