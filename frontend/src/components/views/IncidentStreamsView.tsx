@@ -5,11 +5,10 @@ import {
   RefreshCw,
   AlertTriangle,
   CheckCircle2,
-  ArrowRight,
   Search,
   Sparkles,
 } from 'lucide-react';
-import { Badge, BadgeVariant, Button } from '../ui';
+import { Button } from '../ui';
 import { useWebSocket } from '../../context/WebSocketContext';
 import { useNavigation } from '../../context/NavigationContext';
 import { RealtimeEvent, RealtimeEventType } from '../../types/incident';
@@ -105,12 +104,12 @@ function parseStreamEvent(evt: RealtimeEvent, isLatest: boolean, index: number):
     case 'INCIDENT_CREATED': {
       priorityLevel = p.priority?.level || p.urgency || null;
       priorityScore = typeof p.priority?.score === 'number' ? p.priority.score : null;
-      const locText = p.location?.text ? `at ${p.location.text}` : '';
-      summary = `Incident established${locText ? ` ${locText}` : ''} [${incidentType || 'UNCLASSIFIED'}]`;
-      if (p.people_at_risk?.count && p.people_at_risk.count > 0) {
-        detail = `${p.people_at_risk.count} civilian(s) at risk. Response: ${(p.required_response || []).join(', ') || 'SEARCH_AND_RESCUE'}.`;
-      } else if (p.priority?.explanation) {
+      const locText = p.location?.text ? `at ${p.location.text}` : 'in Bhubaneswar';
+      summary = `${incidentType || 'Emergency Incident'} reported ${locText}`;
+      if (p.priority?.explanation) {
         detail = p.priority.explanation;
+      } else if (p.people_at_risk?.count && p.people_at_risk.count > 0) {
+        detail = `${p.people_at_risk.count} citizens at risk · Response: ${(p.required_response || []).join(', ').replace(/_/g, ' ') || 'SEARCH AND RESCUE'}`;
       }
       break;
     }
@@ -124,9 +123,9 @@ function parseStreamEvent(evt: RealtimeEvent, isLatest: boolean, index: number):
       if (typeof p.previous_priority_score === 'number' && typeof p.new_priority_score === 'number') {
         const delta = p.new_priority_score - p.previous_priority_score;
         const sign = delta >= 0 ? '+' : '';
-        summary = `Priority score shifted: ${p.previous_priority_score.toFixed(1)} → ${p.new_priority_score.toFixed(1)} (${sign}${delta.toFixed(1)})`;
+        summary = `Priority updated: ${p.previous_priority_score.toFixed(1)} → ${p.new_priority_score.toFixed(1)} (${sign}${delta.toFixed(1)}) · ${incidentType || 'Hazard'}`;
       } else {
-        summary = `Incident intelligence updated${incidentType ? ` (${incidentType})` : ''}`;
+        summary = `Incident intelligence updated · ${incidentType || 'Hazard'}`;
       }
 
       if (p.corroboration?.explanation) {
@@ -140,10 +139,10 @@ function parseStreamEvent(evt: RealtimeEvent, isLatest: boolean, index: number):
     }
 
     case 'INCIDENT_STATUS_CHANGED': {
-      oldStatus = p.old_status || 'UNKNOWN';
-      newStatus = p.new_status || 'UNKNOWN';
-      summary = `Status transition: ${oldStatus} → ${newStatus}`;
-      detail = `Operational state transitioned by sovereign operator review.`;
+      oldStatus = p.old_status || 'NEW';
+      newStatus = p.new_status || 'ACTIVE';
+      summary = `Incident status changed: ${oldStatus} → ${newStatus}`;
+      detail = `Operator review approved and dispatch updated`;
       break;
     }
 
@@ -152,8 +151,8 @@ function parseStreamEvent(evt: RealtimeEvent, isLatest: boolean, index: number):
       injectedCount = typeof p.injected_count === 'number' ? p.injected_count : 0;
       totalSimulated = typeof p.total_simulated === 'number' ? p.total_simulated : 0;
       scenario = p.scenario || 'emergency_simulation';
-      summary = `Synthetic dispatch pulse injected (${injectedCount} reports)`;
-      detail = `Scenario: "${scenario}" | Total simulated: ${totalSimulated}.`;
+      summary = `Scenario dispatch pulse: ${injectedCount} reports injected`;
+      detail = `Scenario: "${(scenario || 'emergency_simulation').replace(/_/g, ' ')}" · ${totalSimulated} total events`;
       break;
     }
 
@@ -199,13 +198,13 @@ const INITIAL_DEMO_EVENTS: RealtimeEvent[] = [
       previous_priority_score: 55.0,
       new_priority_score: 60.2,
       new_priority_level: 'HIGH',
-      explanation: 'Operator sovereign override: Urgency escalated to CRITICAL. Reason: Verified via drone feed - civilians trapped under rubble in basement.',
+      explanation: 'Drone feed confirmed civilians trapped in basement rubble. Priority escalated.',
       is_synthetic: true,
       corroboration: {
         report_count: 1,
         independent_source_count: 1,
         score: 0.36,
-        explanation: 'Single eyewitness report corroborated by operator drone surveillance.'
+        explanation: 'Eyewitness report corroborated by aerial drone surveillance.'
       }
     }
   },
@@ -217,7 +216,7 @@ const INITIAL_DEMO_EVENTS: RealtimeEvent[] = [
       incident_type: 'STRUCTURAL_COLLAPSE',
       urgency: 'CRITICAL',
       location: { text: 'Patia Square', latitude: 20.355, longitude: 85.818, precision: 'exact' },
-      priority: { score: 60.2, level: 'HIGH', explanation: 'Classified as HIGH priority (60.2) driven by Urgency: CRITICAL' },
+      priority: { score: 60.2, level: 'HIGH', explanation: 'High priority dispatch assigned to structural collapse' },
       is_synthetic: true,
       source_report_ids: ['rep-579046a5-cee5-4b3e-b7fd-8d37452f5596'],
       required_response: ['SEARCH_AND_RESCUE', 'MEDICAL_EMS']
@@ -304,8 +303,6 @@ export const IncidentStreamsView: React.FC = () => {
     return INITIAL_DEMO_EVENTS;
   }, [events, hasUserCleared]);
 
-  const isDemoFallback = events.length === 0 && !hasUserCleared;
-
   // Parse events into high-density models
   const parsedEvents = useMemo(() => {
     return activeEvents.map((evt, idx) => parseStreamEvent(evt, idx === 0, idx));
@@ -362,108 +359,64 @@ export const IncidentStreamsView: React.FC = () => {
     return result;
   }, [parsedEvents, activeFilter, searchQuery]);
 
-  const getEventBadgeVariant = (eventType: RealtimeEventType): BadgeVariant => {
-    switch (eventType) {
-      case 'INCIDENT_CREATED': return 'p0-critical';
-      case 'INCIDENT_UPDATED': return 'p1-high';
-      case 'INCIDENT_STATUS_CHANGED': return 'p2-medium';
-      case 'SIMULATION_PULSE': return 'simulation';
-      default: return 'neutral';
-    }
-  };
-
-  const getPriorityBadgeVariant = (level?: string | null): BadgeVariant => {
-    switch (level?.toUpperCase()) {
-      case 'CRITICAL': return 'p0-critical';
-      case 'HIGH': return 'p1-high';
-      case 'MEDIUM': return 'p2-medium';
-      case 'LOW': return 'p3-low';
-      case 'NEEDS_REVIEW': return 'needs-review';
-      default: return 'neutral';
-    }
-  };
-
   return (
     <div className="incident-streams-view full-width-console" role="region" aria-label="Live Incident Streams">
       {/* 1. Header Bar: Title, Connection Status, Actions */}
       <header className="streams-header">
         <div className="streams-title-group">
-          <Rss size={18} className="streams-header-icon" />
+          <Rss size={16} className="streams-header-icon" />
           <h1 className="streams-title">LIVE INCIDENT STREAMS</h1>
-          <Badge variant="neutral" size="sm" className="streams-count-badge">
-            {activeEvents.length} RECORDED
-          </Badge>
-          {isDemoFallback && (
-            <Badge variant="simulation" size="sm" title="Preloaded with existing backend incident records">
-              DEMO FEED
-            </Badge>
-          )}
+          <span className="streams-metric-pill">
+            {activeEvents.length} events
+          </span>
           {activeEvents.length > 0 && (
             <span className="streams-last-utc">
-              LATEST: {parsedEvents[0]?.timestampFormatted}
+              SYNCED: {parsedEvents[0]?.timestampFormatted}
             </span>
           )}
         </div>
 
         <div className="streams-header-actions">
-          <Badge
-            variant={status === 'CONNECTED' ? 'verified' : status === 'CONNECTING' ? 'p2-medium' : 'p0-critical'}
-            size="sm"
-            className="streams-connection-badge"
-          >
-            STATUS: {status}
-          </Badge>
+          <div className={`streams-status-indicator status-${status.toLowerCase()}`}>
+            <span className="status-pulse-dot" />
+            {status}
+          </div>
 
-          <Button
-            variant="secondary"
-            size="sm"
+          <button
+            type="button"
             onClick={() => setIsSimulatorModalOpen(true)}
-            className="streams-action-btn"
+            className="streams-ctrl-btn streams-sim-btn"
             title="Open Simulator to inject crisis reports"
           >
             <Sparkles size={12} style={{ marginRight: 5 }} />
-            SIMULATE
-          </Button>
+            Simulate Event
+          </button>
 
           {activeEvents.length > 0 && (
-            <Button
-              variant="secondary"
-              size="sm"
+            <button
+              type="button"
               onClick={() => {
                 clearEvents();
                 setHasUserCleared(true);
               }}
               title="Clear event stream buffer"
-              className="streams-action-btn"
+              className="streams-ctrl-btn streams-clear-btn"
             >
               <Trash2 size={12} style={{ marginRight: 4 }} />
-              CLEAR
-            </Button>
-          )}
-
-          {hasUserCleared && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setHasUserCleared(false)}
-              title="Restore demo stream events"
-              className="streams-action-btn"
-            >
-              RESTORE DEMO
-            </Button>
+              Clear
+            </button>
           )}
 
           {status !== 'CONNECTED' && (
-            <Button
-              variant="hazard"
-              size="sm"
+            <button
+              type="button"
               onClick={reconnect}
               title="Reconnect to dispatch WebSocket"
-              className="streams-action-btn"
+              className="streams-ctrl-btn"
             >
               <RefreshCw size={12} style={{ marginRight: 4 }} />
-              RECONNECT
-            </Button>
+              Reconnect
+            </button>
           )}
         </div>
       </header>
@@ -622,9 +575,7 @@ export const IncidentStreamsView: React.FC = () => {
             filteredEvents.map((evt) => (
               <div
                 key={evt.id}
-                className={`ledger-row ${evt.isLatest ? 'is-latest' : ''} ${
-                  evt.isSynthetic ? 'is-synthetic' : ''
-                }`}
+                className={`ledger-row ${evt.isLatest ? 'is-latest' : ''} prio-border-${(evt.priorityLevel || 'none').toLowerCase()}`}
               >
                 {/* 1. Time */}
                 <div className="col-time">
@@ -638,9 +589,13 @@ export const IncidentStreamsView: React.FC = () => {
 
                 {/* 2. Event Type */}
                 <div className="col-event">
-                  <Badge variant={getEventBadgeVariant(evt.eventType)} size="sm">
-                    {evt.eventType.replace(/_/g, ' ')}
-                  </Badge>
+                  <span className={`stream-event-tag tag-${evt.eventType.toLowerCase().replace(/_/g, '-')}`}>
+                    {evt.eventType === 'INCIDENT_CREATED' ? 'NEW INCIDENT'
+                      : evt.eventType === 'INCIDENT_UPDATED' ? 'UPDATE'
+                      : evt.eventType === 'INCIDENT_STATUS_CHANGED' ? 'STATUS CHANGE'
+                      : evt.eventType === 'SIMULATION_PULSE' ? 'SIM PULSE'
+                      : evt.eventType.replace(/_/g, ' ')}
+                  </span>
                 </div>
 
                 {/* 3. Target ID */}
@@ -648,11 +603,11 @@ export const IncidentStreamsView: React.FC = () => {
                   {evt.incidentId ? (
                     <span className="id-chip" title={evt.incidentId}>
                       {evt.incidentId.length > 16
-                        ? `INC-#${evt.incidentId.replace(/^inc-/, '').substring(0, 8).toUpperCase()}`
-                        : evt.incidentId.toUpperCase()}
+                        ? `#${evt.incidentId.replace(/^inc-/, '').substring(0, 8)}`
+                        : evt.incidentId}
                     </span>
                   ) : evt.scenario ? (
-                    <span className="scenario-chip" title={evt.scenario}>{evt.scenario}</span>
+                    <span className="scenario-chip" title={evt.scenario}>#{evt.scenario.substring(0, 10)}</span>
                   ) : (
                     <span className="dim-chip">—</span>
                   )}
@@ -662,22 +617,10 @@ export const IncidentStreamsView: React.FC = () => {
                 <div className="col-details">
                   <div className="summary-line">
                     <span className="primary-summary">{evt.summary}</span>
-                    {evt.incidentType && (
-                      <span className="hazard-chip">{evt.incidentType}</span>
-                    )}
                   </div>
 
                   {evt.detail && (
                     <div className="secondary-detail">{evt.detail}</div>
-                  )}
-
-                  {/* Old Status -> New Status */}
-                  {evt.oldStatus && evt.newStatus && (
-                    <div className="status-flow">
-                      <span className="flow-node flow-old">{evt.oldStatus}</span>
-                      <ArrowRight size={11} className="flow-arrow" />
-                      <span className="flow-node flow-new">{evt.newStatus}</span>
-                    </div>
                   )}
 
                   {/* Linked report IDs */}
@@ -696,10 +639,10 @@ export const IncidentStreamsView: React.FC = () => {
                 {/* 5. Priority */}
                 <div className="col-priority">
                   {evt.priorityLevel ? (
-                    <Badge variant={getPriorityBadgeVariant(evt.priorityLevel)} size="sm">
+                    <span className={`stream-prio-tag prio-${evt.priorityLevel.toLowerCase()}`}>
                       {evt.priorityLevel}
                       {evt.priorityScore !== null ? ` ${evt.priorityScore.toFixed(0)}` : ''}
-                    </Badge>
+                    </span>
                   ) : (
                     <span className="dim-text">—</span>
                   )}
@@ -708,29 +651,29 @@ export const IncidentStreamsView: React.FC = () => {
                 {/* 6. Source */}
                 <div className="col-source">
                   {evt.isSynthetic ? (
-                    <Badge variant="simulation" size="sm">
-                      SYNTHETIC
-                    </Badge>
+                    <span className="source-stream-tag source-sim" title="Synthetic simulation telemetry">
+                      <span className="source-dot sim-dot" />
+                      SIMULATED
+                    </span>
                   ) : (
-                    <Badge variant="neutral" size="sm">
+                    <span className="source-stream-tag source-live" title="Verified field dispatch">
+                      <span className="source-dot live-dot" />
                       LIVE
-                    </Badge>
+                    </span>
                   )}
                 </div>
 
                 {/* 7. Action */}
                 <div className="col-action">
                   {evt.incidentId ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
+                    <button
+                      type="button"
                       onClick={() => evt.incidentId && navigateToIncident(evt.incidentId)}
                       title={`Inspect ${evt.incidentId} in investigation view`}
-                      className="inspect-btn"
+                      className="stream-inspect-action-btn"
                     >
-                      INSPECT
-                      <ArrowRight size={11} style={{ marginLeft: 4 }} />
-                    </Button>
+                      Inspect →
+                    </button>
                   ) : (
                     <span className="dim-text">—</span>
                   )}

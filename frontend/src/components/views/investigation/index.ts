@@ -5,3 +5,4 @@ export * from './IncidentTimeline';
 export * from './AuditTracePanel';
 export * from './OperatorReviewPanel';
 export * from './IncidentOverridePanel';
+export * from './InvestigationActionWizard';
