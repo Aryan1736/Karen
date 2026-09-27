@@ -103,28 +103,24 @@ flowchart TD
         API --> VAL["Validation & Synthetic Guardrails"]
         VAL --> RAW[("PostgreSQL: raw_reports")]
     end
-
     subgraph ML ["2. Advisory Intelligence"]
         VAL --> PIPE["Local ML Inference Engine"]
         PIPE --> EVI["Structured Evidence & 384-d Embedding"]
     end
-
     subgraph Core ["3. Deterministic Fusion & Priority"]
         EVI --> TRI["Spatiotemporal Triangulation<br/>(Semantic 55% + Space 25% + Time 20%)"]
         TRI --> REL{"Relationship?"}
-        REL -->|Duplicate >= 0.85| DUP["Group without Score Inflation"]
-        REL -->|Corroborating >= 0.70| COR["Source-Aware Corroboration Boost"]
-        REL -->|Similarity < 0.70| NEW["Initialize New Incident"]
-
+        REL -->|Duplicate: Score >= 0.85| DUP["Group without Score Inflation"]
+        REL -->|Corroborating: Score >= 0.70| COR["Source-Aware Corroboration Boost"]
+        REL -->|New Incident: Below 0.70| NEW["Initialize New Incident"]
         DUP & COR & NEW --> PRIO["Transparent Priority Engine<br/>Urgency 35% + Risk 30% + Corrob 20% + Hazard 15%"]
         PRIO --> DB[("PostgreSQL Operational Store<br/>incidents, links, snapshots, audit")]
     end
-
     subgraph Realtime ["4. Live Command Center"]
         DB -->|Broadcast| WS["WebSocket Stream (/ws/events)"]
         WS --> UI["React Tactical Command Center"]
         UI -->|Review & Override| OPR["Human Operator"]
-        OPR -->|POST /incidents/{id}/review| DB
+        OPR -->|Operator Status & Overrides| DB
     end
 ```
 
