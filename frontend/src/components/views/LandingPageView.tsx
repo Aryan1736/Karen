@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigation, NavigationView } from '../../context/NavigationContext';
 import { useBackendHealth } from '../../hooks/useBackendHealth';
 import { useWebSocketStatus } from '../../context/WebSocketContext';
@@ -124,12 +124,57 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
 
   const isConnected = isOnline === true && wsStatus === 'CONNECTED';
 
+  const landingPageRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
   // Full-width radar incident selection
   const [selectedIncidentId, setSelectedIncidentId] = useState<string>('INC-08802');
   const selectedIncident = RADAR_INCIDENTS.find(inc => inc.id === selectedIncidentId) || RADAR_INCIDENTS[0];
 
   // Console preview module selector
   const [activeConsoleTab, setActiveConsoleTab] = useState<NavigationView>('command-deck');
+
+  // Track minimal scroll progress percentage smoothly
+  useEffect(() => {
+    const container = landingPageRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const total = container.scrollHeight - container.clientHeight;
+      if (total > 0) {
+        setScrollProgress((container.scrollTop / total) * 100);
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // IntersectionObserver for minimal scroll reveal animations
+  useEffect(() => {
+    const container = landingPageRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed');
+          }
+        });
+      },
+      {
+        root: container,
+        threshold: 0.08,
+        rootMargin: '0px 0px -30px 0px',
+      }
+    );
+
+    const targets = container.querySelectorAll('.reveal-on-scroll');
+    targets.forEach((target) => observer.observe(target));
+
+    return () => observer.disconnect();
+  }, []);
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
@@ -140,7 +185,12 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
   };
 
   return (
-    <div className={`landing-page ${className}`} role="region" aria-label="Tingle Landing Page">
+    <div 
+      ref={landingPageRef}
+      className={`landing-page ${className}`} 
+      role="region" 
+      aria-label="Tingle Landing Page"
+    >
       {/* ==========================================================================
           1. CLEAN MINIMAL HEADER (NO DUPLICATE BUTTON, SLEEK BRAND & NAV)
           ========================================================================== */}
@@ -149,10 +199,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
           <div className="landing-brand-group">
             <div 
               className="landing-brand-badge" 
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={() => {
+                landingPageRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter') window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onKeyDown={(e) => { 
+                if (e.key === 'Enter') landingPageRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); 
+              }}
               title="Tingle Emergency Operations"
             >
               <span className="brand-dot" aria-hidden="true" />
@@ -190,6 +244,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
           </nav>
         </div>
       </header>
+
+      {/* Minimal Neon Scroll Progress Indicator */}
+      <div className="landing-scroll-progress-track" aria-hidden="true">
+        <div 
+          className="landing-scroll-progress-fill" 
+          style={{ width: `${scrollProgress}%` }} 
+        />
+      </div>
 
       {/* ==========================================================================
           MAIN CONTENT AREA
@@ -239,12 +301,25 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
               </button>
             </div>
           </div>
+
+          {/* Minimal Animated Scroll Indicator */}
+          <a 
+            href="#signals" 
+            className="hero-scroll-indicator" 
+            onClick={(e) => scrollToSection(e, 'signals')}
+            aria-label="Scroll down to signals feed"
+          >
+            <span className="scroll-indicator-mouse">
+              <span className="scroll-indicator-wheel" />
+            </span>
+            <span className="scroll-indicator-label">SCROLL</span>
+          </a>
         </section>
 
         {/* ==========================================================================
             3. THE SIGNAL STREAM SECTION
             ========================================================================== */}
-        <section className="landing-section" id="signals">
+        <section className="landing-section reveal-on-scroll" id="signals">
           <div className="landing-container">
             <div className="section-header">
               <div className="brush-eyebrow">RAW INGESTION FEEDS</div>
@@ -259,7 +334,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
               {/* Card 1 */}
               <div className="dispatch-card">
                 <div className="dispatch-card-top">
-                  <span className="source-tag">911 CALL // CAD-04</span>
+                  <div className="source-tag-group">
+                    <span className="source-tag">911 CALL // CAD-04</span>
+                    <span className="sound-bars" aria-hidden="true">
+                      <span className="sound-bar" />
+                      <span className="sound-bar" />
+                      <span className="sound-bar" />
+                    </span>
+                  </div>
                   <span className="timestamp-tag">14:02:11 UTC</span>
                 </div>
                 <blockquote className="dispatch-quote">
@@ -274,7 +356,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
               {/* Card 2 */}
               <div className="dispatch-card">
                 <div className="dispatch-card-top">
-                  <span className="source-tag highlight-orange">RADIO SCANNER // B1</span>
+                  <div className="source-tag-group">
+                    <span className="source-tag highlight-orange">RADIO SCANNER // B1</span>
+                    <span className="sound-bars" aria-hidden="true">
+                      <span className="sound-bar" />
+                      <span className="sound-bar" />
+                      <span className="sound-bar" />
+                    </span>
+                  </div>
                   <span className="timestamp-tag">14:02:13 UTC</span>
                 </div>
                 <blockquote className="dispatch-quote">
@@ -289,7 +378,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
               {/* Card 3 */}
               <div className="dispatch-card">
                 <div className="dispatch-card-top">
-                  <span className="source-tag highlight-cyan">CITIZEN REPORT</span>
+                  <div className="source-tag-group">
+                    <span className="source-tag highlight-cyan">CITIZEN REPORT</span>
+                    <span className="sound-bars" aria-hidden="true">
+                      <span className="sound-bar" />
+                      <span className="sound-bar" />
+                      <span className="sound-bar" />
+                    </span>
+                  </div>
                   <span className="timestamp-tag">14:02:15 UTC</span>
                 </div>
                 <blockquote className="dispatch-quote">
@@ -307,7 +403,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
         {/* ==========================================================================
             4. THE CORRELATION SECTION
             ========================================================================== */}
-        <section className="landing-section transformation-section" id="correlation">
+        <section className="landing-section transformation-section reveal-on-scroll" id="correlation">
           <div className="landing-container">
             <div className="section-header center">
               <div className="brush-eyebrow">SIGNAL FUSION</div>
@@ -353,6 +449,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
               {/* Center Column: Correlation Convergence Node */}
               <div className="convergence-node">
                 <div className="convergence-marker">
+                  <span className="convergence-pulse-ring" aria-hidden="true" />
                   <span className="marker-core-text">4 MIN</span>
                 </div>
                 <div className="node-label">SIGNAL CORRELATION</div>
@@ -405,7 +502,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
         {/* ==========================================================================
             5. TRANSPARENT DECISION SUPPORT
             ========================================================================== */}
-        <section className="landing-section" id="logic">
+        <section className="landing-section reveal-on-scroll" id="logic">
           <div className="landing-container">
             <div className="logic-grid">
               <div className="logic-narrative">
@@ -511,7 +608,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
         {/* ==========================================================================
             6. THE PRIORITY MATRIX SECTION
             ========================================================================== */}
-        <section className="landing-section matrix-section" id="priority-matrix">
+        <section className="landing-section matrix-section reveal-on-scroll" id="priority-matrix">
           <div className="landing-container">
             <div className="section-header">
               <div className="brush-eyebrow">TRIAGE HIERARCHY</div>
@@ -604,7 +701,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
             7. SHOWSTOPPER FULL-WIDTH SECTION: SPIDER-SENSE MULTIVERSE RADAR
                (Edge-to-Edge 100vw, Clean & Minimal, No Clutter)
             ========================================================================== */}
-        <section className="landing-fullwidth-section" id="radar">
+        <section className="landing-fullwidth-section reveal-on-scroll" id="radar">
           {/* Header Bar spanning full width */}
           <div className="radar-fullwidth-header">
             <div>
@@ -774,6 +871,18 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
               <span className="text-yellow">HUMAN-IN-THE-LOOP SOVEREIGN</span>
               <span>•</span>
               <span>APCO PROJECT 33 COMPLIANT</span>
+              <span>•</span>
+              <span>VHF: 442.800 MHz</span>
+              <span>•</span>
+              <span>CAD FEED: CAD-04</span>
+              <span>•</span>
+              <span>GEOHASH-6 (tgu0u)</span>
+              <span>•</span>
+              <span className="text-green">RT-STT: 140ms REALTIME</span>
+              <span>•</span>
+              <span className="text-yellow">HUMAN-IN-THE-LOOP SOVEREIGN</span>
+              <span>•</span>
+              <span>APCO PROJECT 33 COMPLIANT</span>
             </div>
           </div>
         </section>
@@ -781,7 +890,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
         {/* ==========================================================================
             8. OPERATOR CONTROL & AUTHORITY
             ========================================================================== */}
-        <section className="landing-section" id="sovereignty">
+        <section className="landing-section reveal-on-scroll" id="sovereignty">
           <div className="landing-container">
             <div className="sovereignty-box">
               <div className="sovereignty-inner">
@@ -815,7 +924,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
         {/* ==========================================================================
             9. COMMAND CENTER INTERFACE PREVIEW
             ========================================================================== */}
-        <section className="landing-section preview-section" id="command-center">
+        <section className="landing-section preview-section reveal-on-scroll" id="command-center">
           <div className="landing-container">
             <div className="section-header between">
               <div>
@@ -854,6 +963,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
               {/* Viewport Preview Area */}
               <div className="preview-radar-canvas">
                 <div className="radar-grid" />
+                <div className="preview-sweep-cone" aria-hidden="true" />
                 <div className="radar-incident-pin pin-1">
                   <span className="pin-pulse" />
                   <span className="pin-label">INC-08802 (P0)</span>
@@ -903,7 +1013,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
         {/* ==========================================================================
             10. READY CALLOUT
             ========================================================================== */}
-        <section className="landing-section">
+        <section className="landing-section reveal-on-scroll">
           <div className="landing-container">
             <div className="tactical-launch-box">
               <div className="brush-eyebrow">OPERATIONAL READINESS</div>

@@ -107,8 +107,8 @@
 
 /* Target Button sitting on the Lower-Right Edge */
 .radar-edge-btn.btn-target {
-  bottom: 0px;
-  right: 12px;
+  bottom: 18px;
+  right: 2px;
 }
 
 .radar-edge-btn.btn-target.locked {
