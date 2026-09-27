@@ -1,18 +1,13 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Rss,
-  Radio,
   Trash2,
   RefreshCw,
   AlertTriangle,
   CheckCircle2,
   ArrowRight,
   Search,
-  Activity,
-  Filter,
   Sparkles,
-  ShieldAlert,
-  SlidersHorizontal,
 } from 'lucide-react';
 import { Badge, BadgeVariant, Button } from '../ui';
 import { useWebSocket } from '../../context/WebSocketContext';
@@ -20,7 +15,7 @@ import { useNavigation } from '../../context/NavigationContext';
 import { RealtimeEvent, RealtimeEventType } from '../../types/incident';
 import './IncidentStreamsView.css';
 
-export type StreamFilterCategory = 'ALL' | 'INCIDENTS' | 'STATUS' | 'SIMULATION' | 'SYSTEM';
+export type StreamFilterCategory = 'ALL' | 'INCIDENTS' | 'STATUS' | 'SIMULATION';
 
 interface ParsedEventDetails {
   id: string;
@@ -111,9 +106,9 @@ function parseStreamEvent(evt: RealtimeEvent, isLatest: boolean, index: number):
       priorityLevel = p.priority?.level || p.urgency || null;
       priorityScore = typeof p.priority?.score === 'number' ? p.priority.score : null;
       const locText = p.location?.text ? `at ${p.location.text}` : '';
-      summary = `New Incident Created${locText ? ` ${locText}` : ''} [${incidentType || 'UNCLASSIFIED'}]`;
+      summary = `Incident established${locText ? ` ${locText}` : ''} [${incidentType || 'UNCLASSIFIED'}]`;
       if (p.people_at_risk?.count && p.people_at_risk.count > 0) {
-        detail = `${p.people_at_risk.count} civilian(s) assessed at risk. Response required: ${(p.required_response || []).join(', ') || 'SEARCH_AND_RESCUE'}.`;
+        detail = `${p.people_at_risk.count} civilian(s) at risk. Response: ${(p.required_response || []).join(', ') || 'SEARCH_AND_RESCUE'}.`;
       } else if (p.priority?.explanation) {
         detail = p.priority.explanation;
       }
@@ -129,9 +124,9 @@ function parseStreamEvent(evt: RealtimeEvent, isLatest: boolean, index: number):
       if (typeof p.previous_priority_score === 'number' && typeof p.new_priority_score === 'number') {
         const delta = p.new_priority_score - p.previous_priority_score;
         const sign = delta >= 0 ? '+' : '';
-        summary = `Priority shifted: ${p.previous_priority_score.toFixed(1)} → ${p.new_priority_score.toFixed(1)} (${sign}${delta.toFixed(1)})`;
+        summary = `Priority score shifted: ${p.previous_priority_score.toFixed(1)} → ${p.new_priority_score.toFixed(1)} (${sign}${delta.toFixed(1)})`;
       } else {
-        summary = `Incident intelligence updated${incidentType ? ` for ${incidentType}` : ''}`;
+        summary = `Incident intelligence updated${incidentType ? ` (${incidentType})` : ''}`;
       }
 
       if (p.corroboration?.explanation) {
@@ -139,7 +134,7 @@ function parseStreamEvent(evt: RealtimeEvent, isLatest: boolean, index: number):
       } else if (p.explanation) {
         detail = p.explanation;
       } else if (p.corroboration?.report_count) {
-        detail = `Corroborated by ${p.corroboration.report_count} linked report(s). Corroboration score: ${Math.round((p.corroboration.score || 0) * 100)}%.`;
+        detail = `Corroborated by ${p.corroboration.report_count} linked report(s).`;
       }
       break;
     }
@@ -148,7 +143,7 @@ function parseStreamEvent(evt: RealtimeEvent, isLatest: boolean, index: number):
       oldStatus = p.old_status || 'UNKNOWN';
       newStatus = p.new_status || 'UNKNOWN';
       summary = `Status transition: ${oldStatus} → ${newStatus}`;
-      detail = `Operational state transitioned by sovereign operator review or automated escalation rule.`;
+      detail = `Operational state transitioned by sovereign operator review.`;
       break;
     }
 
@@ -157,25 +152,19 @@ function parseStreamEvent(evt: RealtimeEvent, isLatest: boolean, index: number):
       injectedCount = typeof p.injected_count === 'number' ? p.injected_count : 0;
       totalSimulated = typeof p.total_simulated === 'number' ? p.total_simulated : 0;
       scenario = p.scenario || 'emergency_simulation';
-      summary = `Synthetic crisis dispatch pulse injected (${injectedCount} reports)`;
-      detail = `Scenario: "${scenario}" | Cumulative simulated reports: ${totalSimulated}.`;
+      summary = `Synthetic dispatch pulse injected (${injectedCount} reports)`;
+      detail = `Scenario: "${scenario}" | Total simulated: ${totalSimulated}.`;
       break;
     }
 
     case 'PING':
     case 'PONG': {
       summary = `${eventType} keepalive heartbeat frame received`;
-      detail = `Transport WebSocket duplex communication channel verified operational.`;
       break;
     }
 
     default: {
       summary = `Operational event [${eventType}] received`;
-      try {
-        detail = JSON.stringify(p);
-      } catch {
-        detail = null;
-      }
     }
   }
 
@@ -219,24 +208,22 @@ export const IncidentStreamsView: React.FC = () => {
       setShowRestoredNotice(true);
       const timer = setTimeout(() => {
         setShowRestoredNotice(false);
-      }, 5000);
+      }, 4000);
       return () => clearTimeout(timer);
     }
     prevStatusRef.current = status;
   }, [status]);
 
-  // Parse all events into high-signal structured models
+  // Parse events into high-density models
   const parsedEvents = useMemo(() => {
     return events.map((evt, idx) => parseStreamEvent(evt, idx === 0, idx));
   }, [events]);
 
-  // Real metric breakdowns across buffer
-  const metrics = useMemo(() => {
-    const total = parsedEvents.length;
+  // Counts
+  const counts = useMemo(() => {
     let incidentCount = 0;
     let statusCount = 0;
     let simCount = 0;
-    let systemCount = 0;
 
     for (const pe of parsedEvents) {
       if (pe.eventType === 'INCIDENT_CREATED' || pe.eventType === 'INCIDENT_UPDATED') {
@@ -245,15 +232,13 @@ export const IncidentStreamsView: React.FC = () => {
         statusCount++;
       } else if (pe.eventType === 'SIMULATION_PULSE' || pe.isSynthetic) {
         simCount++;
-      } else if (pe.eventType === 'PING' || pe.eventType === 'PONG') {
-        systemCount++;
       }
     }
 
-    return { total, incidentCount, statusCount, simCount, systemCount };
+    return { total: parsedEvents.length, incidentCount, statusCount, simCount };
   }, [parsedEvents]);
 
-  // Apply active category filter and search query
+  // Filter & Search
   const filteredEvents = useMemo(() => {
     let result = parsedEvents;
 
@@ -265,8 +250,6 @@ export const IncidentStreamsView: React.FC = () => {
       result = result.filter((e) => e.eventType === 'INCIDENT_STATUS_CHANGED');
     } else if (activeFilter === 'SIMULATION') {
       result = result.filter((e) => e.eventType === 'SIMULATION_PULSE' || e.isSynthetic);
-    } else if (activeFilter === 'SYSTEM') {
-      result = result.filter((e) => e.eventType === 'PING' || e.eventType === 'PONG');
     }
 
     if (searchQuery.trim()) {
@@ -293,8 +276,6 @@ export const IncidentStreamsView: React.FC = () => {
       case 'INCIDENT_UPDATED': return 'p1-high';
       case 'INCIDENT_STATUS_CHANGED': return 'p2-medium';
       case 'SIMULATION_PULSE': return 'simulation';
-      case 'PING':
-      case 'PONG': return 'neutral';
       default: return 'neutral';
     }
   };
@@ -311,14 +292,14 @@ export const IncidentStreamsView: React.FC = () => {
   };
 
   return (
-    <div className="incident-streams-view" role="region" aria-label="Live Incident Streams">
-      {/* 1. Header: Live Incident Streams, Event Count, Truthful Connection Status */}
+    <div className="incident-streams-view full-width-console" role="region" aria-label="Live Incident Streams">
+      {/* 1. Header Bar: Title, Connection Status, Actions */}
       <header className="streams-header">
         <div className="streams-title-group">
-          <Rss size={20} className="streams-header-icon" />
+          <Rss size={18} className="streams-header-icon" />
           <h1 className="streams-title">LIVE INCIDENT STREAMS</h1>
           <Badge variant="neutral" size="sm" className="streams-count-badge">
-            {events.length} EVENTS RECORDED
+            {events.length} RECORDED
           </Badge>
           {events.length > 0 && (
             <span className="streams-last-utc">
@@ -336,6 +317,17 @@ export const IncidentStreamsView: React.FC = () => {
             STATUS: {status}
           </Badge>
 
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsSimulatorModalOpen(true)}
+            className="streams-action-btn"
+            title="Open Simulator to inject crisis reports"
+          >
+            <Sparkles size={12} style={{ marginRight: 5 }} />
+            SIMULATE
+          </Button>
+
           {events.length > 0 && (
             <Button
               variant="secondary"
@@ -344,8 +336,8 @@ export const IncidentStreamsView: React.FC = () => {
               title="Clear event stream buffer"
               className="streams-action-btn"
             >
-              <Trash2 size={13} style={{ marginRight: 5 }} />
-              CLEAR STREAM
+              <Trash2 size={12} style={{ marginRight: 4 }} />
+              CLEAR
             </Button>
           )}
 
@@ -357,20 +349,20 @@ export const IncidentStreamsView: React.FC = () => {
               title="Reconnect to dispatch WebSocket"
               className="streams-action-btn"
             >
-              <RefreshCw size={13} style={{ marginRight: 5 }} />
+              <RefreshCw size={12} style={{ marginRight: 4 }} />
               RECONNECT
             </Button>
           )}
         </div>
       </header>
 
-      {/* Disconnected Notice Banner */}
+      {/* Disconnected Alert Banner */}
       {status !== 'CONNECTED' && (
         <div className="streams-alert-banner paused-banner" role="alert">
           <div className="streams-banner-content">
-            <AlertTriangle size={16} className="streams-banner-icon" />
+            <AlertTriangle size={15} className="streams-banner-icon" />
             <div className="streams-banner-text">
-              <strong>LIVE UPDATES PAUSED</strong> — Connection to dispatch server lost. Background retry active (exponential backoff).
+              <strong>LIVE UPDATES PAUSED</strong> — Connection to dispatch core offline. Automatic reconnect in background.
             </div>
           </div>
           <Button variant="hazard" size="sm" onClick={reconnect}>
@@ -379,13 +371,13 @@ export const IncidentStreamsView: React.FC = () => {
         </div>
       )}
 
-      {/* Restored Connection Notice Banner */}
+      {/* Connection Restored Banner */}
       {showRestoredNotice && status === 'CONNECTED' && (
         <div className="streams-alert-banner restored-banner" role="status">
           <div className="streams-banner-content">
-            <CheckCircle2 size={16} className="streams-banner-icon text-success" />
+            <CheckCircle2 size={15} className="streams-banner-icon text-success" />
             <div className="streams-banner-text">
-              <strong>LIVE CONNECTION RESTORED</strong> — Real-time event stream synchronized with emergency dispatch core.
+              <strong>LIVE CONNECTION RESTORED</strong> — Real-time event stream synchronized.
             </div>
           </div>
           <button
@@ -398,380 +390,240 @@ export const IncidentStreamsView: React.FC = () => {
         </div>
       )}
 
-      {/* 2. Main Two-Column Layout */}
-      <div className="streams-layout-grid">
-        {/* Left / Main Area: Chronological Event Stream */}
-        <main className="streams-main-column">
-          {/* Quick Filter Bar */}
-          <div className="streams-filter-bar">
-            <div className="streams-category-tabs" role="tablist" aria-label="Event category filters">
-              <button
-                className={`streams-tab-btn ${activeFilter === 'ALL' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('ALL')}
-                role="tab"
-                aria-selected={activeFilter === 'ALL'}
-              >
-                ALL <span className="tab-count">{metrics.total}</span>
-              </button>
-              <button
-                className={`streams-tab-btn ${activeFilter === 'INCIDENTS' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('INCIDENTS')}
-                role="tab"
-                aria-selected={activeFilter === 'INCIDENTS'}
-              >
-                INCIDENTS <span className="tab-count">{metrics.incidentCount}</span>
-              </button>
-              <button
-                className={`streams-tab-btn ${activeFilter === 'STATUS' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('STATUS')}
-                role="tab"
-                aria-selected={activeFilter === 'STATUS'}
-              >
-                STATUS <span className="tab-count">{metrics.statusCount}</span>
-              </button>
-              <button
-                className={`streams-tab-btn ${activeFilter === 'SIMULATION' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('SIMULATION')}
-                role="tab"
-                aria-selected={activeFilter === 'SIMULATION'}
-              >
-                SIMULATION <span className="tab-count">{metrics.simCount}</span>
-              </button>
-              {metrics.systemCount > 0 && (
-                <button
-                  className={`streams-tab-btn ${activeFilter === 'SYSTEM' ? 'active' : ''}`}
-                  onClick={() => setActiveFilter('SYSTEM')}
-                  role="tab"
-                  aria-selected={activeFilter === 'SYSTEM'}
-                >
-                  SYSTEM <span className="tab-count">{metrics.systemCount}</span>
-                </button>
-              )}
-            </div>
+      {/* 2. Utility & Filter Row */}
+      <div className="streams-toolbar">
+        <div className="streams-filter-group" role="tablist" aria-label="Event category filters">
+          <button
+            className={`filter-chip ${activeFilter === 'ALL' ? 'active' : ''}`}
+            onClick={() => setActiveFilter('ALL')}
+            role="tab"
+            aria-selected={activeFilter === 'ALL'}
+          >
+            ALL [{counts.total}]
+          </button>
+          <button
+            className={`filter-chip ${activeFilter === 'INCIDENTS' ? 'active' : ''}`}
+            onClick={() => setActiveFilter('INCIDENTS')}
+            role="tab"
+            aria-selected={activeFilter === 'INCIDENTS'}
+          >
+            INCIDENTS [{counts.incidentCount}]
+          </button>
+          <button
+            className={`filter-chip ${activeFilter === 'STATUS' ? 'active' : ''}`}
+            onClick={() => setActiveFilter('STATUS')}
+            role="tab"
+            aria-selected={activeFilter === 'STATUS'}
+          >
+            STATUS [{counts.statusCount}]
+          </button>
+          <button
+            className={`filter-chip ${activeFilter === 'SIMULATION' ? 'active' : ''}`}
+            onClick={() => setActiveFilter('SIMULATION')}
+            role="tab"
+            aria-selected={activeFilter === 'SIMULATION'}
+          >
+            SIMULATION [{counts.simCount}]
+          </button>
+        </div>
 
-            <div className="streams-search-box">
-              <Search size={14} className="streams-search-icon" />
-              <input
-                type="text"
-                placeholder="Filter events by ID, hazard, or keyword..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="streams-search-input"
-                aria-label="Filter events"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="streams-search-clear"
-                  title="Clear search"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
+        <div className="streams-search-wrap">
+          <Search size={13} className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search by ID, keyword, hazard..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="terminal-search-input"
+            aria-label="Filter events"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="search-clear-btn"
+              title="Clear search"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
 
-          {/* Event Stream List */}
-          <div className="streams-feed-container">
-            {events.length === 0 ? (
-              /* Compact, intentional tactical empty state */
-              <div className="streams-empty-card" role="status">
-                <div className="streams-empty-header">
-                  <div className="streams-empty-beacon-icon">
-                    <Radio size={28} className="pulse-svg" />
-                  </div>
-                  <div>
-                    <h2 className="streams-empty-title">NO EVENTS YET</h2>
-                    <p className="streams-empty-desc">
-                      Live events will appear here when Tingle receives or processes reports.
-                    </p>
-                  </div>
-                </div>
+      {/* 3. Full-Width Event Stream Table / Ledger */}
+      <main className="streams-ledger-container">
+        {/* Ledger Header Strip */}
+        <div className="ledger-header-row">
+          <div className="col-time">TIME (UTC)</div>
+          <div className="col-event">EVENT TYPE</div>
+          <div className="col-id">TARGET ID</div>
+          <div className="col-details">OPERATIONAL SUMMARY & TELEMETRY DELTA</div>
+          <div className="col-priority">PRIORITY</div>
+          <div className="col-source">SOURCE</div>
+          <div className="col-action">ACTION</div>
+        </div>
 
-                <div className="streams-empty-footer">
-                  <div className="streams-empty-tags">
-                    <span className="tech-tag">WS: {status}</span>
-                    <span className="tech-tag">DISPATCH FEED: ACTIVE</span>
-                    <span className="tech-tag">BUFFER: 0/50</span>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setIsSimulatorModalOpen(true)}
-                  >
-                    <Sparkles size={12} style={{ marginRight: 5 }} />
-                    LAUNCH SIMULATOR →
-                  </Button>
-                </div>
+        {/* Ledger Body */}
+        <div className="ledger-body">
+          {events.length === 0 ? (
+            /* Authentic Standby Terminal State */
+            <div className="stream-standby-banner" role="status">
+              <div className="standby-line">
+                <span className="standby-dot" />
+                <span className="standby-title">DISPATCH STREAM STANDBY</span>
+                <span className="standby-sep">•</span>
+                <span className="standby-meta">WS: {status}</span>
+                <span className="standby-sep">•</span>
+                <span className="standby-meta">ENDPOINT: /ws/events</span>
+                <span className="standby-sep">•</span>
+                <span className="standby-meta">BUFFER: 0/50</span>
               </div>
-            ) : filteredEvents.length === 0 ? (
-              /* Empty filter state */
-              <div className="streams-empty-filter-card">
-                <Filter size={24} style={{ color: 'var(--color-text-muted)', marginBottom: 8 }} />
-                <h3 className="empty-filter-title">NO MATCHING EVENTS</h3>
-                <p className="empty-filter-desc">
-                  No events found matching category <strong>{activeFilter}</strong>
-                  {searchQuery ? ` and query "${searchQuery}"` : ''}.
-                </p>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setActiveFilter('ALL');
-                    setSearchQuery('');
-                  }}
-                >
-                  RESET FILTERS
-                </Button>
-              </div>
-            ) : (
-              <div className="streams-event-card-list">
-                {filteredEvents.map((evt, idx) => (
-                  <article
-                    key={evt.id}
-                    className={`stream-card ${evt.isLatest ? 'is-latest' : ''} ${
-                      evt.isSynthetic ? 'is-synthetic' : ''
-                    }`}
-                  >
-                    {/* Event Card Header */}
-                    <div className="card-top-row">
-                      <div className="card-top-left">
-                        <span className="card-timestamp">{evt.timestampFormatted}</span>
-                        <Badge variant={getEventBadgeVariant(evt.eventType)} size="sm">
-                          {evt.eventType.replace(/_/g, ' ')}
-                        </Badge>
-                        {evt.isLatest && (
-                          <span className="latest-indicator">
-                            <span className="latest-dot" /> LATEST
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="card-top-right">
-                        {evt.isSynthetic ? (
-                          <Badge variant="simulation" size="sm">
-                            SYNTHETIC
-                          </Badge>
-                        ) : (
-                          <Badge variant="neutral" size="sm">
-                            LIVE DISPATCH
-                          </Badge>
-                        )}
-
-                        {evt.priorityLevel && (
-                          <Badge variant={getPriorityBadgeVariant(evt.priorityLevel)} size="sm">
-                            {evt.priorityLevel}
-                            {evt.priorityScore !== null && ` (${evt.priorityScore.toFixed(0)})`}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Event Card Body */}
-                    <div className="card-body-section">
-                      <div className="card-subject-row">
-                        {evt.incidentId && (
-                          <span className="card-id-pill">
-                            {evt.incidentId.toUpperCase()}
-                          </span>
-                        )}
-
-                        {evt.incidentType && (
-                          <span className="card-hazard-pill">
-                            {evt.incidentType}
-                          </span>
-                        )}
-
-                        {evt.scenario && (
-                          <span className="card-scenario-pill">
-                            SCENARIO: {evt.scenario}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="card-narrative-box">
-                        <p className="card-summary">{evt.summary}</p>
-                        {evt.detail && <p className="card-detail">{evt.detail}</p>}
-                      </div>
-
-                      {/* Status Transition Visual */}
-                      {evt.oldStatus && evt.newStatus && (
-                        <div className="card-status-transition">
-                          <span className="status-node status-node-old">{evt.oldStatus}</span>
-                          <ArrowRight size={13} className="status-arrow-icon" />
-                          <span className="status-node status-node-new">{evt.newStatus}</span>
-                        </div>
-                      )}
-
-                      {/* Linked Report IDs */}
-                      {evt.sourceReportIds.length > 0 && (
-                        <div className="card-reports-line">
-                          <span className="reports-label">LINKED REPORTS:</span>
-                          {evt.sourceReportIds.map((rid) => (
-                            <span key={rid} className="report-id-chip">
-                              {rid}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Event Card Footer */}
-                    <div className="card-bottom-row">
-                      <span className="card-seq-num">
-                        SEQ #{events.length - idx}
-                      </span>
-
-                      {evt.incidentId && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => evt.incidentId && navigateToIncident(evt.incidentId)}
-                          title={`Open investigation view for ${evt.incidentId}`}
-                          className="view-incident-btn"
-                        >
-                          VIEW INCIDENT
-                          <ArrowRight size={12} style={{ marginLeft: 6 }} />
-                        </Button>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-        </main>
-
-        {/* Right / Secondary Area: Live Connection, Feed Summary, and Tactical Context */}
-        <aside className="streams-secondary-column" aria-label="Live Stream Controls and Metrics">
-          {/* Panel 1: Live Connection & Dispatch Status */}
-          <div className="tactical-panel connection-panel">
-            <div className="panel-header">
-              <Activity size={14} className="panel-header-icon" />
-              <h2 className="panel-title">DISPATCH CONNECTION</h2>
-            </div>
-            <div className="panel-body">
-              <div className="connection-row">
-                <span className="connection-key">WEBSOCKET STATUS:</span>
-                <span className={`connection-val val-${status.toLowerCase()}`}>
-                  <span className={`status-orb orb-${status.toLowerCase()}`} />
-                  {status}
-                </span>
-              </div>
-              <div className="connection-row">
-                <span className="connection-key">PROTOCOL / ENDPOINT:</span>
-                <span className="connection-val tech-code">/ws/events</span>
-              </div>
-              <div className="connection-row">
-                <span className="connection-key">DISPATCH FEED:</span>
-                <span className="connection-val text-cyan">ACTIVE</span>
-              </div>
-              <div className="connection-row">
-                <span className="connection-key">RECONNECT POLICY:</span>
-                <span className="connection-val">EXPONENTIAL (MAX 15S)</span>
-              </div>
-
-              {status !== 'CONNECTED' ? (
-                <Button
-                  variant="hazard"
-                  size="sm"
-                  onClick={reconnect}
-                  className="panel-action-btn"
-                >
-                  <RefreshCw size={13} style={{ marginRight: 6 }} />
-                  RECONNECT WEBSOCKET
-                </Button>
-              ) : (
-                <div className="connection-health-note">
-                  <CheckCircle2 size={13} color="var(--color-system-green)" />
-                  <span>Real-time event pipe connected & healthy</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Panel 2: Live Stream Metrics */}
-          <div className="tactical-panel metrics-panel">
-            <div className="panel-header">
-              <SlidersHorizontal size={14} className="panel-header-icon" />
-              <h2 className="panel-title">STREAM BUFFER METRICS</h2>
-            </div>
-            <div className="panel-body">
-              <div className="metric-grid">
-                <div className="metric-cell">
-                  <span className="metric-val">{metrics.total}</span>
-                  <span className="metric-lbl">TOTAL BUFFER (MAX 50)</span>
-                </div>
-                <div className="metric-cell">
-                  <span className="metric-val text-critical">{metrics.incidentCount}</span>
-                  <span className="metric-lbl">INCIDENT EVENTS</span>
-                </div>
-                <div className="metric-cell">
-                  <span className="metric-val text-warning">{metrics.statusCount}</span>
-                  <span className="metric-lbl">STATUS TRANSITIONS</span>
-                </div>
-                <div className="metric-cell">
-                  <span className="metric-val text-sim">{metrics.simCount}</span>
-                  <span className="metric-lbl">SYNTHETIC PULSES</span>
-                </div>
-              </div>
-
-              <div className="panel-controls-row">
+              <p className="standby-desc">
+                Awaiting incoming field reports, triage correlations, or status transitions from dispatch.
+              </p>
+              <div className="standby-actions">
                 <Button
                   variant="secondary"
                   size="sm"
                   onClick={() => setIsSimulatorModalOpen(true)}
-                  className="panel-btn-full"
                 >
-                  <Sparkles size={13} style={{ marginRight: 6 }} />
-                  INJECT SIMULATION
+                  <Sparkles size={12} style={{ marginRight: 6 }} />
+                  TRIGGER TEST PULSE IN SIMULATOR →
                 </Button>
-                {events.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearEvents}
-                    className="panel-btn-clear"
-                    title="Clear in-memory event buffer"
-                  >
-                    <Trash2 size={13} />
-                  </Button>
-                )}
               </div>
             </div>
-          </div>
+          ) : filteredEvents.length === 0 ? (
+            /* Empty Filter State */
+            <div className="ledger-empty-filter">
+              <span>NO EVENTS MATCHING FILTER [{activeFilter}]{searchQuery ? ` AND QUERY "${searchQuery}"` : ''}</span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setActiveFilter('ALL');
+                  setSearchQuery('');
+                }}
+              >
+                RESET FILTERS
+              </Button>
+            </div>
+          ) : (
+            filteredEvents.map((evt) => (
+              <div
+                key={evt.id}
+                className={`ledger-row ${evt.isLatest ? 'is-latest' : ''} ${
+                  evt.isSynthetic ? 'is-synthetic' : ''
+                }`}
+              >
+                {/* 1. Time */}
+                <div className="col-time">
+                  <span className="row-timestamp">{evt.timestampFormatted}</span>
+                  {evt.isLatest && (
+                    <span className="row-latest-tag" title="Most recent event">
+                      <span className="pip" /> NEW
+                    </span>
+                  )}
+                </div>
 
-          {/* Panel 3: Tactical Architecture Boundaries (Product Clarity) */}
-          <div className="tactical-panel reference-panel">
-            <div className="panel-header">
-              <ShieldAlert size={14} className="panel-header-icon" />
-              <h2 className="panel-title">OPERATIONAL CONTEXT</h2>
-            </div>
-            <div className="panel-body context-guide-body">
-              <div className="context-item">
-                <span className="context-badge">COMMAND CENTER</span>
-                <span className="context-text">Active incidents and tactical geographic triage.</span>
+                {/* 2. Event Type */}
+                <div className="col-event">
+                  <Badge variant={getEventBadgeVariant(evt.eventType)} size="sm">
+                    {evt.eventType.replace(/_/g, ' ')}
+                  </Badge>
+                </div>
+
+                {/* 3. Target ID */}
+                <div className="col-id">
+                  {evt.incidentId ? (
+                    <span className="id-chip">{evt.incidentId.toUpperCase()}</span>
+                  ) : evt.scenario ? (
+                    <span className="scenario-chip">{evt.scenario}</span>
+                  ) : (
+                    <span className="dim-chip">—</span>
+                  )}
+                </div>
+
+                {/* 4. Operational Summary & Details */}
+                <div className="col-details">
+                  <div className="summary-line">
+                    <span className="primary-summary">{evt.summary}</span>
+                    {evt.incidentType && (
+                      <span className="hazard-chip">{evt.incidentType}</span>
+                    )}
+                  </div>
+
+                  {evt.detail && (
+                    <div className="secondary-detail">{evt.detail}</div>
+                  )}
+
+                  {/* Old Status -> New Status */}
+                  {evt.oldStatus && evt.newStatus && (
+                    <div className="status-flow">
+                      <span className="flow-node flow-old">{evt.oldStatus}</span>
+                      <ArrowRight size={11} className="flow-arrow" />
+                      <span className="flow-node flow-new">{evt.newStatus}</span>
+                    </div>
+                  )}
+
+                  {/* Linked report IDs */}
+                  {evt.sourceReportIds.length > 0 && (
+                    <div className="linked-reports">
+                      <span className="reports-label">REPORTS:</span>
+                      {evt.sourceReportIds.map((rid) => (
+                        <span key={rid} className="report-pip">
+                          {rid}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Priority */}
+                <div className="col-priority">
+                  {evt.priorityLevel ? (
+                    <Badge variant={getPriorityBadgeVariant(evt.priorityLevel)} size="sm">
+                      {evt.priorityLevel}
+                      {evt.priorityScore !== null ? ` ${evt.priorityScore.toFixed(0)}` : ''}
+                    </Badge>
+                  ) : (
+                    <span className="dim-text">—</span>
+                  )}
+                </div>
+
+                {/* 6. Source */}
+                <div className="col-source">
+                  {evt.isSynthetic ? (
+                    <Badge variant="simulation" size="sm">
+                      SYNTHETIC
+                    </Badge>
+                  ) : (
+                    <Badge variant="neutral" size="sm">
+                      LIVE
+                    </Badge>
+                  )}
+                </div>
+
+                {/* 7. Action */}
+                <div className="col-action">
+                  {evt.incidentId ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => evt.incidentId && navigateToIncident(evt.incidentId)}
+                      title={`Inspect ${evt.incidentId} in investigation view`}
+                      className="inspect-btn"
+                    >
+                      INSPECT
+                      <ArrowRight size={11} style={{ marginLeft: 4 }} />
+                    </Button>
+                  ) : (
+                    <span className="dim-text">—</span>
+                  )}
+                </div>
               </div>
-              <div className="context-item active-context-item">
-                <span className="context-badge badge-active">LIVE STREAMS</span>
-                <span className="context-text">Real-time incoming dispatches and state updates.</span>
-              </div>
-              <div className="context-item">
-                <span className="context-badge">INVESTIGATION</span>
-                <span className="context-text">Forensic evidence, corroboration, and NLP factors.</span>
-              </div>
-              <div className="context-item">
-                <span className="context-badge">AUDIT LEDGER</span>
-                <span className="context-text">Immutable record of operator sovereign overrides.</span>
-              </div>
-              <div className="context-item">
-                <span className="context-badge">SYSTEM BRIEFING</span>
-                <span className="context-text">Current overall situation and executive summary.</span>
-              </div>
-            </div>
-          </div>
-        </aside>
-      </div>
+            ))
+          )}
+        </div>
+      </main>
     </div>
   );
 };
