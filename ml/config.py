@@ -198,6 +198,9 @@ class MLConfig:
     # TODO (Feature 4): Configure NER entity extractor (ADR-002: spacy en_core_web_sm vs bert-base-NER)
     ner_model_name: str | None = None
 
+    # Lightweight mode for constrained deployment environments (e.g. Render Free 512MB RAM)
+    lightweight_mode: bool = False
+
     def validate(self) -> None:
         """Validates configuration values against acceptable operational bounds."""
         if self.min_report_text_length <= 0:
@@ -261,6 +264,12 @@ class MLConfig:
             except ValueError:
                 raise MLConfigurationError(f"Environment variable '{key}' must be an integer, got: {val!r}")
 
+        def _get_bool(key: str, default: bool) -> bool:
+            val = os.getenv(key)
+            if val is None or not val.strip():
+                return default
+            return val.strip().lower() in ("1", "true", "yes", "on")
+
         config = cls(
             model_version=os.getenv("ML_MODEL_VERSION", "all-MiniLM-L6-v2+heuristic-v1").strip(),
             embedding_model_name=os.getenv(
@@ -288,6 +297,7 @@ class MLConfig:
             log_level=os.getenv("ML_LOG_LEVEL", os.getenv("LOG_LEVEL", "INFO")).strip().upper(),
             classification_model_name=os.getenv("CLASSIFICATION_MODEL_NAME"),
             ner_model_name=os.getenv("NER_MODEL_NAME"),
+            lightweight_mode=_get_bool("ML_LIGHTWEIGHT_MODE", False),
         )
         config.validate()
         return config

@@ -129,14 +129,17 @@ class IncidentClassifier:
     def __init__(
         self,
         config: MLConfig | None = None,
-        mode: str = "hybrid",
+        mode: str | None = None,
         keyword_weight: float = 0.40,
         semantic_weight: float = 0.60,
         min_confidence_threshold: float = 0.35,
         fallback_label: str = "OTHER_GENERAL_INCIDENT",
     ) -> None:
         self.config = config or get_ml_config()
-        self.mode = mode.lower()
+        if mode is None:
+            self.mode = "keyword" if self.config.lightweight_mode else "hybrid"
+        else:
+            self.mode = mode.lower()
         if self.mode not in ("hybrid", "semantic", "keyword"):
             raise MLInferenceError(
                 f"Unsupported classifier mode: {mode!r}. Must be 'hybrid', 'semantic', or 'keyword'."
@@ -187,6 +190,12 @@ class IncidentClassifier:
         """
         if self._model is not None and self._prototype_embeddings is not None:
             return self._model
+
+        if self.config.lightweight_mode:
+            raise MLModelError(
+                "Neural runtime is disabled in lightweight mode (ML_LIGHTWEIGHT_MODE=true)",
+                details={"library": "sentence-transformers", "lightweight_mode": True},
+            )
 
         try:
             self.logger.info("Initializing lazy semantic model for classification...")
@@ -591,7 +600,7 @@ class IncidentClassifier:
 def classify_incident(
     text: str | PreprocessedText,
     config: MLConfig | None = None,
-    mode: str = "hybrid",
+    mode: str | None = None,
     report_id: str | None = None,
 ) -> ClassificationResult:
     """

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib
 import logging
+import os
 import threading
 from typing import Any, Callable, Optional, Union
 
@@ -31,6 +32,22 @@ AnalyzerCallable = Callable[[str, str, Optional[dict[str, Any]]], Union[dict[str
 DEFAULT_FALLBACK_MODEL_VERSION = "karen-fallback-v1"
 
 
+def is_lightweight_mode() -> bool:
+    """
+    Returns True if ML_LIGHTWEIGHT_MODE is enabled via environment variable or settings.
+    Accepts standard truthy values: 1, true, yes, on.
+    Defaults to False.
+    """
+    val = os.getenv("ML_LIGHTWEIGHT_MODE")
+    if val is not None and val.strip():
+        return val.strip().lower() in ("1", "true", "yes", "on")
+    try:
+        from backend.app.core.config import settings
+        return bool(getattr(settings, "ML_LIGHTWEIGHT_MODE", False))
+    except Exception:
+        return False
+
+
 # Shared process-level lock protecting concurrent execution of the discovered ML InferenceEngine
 _discovered_engine_lock = threading.Lock()
 _discovered_engine: Any = None
@@ -49,6 +66,8 @@ class MLAdapter:
     Supports dependency-injected analyzers for testing and lazy dynamic discovery for production.
     """
 
+    is_lightweight_mode = staticmethod(is_lightweight_mode)
+
     def __init__(self, analyzer: Optional[AnalyzerCallable] = None) -> None:
         self._analyzer: Optional[AnalyzerCallable] = analyzer
         self._discovery_attempted: bool = False
@@ -58,7 +77,7 @@ class MLAdapter:
         """
         Wraps discovered InferenceEngine with the process-level lock
         and adapts to the backend (text, report_id, location_hint) -> dict contract.
-        Explicitly requests include_embedding=True.
+        Requests include_embedding=False in lightweight mode, or True in normal mode.
         """
         def _call_engine(
             text: str,
@@ -66,11 +85,12 @@ class MLAdapter:
             location_hint: Optional[dict[str, Any]] = None,
         ) -> dict[str, Any]:
             with _discovered_engine_lock:
+                req_embedding = not is_lightweight_mode()
                 return engine.analyze(
                     report=text,
                     report_id=report_id,
                     location_hint=location_hint,
-                    include_embedding=True,
+                    include_embedding=req_embedding,
                 )
         return _call_engine
 
