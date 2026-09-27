@@ -170,9 +170,14 @@
   background-color: #050d18;
 }
 
-/* Leaflet Tile Styling with Tactical Navy Chromatic Grade */
+/* Leaflet Tile Styling with Tactical Navy Chromatic Grade (Esri Dark Canvas) */
 .tactical-leaflet-tiles {
-  filter: brightness(0.85) contrast(1.25) hue-rotate(198deg) saturate(1.85);
+  filter: brightness(0.72) contrast(1.4) sepia(100%) hue-rotate(185deg) saturate(3.2);
+}
+
+.tactical-leaflet-labels {
+  filter: brightness(1.2) contrast(1.1) sepia(50%) hue-rotate(185deg) saturate(2);
+  pointer-events: none;
 }
 
 /* ==========================================================================

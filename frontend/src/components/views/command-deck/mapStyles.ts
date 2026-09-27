@@ -6,7 +6,7 @@
  * - Muted dark blue geographic land areas (#0c253d)
  * - Cyan/electric blue accents (#00f0ff)
  * - Coordinate grid / HUD framing
- * - 100% Leaflet engine (zero API keys, zero external quotas)
+ * - 100% Free, zero API key, no watermark tile architecture
  */
 
 export const DEFAULT_MAP_CENTER = {
@@ -17,15 +17,24 @@ export const DEFAULT_MAP_CENTER = {
 export const DEFAULT_MAP_ZOOM = 13;
 
 /**
- * CartoDB Dark Matter tile layer configuration
- * High-performance dark tactical basemap tailored for emergency dispatch overlays
+ * Esri World Dark Gray Canvas tile layer configuration
+ * Completely free, high performance, no API keys, zero watermarks.
  */
-export const TACTICAL_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+export const TACTICAL_BASE_TILE_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+
+export const TACTICAL_REFERENCE_TILE_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}';
 
 export const TACTICAL_TILE_OPTIONS = {
-  maxZoom: 19,
-  minZoom: 3,
-  subdomains: 'abcd',
+  maxZoom: 16,
+  minZoom: 2,
   className: 'tactical-leaflet-tiles',
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  attribution: '&copy; Esri &mdash; Tactical Emergency Basemap',
+};
+
+export const TACTICAL_LABEL_OPTIONS = {
+  maxZoom: 16,
+  minZoom: 2,
+  className: 'tactical-leaflet-labels',
+  opacity: 0.85,
+  interactive: false,
 };

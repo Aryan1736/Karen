@@ -14,8 +14,10 @@ import { useWebSocketStatus } from '../../../context/WebSocketContext';
 import { 
   DEFAULT_MAP_CENTER, 
   DEFAULT_MAP_ZOOM, 
-  TACTICAL_TILE_URL, 
-  TACTICAL_TILE_OPTIONS 
+  TACTICAL_BASE_TILE_URL, 
+  TACTICAL_REFERENCE_TILE_URL,
+  TACTICAL_TILE_OPTIONS,
+  TACTICAL_LABEL_OPTIONS
 } from './mapStyles';
 import './TacticalMap.css';
 
@@ -74,9 +76,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         attributionControl: false,
       });
 
-      // CartoDB Dark Matter tile layer with tactical navy chromatic styling
-      const tileLayer = L.tileLayer(TACTICAL_TILE_URL, TACTICAL_TILE_OPTIONS);
-      tileLayer.addTo(map);
+      // Esri Dark Gray Base geometry layer
+      const baseLayer = L.tileLayer(TACTICAL_BASE_TILE_URL, TACTICAL_TILE_OPTIONS);
+      baseLayer.addTo(map);
+
+      // Esri Dark Gray Reference labels layer
+      const labelsLayer = L.tileLayer(TACTICAL_REFERENCE_TILE_URL, TACTICAL_LABEL_OPTIONS);
+      labelsLayer.addTo(map);
 
       const circlesGroup = L.layerGroup().addTo(map);
       const markersGroup = L.layerGroup().addTo(map);
