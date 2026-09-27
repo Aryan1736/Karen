@@ -1,106 +1,247 @@
-# 🎙️ Karen's Ear — AI/ML Emergency Intelligence & Prioritization System
+# ⚡ Tingle
+### AI Emergency Intelligence & Continuous Incident Prioritization
 
-> **Transforming noisy, fragmented emergency dispatches into structured, explainable, and continuously prioritized incidents.**
+[![Python](https://img.shields.io/badge/Python-3.13%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%2B-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Hugging Face](https://img.shields.io/badge/Model-all--MiniLM--L6--v2-FFD21E?style=flat-square&logo=huggingface&logoColor=black)](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
+[![Hackathon](https://img.shields.io/badge/Bit%20n%20Build-Hackathon%202026-FF6B6B?style=flat-square)](https://bitnbuild.com/)
 
-Developed for the **Bit n Build Hackathon** (24-Hour Sprint).
-
----
-
-## 🧭 North Star
-In a disaster, emergency call centers and social media feeds are inundated with duplicate, chaotic, and urgent messages. **Karen's Ear** serves as an intelligent decision-support console for emergency operators by answering:
-1. **What happened?** (Multi-hazard crisis classification)
-2. **Where did it happen?** (Conservative location extraction without GPS hallucination)
-3. **How urgent is it?** (Feature-derived life-safety and hazard velocity scoring)
-4. **Who is at risk?** (Victim and trapped persons detection)
-5. **What response is needed?** (Automated service mapping: Search & Rescue, Medical, Fire)
-6. **Which reports belong together?** (Dense semantic embedding + spatiotemporal triangulation to distinguish duplicates from true corroborations)
-7. **Which incident deserves attention first?** (Deterministic, multi-factor priority ranking with human-in-the-loop auditability)
+**Tingle** is a human-in-the-loop emergency decision-support system. It transforms incoming streams of noisy, fragmented, and duplicate emergency calls into structured, continuously prioritized incidents on a live operator dashboard.
 
 ---
 
-## 🏛️ The 3-Layer Architecture (B.L.A.S.T. Protocol)
+## 📌 The Problem
 
-```text
-┌────────────────────────────────────────────────────────┐
-│ LAYER 1 — ARCHITECTURE (SOPs & Contracts)               │
-│ Standard Operating Procedures in architecture/         │
-└───────────────────────────┬────────────────────────────┘
-                            │
-┌───────────────────────────▼────────────────────────────┐
-│ LAYER 2 — NAVIGATION (State Orchestration)             │
-│ Decision flow & state machine in architecture/navigation.md
-└───────────────────────────┬────────────────────────────┘
-                            │
-┌───────────────────────────▼────────────────────────────┐
-│ LAYER 3 — TOOLS (Deterministic Executables)            │
-│ Atomic verification and operational tools in tools/    │
-└────────────────────────────────────────────────────────┘
+During natural disasters and urban crises, 911 dispatch centers and emergency operations are inundated with incoming communication:
+
+* **Duplicate floods:** Dozens of panicked callers report the exact same flooded underpass within minutes, tying up critical phone lines.
+* **Incomplete locations:** Callers rarely give GPS coordinates—they say *"water is rising behind the market near the railway bridge"*.
+* **Conflicting details:** Initial reports frequently underestimate or exaggerate hazard severity, casualties, and water velocity.
+* **Distractor traffic:** Routine municipal complaints, road closures, and social media rumors arrive mixed in with life-threatening emergencies.
+
+Classifying whether a single text message mentions a "flood" is a solved baseline problem. The real bottleneck is **continuous incident fusion**: grouping fragmented reports over time, recognizing when a dispatch corroborates an active incident versus repeating an existing caller, calculating an explainable operational priority, and putting human dispatchers in complete control.
+
+---
+
+## 🧠 The Machine Learning Pipeline (In-Depth)
+
+In Tingle, **machine learning is advisory**. The AI extracts structured signals from messy text, but deterministic system logic owns incident state, priority rankings, and database records. This design prevents language models from hallucinating operational decisions.
+
+The entire ML pipeline runs **locally in-process** on standard CPU hardware with zero external API calls, completing inferences in ~23 milliseconds.
+
+```mermaid
+flowchart LR
+    RAW["Raw Emergency Text"] --> CLEAN["1. Preprocessing & Cleaning"]
+    CLEAN --> CLF["2. Crisis Classification (9 Hazards)"]
+    CLEAN --> URG["3. Life-Safety Urgency Scoring"]
+    CLEAN --> ENT["4. People-at-Risk & Entity Extraction"]
+    CLEAN --> LOC["5. Conservative Location Parsing"]
+    CLEAN --> RSP["6. Response Agency Mapping"]
+    CLEAN --> EMB["7. 384-d Dense Embedding Vector"]
+
+    CLF & URG & ENT & LOC & RSP & EMB --> CONF["8. Multi-Signal Confidence Engine"]
+    CONF --> OUT["Structured Advisory Evidence (JSON)"]
 ```
 
+### 1. Text Preprocessing & Normalization
+Incoming dispatches arrive from SMS, web forms, and voice-to-text transcriptions filled with typos, contractions, and frantic fragments. The preprocessor cleans punctuation, normalizes spacing, and standardizes vocabulary without stripping critical situational keywords.
+
+### 2. Multi-Hazard Crisis Classification
+Tingle categorizes incoming dispatches into 9 canonical disaster hazard categories:
+* **Floods & Flash Floods**
+* **Fire, Wildfire & Explosion**
+* **Structural Collapse**
+* **Earthquake & Landslide**
+* **Civil Unrest & Active Threats**
+* **Medical Emergencies**
+* **Severe Storms & Weather**
+* **Utility & Infrastructure Failures**
+* **General / Other Incidents**
+
+Each category is assigned a calibrated severity baseline used downstream in triage priority calculations.
+
+### 3. Life-Safety Urgency Estimation
+Urgency isn't just a label—it measures immediate threat to life:
+* **CRITICAL:** Imminent life threat (e.g., people trapped inside submerged vehicles or collapsing structures).
+* **HIGH:** Rapidly escalating hazard with potential casualties or blocked evacuation routes.
+* **MEDIUM:** Significant structural damage or utility hazard without direct casualties.
+* **LOW:** Informational advisories, minor property disruption, or post-incident reports.
+
+The urgency engine inspects linguistic indicators of velocity, entrapment, rising water, and fire spread to assign discrete urgency ratings and confidence scores.
+
+### 4. People-at-Risk & Casualty Profiling
+The entity extraction module detects numbers of affected individuals, injured persons, and trapped victims. If a dispatch states *"4 people stuck on the roof with 2 children"*, the extractor isolates the casualty count (4) and flags active entrapment, directly increasing the incident's life-safety weight.
+
+### 5. Conservative Location Handling (Zero Hallucination)
+A critical rule in emergency intelligence: **never fabricate GPS coordinates**. If a caller reports *"near the underpass behind the mall"*, traditional generative models often hallucinate coordinates. Tingle extracts the landmark phrasing verbatim, tags its precision as approximate or unknown, and preserves caller-provided coordinates only when explicitly verified. In evaluation, Tingle achieved a **0.00% coordinate hallucination rate**.
+
+### 6. Tactical Response Mapping
+Emergency dispatchers must know which agencies to notify instantly. The response engine maps extracted incident features to required emergency branches:
+* **Search & Rescue (SAR)**
+* **Emergency Medical Services (EMS)**
+* **Fire & Rescue**
+* **Law Enforcement**
+* **Utility & Public Works**
+
+### 7. Dense Semantic Embeddings (`all-MiniLM-L6-v2`)
+To connect reports written in different words, Tingle generates 384-dimensional dense vector embeddings using the open-source `sentence-transformers/all-MiniLM-L6-v2` model. This allows the system to recognize that *"water rising over the hood of my car"* and *"vehicle submerged up to windows near underpass"* refer to the same crisis.
+
+### 8. Multi-Component Confidence Scoring
+Every extracted field receives a calibrated confidence score. If overall model confidence falls below 50%, a low-confidence flag is attached and the priority score applies a conservative safety adjustment (-10 points) until a human dispatcher reviews the incident.
+
 ---
 
-## 📚 Technical Architecture Documentation (`architecture/`)
+## 🔄 How Tingle Works (End-to-End Flow)
 
-All system logic, invariants, and interface contracts are formally specified in [`architecture/`](architecture/):
+```mermaid
+flowchart TD
+    subgraph Ingestion ["1. Fast Ingestion"]
+        IN["Dispatch Feeds / 911 Calls / Simulator"] -->|POST /reports| API["FastAPI Ingestion Route"]
+        API --> VAL["Validation & Synthetic Guardrails"]
+        VAL --> RAW[("PostgreSQL: raw_reports")]
+    end
 
-1. **[System Overview](architecture/system-overview.md):** Purpose, data flow, trust boundaries, and component roles.
-2. **[ML & NLP Pipeline](architecture/ml-pipeline.md):** Open-source inference, embeddings (`all-MiniLM-L6-v2`), and feature-derived urgency.
-3. **[Incident Correlation & Deduplication](architecture/incident-correlation.md):** Dense cosine similarity, time decay, and corroboration saturation.
-4. **[Deterministic Priority Engine](architecture/priority-engine.md):** Mathematical formula, factor normalization, and explainability breakdown.
-5. **[Human Review & Override](architecture/human-review.md):** Operator workflow, immutable audit ledger, and raw ML preservation.
-6. **[Failure Handling & Fallbacks](architecture/failure-handling.md):** Graceful degradation matrix (`AI failure ≠ system failure`).
-7. **[API Contracts](architecture/api-contracts.md):** Standardized JSON envelopes, REST endpoints, and error handling.
-8. **[Database Architecture](architecture/database.md):** PostgreSQL runtime source of truth, schema models, and indexes.
-9. **[Real-Time Streaming](architecture/realtime.md):** Native WebSocket event catalog and reconnection policies.
-10. **[Synthetic Simulation Engine](architecture/simulation.md):** Scenario presets (`CrisiText`), rate throttling, and safety tagging.
-11. **[Command Center Frontend](architecture/frontend.md):** Tactical dark-mode UI, Leaflet map integration, and design system tokens.
-12. **[Deployment & Infrastructure](architecture/deployment.md):** Vercel (Edge SPA) + Render (FastAPI + ML + Managed PostgreSQL).
-13. **[Security Architecture](architecture/security.md):** Secrets isolation, input sanitization, and automated dispatch prohibition.
-14. **[Testing & Evaluation](architecture/testing.md):** Multi-level verification pyramid and quantitative ML benchmark criteria.
-15. **[Observability & Telemetry](architecture/observability.md):** Structured JSON logging, end-to-end tracing, and health checks.
-16. **[Navigation Layer](architecture/navigation.md):** Layer 2 state machine transitions and orchestration flow.
-17. **[Architectural Decision Records (ADRs)](architecture/decisions.md):** Binding design decisions (ADR-001 through ADR-010).
+    subgraph ML ["2. Advisory Intelligence"]
+        VAL --> PIPE["Local ML Inference Engine"]
+        PIPE --> EVI["Structured Evidence & 384-d Embedding"]
+    end
+
+    subgraph Core ["3. Deterministic Fusion & Priority"]
+        EVI --> TRI["Spatiotemporal Triangulation<br/>(Semantic 55% + Space 25% + Time 20%)"]
+        TRI --> REL{"Relationship?"}
+        REL -->|Duplicate >= 0.85| DUP["Group without Score Inflation"]
+        REL -->|Corroborating >= 0.70| COR["Source-Aware Corroboration Boost"]
+        REL -->|Similarity < 0.70| NEW["Initialize New Incident"]
+
+        DUP & COR & NEW --> PRIO["Transparent Priority Engine<br/>Urgency 35% + Risk 30% + Corrob 20% + Hazard 15%"]
+        PRIO --> DB[("PostgreSQL Operational Store<br/>incidents, links, snapshots, audit")]
+    end
+
+    subgraph Realtime ["4. Live Command Center"]
+        DB -->|Broadcast| WS["WebSocket Stream (/ws/events)"]
+        WS --> UI["React Tactical Command Center"]
+        UI -->|Review & Override| OPR["Human Operator"]
+        OPR -->|POST /incidents/{id}/review| DB
+    end
+```
+
+### Triangulation & Smart Corroboration
+When a report arrives, Tingle compares it against active incidents within a 6-hour lookback window using three dimensions:
+* **Semantic Similarity (55%):** Cosine similarity between embedding vectors.
+* **Spatial Proximity (25%):** Haversine distance within a 2.5 km cluster radius.
+* **Temporal Proximity (20%):** Exponential decay with a 3-hour half-life.
+
+**Source-Aware Corroboration:** Five phone calls from five distinct callers corroborate an incident and raise its priority. Five calls from the *same* phone number or radio ID are recognized as duplicates and grouped together without artificially inflating the priority score.
+
+### Explainable Priority Formula
+Every incident receives a clear, deterministic score from **0.0 to 100.0**:
+
+$$\text{Priority} = (0.35 \times \text{Urgency}) + (0.30 \times \text{Casualties}) + (0.20 \times \text{Corroboration}) + (0.15 \times \text{Hazard}) + \text{Modifiers}$$
+
+* **CRITICAL ($\ge 80$):** Immediate multi-casualty life-safety response required.
+* **HIGH ($\ge 60$):** Escalating severe hazard.
+* **MEDIUM ($\ge 35$):** Active disruption requiring response.
+* **LOW ($< 35$):** Monitored minor incident.
+* **Modifiers:** Human verification (+10), human escalation (+15), low-confidence penalty (-10), and resolution (forces score to 0.0).
 
 ---
 
-## 🤝 Shared Developer Contracts & Implementation Tooling
+## 🖥️ Tactical Command Center Features
 
-Shared contracts ensuring zero interface drift across the four feature branches:
-* **[API Contract](docs/api-contract.md):** Complete REST endpoints, WebSocket envelopes, status codes, and request tracing.
-* **[Canonical Data Schema](docs/data-schema.md):** Required/optional fields, enums, timestamps, and validation invariants.
-* **[Developer Collaboration Guide](docs/development-guide.md):** Feature branch ownership, shared-contract change protocol, and mocking rules.
-* **[ML Output JSON Schema](ml/schemas/incident_output.json):** Machine-readable JSON Schema for Aryan's NLP inference output.
-* **[Frontend TypeScript Types](frontend/src/types/incident.ts):** Strict TypeScript types for Srinivash's command center components.
+* **Live Incident Queue:** Priority-sorted queue updated instantly over WebSockets.
+* **Tactical Leaflet Map:** Dark-mode geospatial map displaying active incidents color-coded by priority tier.
+* **Deep Fact & Evidence Inspector:** Inspect aggregated incident details, casualty estimates, required services, and every linked caller dispatch.
+* **Human-in-the-Loop Controls:** One-click status transitions (ACTIVE $\to$ VERIFIED $\to$ ESCALATED $\to$ RESOLVED).
+* **Manual Field Overrides:** Operators can correct any AI-extracted field with mandatory justification logging for accountability.
+* **Audit Trail & Timelines:** Full historical audit record tracking every system calculation and human override.
 
 ---
 
-## 🛠️ Verification & Connectivity Tools (`tools/`)
+## 🚀 Quickstart & Deployment
 
-Deterministic verification scripts created during Phase 2 (Link):
-* `tools/check_environment.py`: Verifies Python 3.13, Node.js v22, git remote, and core files.
-* `tools/check_osm.py`: Verifies OpenStreetMap tile and web server connectivity.
-* `tools/check_postgres.py`: Verifies live local PostgreSQL connection and `SELECT 1`.
-* `tools/check_crisitext.py`: Verifies public streaming access to `LanD-FBK/crisitext` on Hugging Face.
-* `tools/check_ml_runtime.py`: Verifies `all-MiniLM-L6-v2` loading and measures CPU inference latency (**9.68 ms**).
-* `tools/check_links.py`: Master deterministic runner executing all connectivity checks.
+Run Tingle locally in under two minutes:
 
-Run master link check:
+### 1. Clone & Configure Environment
 ```bash
-python tools/check_links.py
+cp .env.example .env
+# Ensure DATABASE_URL points to your PostgreSQL instance in .env
 ```
 
+### 2. Backend Setup
+```bash
+# Create & activate environment
+python -m venv .venv
+source .venv/bin/activate   # On Windows: .venv\Scripts\Activate.ps1
+
+# Install & initialize database
+pip install -r backend/requirements.txt
+python backend/scripts/init_db.py
+
+# Launch FastAPI server (port 8000)
+uvicorn backend.app.main:app --port 8000 --reload
+```
+
+### 3. Frontend Setup
+```bash
+# In a separate terminal
+cd frontend
+npm install
+npm run dev
+```
+Open **`http://localhost:5173`** to access the tactical command center.
+
+### 4. Run the Disaster Simulator Demo
+Stream realistic flood crisis dispatches directly into your live dashboard:
+```bash
+python -m simulator.cli --scenario flood_rasulgarh --live --endpoint http://localhost:8000/reports --speed 2x --rebase-time-now
+```
+
+> **Need a lightweight run?** Set `ML_LIGHTWEIGHT_MODE=true` in `.env` to run on memory-constrained servers (e.g. 512MB RAM cloud containers) using fast lexical heuristics instead of dense embeddings.
+
 ---
 
-## 👥 Team Ownership
-* **Aryan:** ML Architecture, NLP Pipeline, Embeddings, Feature-derived Urgency (`feature/ml-pipeline`).
-* **Daksh:** Backend API, PostgreSQL Models, Incident Fusion Engine, Priority Calculator (`feature/backend`).
-* **Pankaj:** System Integration, Simulation Streaming Engine, CrisiText Evaluation (`feature/evaluation-integration`).
-* **Srinivash:** Command Center UX, Leaflet Map, Queue Re-ordering, Operator Review UI (`feature/frontend`).
+## 📊 Verified System Results
+
+Metrics audited from the final evaluation suite ([`evaluation/FINAL_SCORECARD.md`](evaluation/FINAL_SCORECARD.md)):
+
+| Subsystem | Metric | Result | Operational Meaning |
+| :--- | :--- | :---: | :--- |
+| **Direct ML** | Schema Coverage | **100.00%** | Full JSON output adherence across 27/27 test dispatches |
+| **Direct ML** | High Urgency Recall | **87.50%** | 7 of 8 life-threatening emergencies identified |
+| **Direct ML** | Hard Negative Rejection | **100.00%** | Non-crisis dispatches rejected from emergency priority |
+| **Direct ML** | Coordinate Hallucination | **0.00%** | Zero fabricated GPS coordinates |
+| **Direct ML** | Warm Inference Latency | **23.42 ms** | In-process local CPU execution time (p50) |
+| **Live E2E** | HTTP Ingestion Reliability | **100.00%** | 27/27 dispatches ingested with HTTP 201 Created |
+| **Live E2E** | Pairwise Clustering F1 | **0.8478** | Report-to-incident clustering accuracy (Rand index: 0.9202) |
+| **Live E2E** | Critical Triage Recall | **100.00%** | Life-safety disaster correctly escalated to 85.35 (CRITICAL) |
+| **Resilience** | Surge Throughput | **19.55 rps** | 40/40 healthy surge requests processed (p50: 51.75 ms) |
+| **Resilience** | Backend Outage Recovery | **100.00%** | Zero lost reports; FIFO queue buffered and flushed all reports |
 
 ---
 
-## 📜 Project Memory & Constitution
-* [`gemini.md`](gemini.md): Project Constitution & canonical JSON contracts.
-* [`task_plan.md`](task_plan.md): B.L.A.S.T. roadmap and active checklist.
-* [`findings.md`](findings.md): Research discoveries, dataset schemas, and empirical benchmarks.
-* [`progress.md`](progress.md): Chronological execution log and test scorecard.
+## 🛠️ Technology Stack
+
+| Layer | Tools |
+| :--- | :--- |
+| **Backend & API** | Python 3.13 / 3.14, FastAPI 0.115+, Uvicorn, Pydantic v2 |
+| **Database & ORM** | PostgreSQL 15+, SQLAlchemy 2.0, Psycopg 3.2 (7 core tables) |
+| **Machine Learning** | `sentence-transformers`, `all-MiniLM-L6-v2` (384 dims), NumPy |
+| **Frontend UI** | React 18.3, TypeScript 5.7, Vite 8, Lucide React |
+| **Tactical Map** | Leaflet 1.9, OpenStreetMap |
+| **Realtime** | Native WebSockets (`/ws/events`), Python `websockets` |
+| **Simulation Client** | HTTPX, Custom `SafeHttpTransport` (Circuit Breaker & FIFO buffer) |
+| **Testing** | pytest 8.3+, scikit-learn metrics, JSONSchema |
+
+---
+
+## 👥 Team
+
+Built for the **Bit n Build Hackathon 2026** (24-Hour Sprint):
+
+* **Aryan Bagchi:** ML Architecture, NLP Pipeline, Semantic Embeddings, Urgency Engine
+* **Daksh Madaan:** Backend REST API, PostgreSQL Architecture, Incident Fusion & Priority Engine
+* **Sri Sai Srinivash Panda:** Command Center UX, Leaflet Geospatial Map, Operator Review & Override UI
+* **Pankaj Sharma:** Simulator Engine, Fault Injection, System Resilience, Master Scorecard
