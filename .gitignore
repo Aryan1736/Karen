@@ -48,3 +48,7 @@ dist-ssr/
 *.swo
 .DS_Store
 Thumbs.db
+
+.agents/
+.aider-desk/
+skills-lock.json
