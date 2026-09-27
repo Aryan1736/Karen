@@ -1,12 +1,7 @@
 import React from 'react';
-import {
-  Badge,
-  StatusIndicator,
-  AudioVisualizerBar
-} from '../ui';
 import { useNavigation, NavigationView } from '../../context/NavigationContext';
 import { useBackendHealth } from '../../hooks/useBackendHealth';
-import { useWebSocket } from '../../context/WebSocketContext';
+import { useWebSocketStatus } from '../../context/WebSocketContext';
 import { getOperatorId } from '../../api/client';
 import './HeaderBar.css';
 
@@ -16,32 +11,26 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'command-deck', label: 'Deck' },
-  { id: 'incident-streams', label: 'Streams' },
+  { id: 'command-deck', label: 'Command Deck' },
+  { id: 'incident-streams', label: 'Live Streams' },
   { id: 'investigation', label: 'Investigation' },
-  { id: 'audit-trail', label: 'Audit Trail' },
-  { id: 'briefing', label: 'Briefing' },
+  { id: 'audit-trail', label: 'Audit Ledger' },
+  { id: 'briefing', label: 'System Briefing' },
 ];
 
 export const HeaderBar: React.FC = () => {
   const { activeView, setActiveView } = useNavigation();
   const { isOnline } = useBackendHealth();
-  const { status: wsStatus } = useWebSocket();
+  const { status: wsStatus } = useWebSocketStatus();
   const operatorId = getOperatorId();
 
-  // Map API health probe state truthfully
-  const engineIndicatorStatus = isOnline === true ? 'online' : isOnline === false ? 'offline' : 'standby';
-  const engineIndicatorLabel = isOnline === true ? 'API ONLINE' : isOnline === false ? 'API OFFLINE' : 'CHECKING...';
-
-  // Map WebSocket connection state truthfully
-  const wsIndicatorStatus = wsStatus === 'CONNECTED' ? 'online' : (wsStatus === 'DISCONNECTED' || wsStatus === 'ERROR') ? 'offline' : 'standby';
-  const wsIndicatorLabel = `WS ${wsStatus}`;
+  const isConnected = isOnline && wsStatus === 'CONNECTED';
 
   return (
     <header className="header-bar" role="banner">
       <div className="header-left">
         <div
-          className="header-brand-group clickable"
+          className="header-brand clickable"
           onClick={() => setActiveView('landing')}
           role="button"
           tabIndex={0}
@@ -51,19 +40,28 @@ export const HeaderBar: React.FC = () => {
               setActiveView('landing');
             }
           }}
-          title="Return to Tingle Landing Page"
-          aria-label="Return to Tingle Landing Page"
+          title="Return to Tingle Landing Overview"
+          aria-label="Return to Tingle Landing Overview"
         >
-          <span className="brand-logo-badge">TINGLE</span>
-          <Badge variant="p2-medium" size="sm">TAC-OPS</Badge>
+          <span className="brand-dot" aria-hidden="true" />
+          <span className="brand-logo-text">TINGLE</span>
         </div>
-        <div className="header-hud-metrics">
-          <StatusIndicator status={engineIndicatorStatus} label={engineIndicatorLabel} />
-          <StatusIndicator status={wsIndicatorStatus} label={wsIndicatorLabel} />
+
+        {/* Small letter size sync element */}
+        <div 
+          className="header-sync-pill"
+          title={`Backend: ${isOnline ? 'Online' : 'Offline'} | WebSocket: ${wsStatus}`}
+          aria-label="System Connection Status"
+        >
+          <span className={`sync-dot ${isConnected ? 'online' : isOnline ? 'standby' : 'offline'}`} />
+          <span className="sync-text">
+            {isConnected ? 'ONLINE' : isOnline ? 'CONNECTING' : 'OFFLINE'}
+          </span>
         </div>
       </div>
 
-      <nav className="header-nav" aria-label="Tactical Views Navigation">
+      {/* Main navigation tabs */}
+      <nav className="header-nav" aria-label="Views Navigation">
         {NAV_ITEMS.map((item) => {
           const isActive = activeView === item.id;
           return (
@@ -74,21 +72,26 @@ export const HeaderBar: React.FC = () => {
               onClick={() => setActiveView(item.id)}
               aria-current={isActive ? 'page' : undefined}
             >
-              {item.label}
+              <span className="nav-tab-label">{item.label}</span>
+              {isActive && <span className="nav-tab-glow" />}
             </button>
           );
         })}
       </nav>
 
       <div className="header-right">
-        <div className="header-channel-monitor">
-          <span className="channel-label">RF MONITOR:</span>
-          <AudioVisualizerBar active={false} />
-          <span className="channel-freq">STANDBY</span>
+        <div className="header-operator-pill" title={`Active Operator Session: ${operatorId}`}>
+          <span className="operator-label">OPERATOR</span>
+          <span className="operator-id">{operatorId.toUpperCase()}</span>
         </div>
-        <div className="operator-badge">
-          OP: {operatorId.toUpperCase()}
-        </div>
+        <button 
+          type="button"
+          className="header-exit-btn"
+          onClick={() => setActiveView('landing')}
+          title="Return to Overview"
+        >
+          Overview
+        </button>
       </div>
     </header>
   );

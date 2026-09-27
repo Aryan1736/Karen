@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import { WebSocketProvider } from './context/WebSocketContext';
-import { SimulationStrip, HeaderBar, FooterBar } from './components/layout';
+import { HeaderBar, FooterBar } from './components/layout';
 import {
   LandingPageView,
   CommandDeckView,
@@ -21,9 +21,6 @@ const AppViewport: React.FC = () => {
 
   return (
     <div className="command-center">
-      {/* Tactical Drill Runbook Banner */}
-      <SimulationStrip />
-
       {/* Primary Header with Branding & View Navigation Tabs */}
       <HeaderBar />
 

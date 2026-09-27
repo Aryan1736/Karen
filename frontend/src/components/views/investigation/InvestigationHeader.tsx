@@ -3,7 +3,6 @@ import {
   ArrowLeft, 
   RotateCcw, 
   MapPin, 
-  Clock, 
   Radio, 
   Layers, 
   FileText,
@@ -49,12 +48,12 @@ export const InvestigationHeader: React.FC<InvestigationHeaderProps> = ({
   const locationText = incident?.location?.text || (
     incident?.location?.latitude != null && incident?.location?.longitude != null
       ? `${incident.location.latitude.toFixed(4)}° N, ${incident.location.longitude.toFixed(4)}° W`
-      : '--'
+      : 'Location Pending'
   );
 
   const incidentTypeDisplay = incident?.incident_type
     ? incident.incident_type.replace(/_/g, ' ')
-    : '--';
+    : 'Unclassified';
 
   const updatedTime = incident?.updated_at
     ? new Date(incident.updated_at).toUTCString().replace('GMT', 'UTC')
@@ -62,36 +61,6 @@ export const InvestigationHeader: React.FC<InvestigationHeaderProps> = ({
 
   return (
     <header className="inv-header" role="banner" aria-label="Investigation Console Header">
-      {/* Top Tactical Status Strip */}
-      <div className="inv-header-ticker">
-        <div className="inv-ticker-left">
-          <span className="inv-ticker-id">EVIDENCE WORKSPACE</span>
-          <span className="inv-ticker-separator">//</span>
-          <span className="inv-ticker-badge">
-            {incident?.is_synthetic ? 'SYNTHETIC RUN [SIMULATOR]' : 'OPERATIONAL PRODUCTION FEED'}
-          </span>
-          <span className="inv-ticker-separator">•</span>
-          <span className="inv-ticker-metric">
-            STATUS: <strong className="inv-ticker-val">{incident?.status || 'UNKNOWN'}</strong>
-          </span>
-          {incident?.urgency && (
-            <>
-              <span className="inv-ticker-separator">•</span>
-              <span className="inv-ticker-metric">
-                URGENCY: <strong className="inv-ticker-val">{incident.urgency}</strong>
-              </span>
-            </>
-          )}
-        </div>
-        <div className="inv-ticker-right">
-          <span className="inv-ticker-sync">
-            <span className="inv-ticker-dot" />
-            LIVE LINK ACTIVE
-          </span>
-        </div>
-      </div>
-
-      {/* Main Header Bar */}
       <div className="inv-header-main">
         <div className="inv-header-identity">
           <div className="inv-header-topline">
@@ -101,13 +70,13 @@ export const InvestigationHeader: React.FC<InvestigationHeaderProps> = ({
               onClick={onBackToDeck}
               aria-label="Return to Command Deck"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={14} />
               <span>COMMAND DECK</span>
             </button>
             <span className="inv-header-breadcrumbs">
-              <span className="inv-crumb-deck">DECK</span>
-              <span className="inv-crumb-arrow">→</span>
-              <span className="inv-crumb-active">INVESTIGATION // {selectedIncidentId}</span>
+              <span className="inv-crumb-deck">INCIDENTS</span>
+              <span className="inv-crumb-arrow">/</span>
+              <span className="inv-crumb-active">{selectedIncidentId}</span>
             </span>
           </div>
 
@@ -115,39 +84,38 @@ export const InvestigationHeader: React.FC<InvestigationHeaderProps> = ({
             <h1 className="inv-incident-id">{selectedIncidentId}</h1>
             {incident && (
               <Badge variant={badgeVariant} size="md">
-                {incident.priority?.level ? `[ ${incident.priority.level} P${incident.priority.level === 'CRITICAL' ? '0' : incident.priority.level === 'HIGH' ? '1' : incident.priority.level === 'MEDIUM' ? '2' : '3'} ]` : incident.status}
+                {incident.priority?.level ? `${incident.priority.level} P${incident.priority.level === 'CRITICAL' ? '0' : incident.priority.level === 'HIGH' ? '1' : incident.priority.level === 'MEDIUM' ? '2' : '3'}` : incident.status}
               </Badge>
             )}
             {incident?.priority?.score != null && (
               <span className="inv-priority-score-pill">
-                SCORE: {Math.round(incident.priority.score)} / 100
+                SCORE: {Math.round(incident.priority.score)}
               </span>
             )}
             <span className="inv-type-pill">
-              TYPE: {incidentTypeDisplay}
+              {incidentTypeDisplay}
             </span>
           </div>
 
           <div className="inv-header-meta-row">
             <div className="inv-meta-item">
               <MapPin size={13} className="inv-meta-icon" />
-              <span className="inv-meta-label">LOCATION:</span>
+              <span className="inv-meta-label">Location:</span>
               <span className="inv-meta-val" title={locationText}>{locationText}</span>
               {incident?.location?.precision && (
-                <span className="inv-meta-precision">[{incident.location.precision.toUpperCase()}]</span>
+                <span className="inv-meta-precision">({incident.location.precision})</span>
               )}
             </div>
-            <span className="inv-meta-divider">|</span>
+            <span className="inv-meta-divider">•</span>
             <div className="inv-meta-item">
-              <Clock size={13} className="inv-meta-icon" />
-              <span className="inv-meta-label">LAST UPDATE:</span>
+              <span className="inv-meta-label">Updated:</span>
               <span className="inv-meta-val">{updatedTime}</span>
             </div>
-            <span className="inv-meta-divider">|</span>
+            <span className="inv-meta-divider">•</span>
             <div className="inv-meta-item">
               <Layers size={13} className="inv-meta-icon" />
-              <span className="inv-meta-label">REPORTS LINKED:</span>
-              <span className="inv-meta-val">{incident?.source_report_ids?.length ?? '--'}</span>
+              <span className="inv-meta-label">Linked Reports:</span>
+              <span className="inv-meta-val">{incident?.source_report_ids?.length ?? 0}</span>
             </div>
           </div>
         </div>
@@ -194,11 +162,11 @@ export const InvestigationHeader: React.FC<InvestigationHeaderProps> = ({
             size="sm"
             onClick={onRefetch}
             disabled={isLoading}
-            title="Refresh incident detail and timeline"
+            title="Refresh incident data"
             aria-label="Refresh incident data"
           >
-            <RotateCcw size={14} className={isLoading ? 'spinning' : ''} style={{ marginRight: 6 }} />
-            REFETCH
+            <RotateCcw size={13} className={isLoading ? 'spinning' : ''} style={{ marginRight: 5 }} />
+            REFRESH
           </Button>
 
           <Button
@@ -209,7 +177,7 @@ export const InvestigationHeader: React.FC<InvestigationHeaderProps> = ({
             title="Inspect all incident streams"
             aria-label="Navigate to incident streams"
           >
-            <Radio size={14} style={{ marginRight: 6 }} />
+            <Radio size={13} style={{ marginRight: 5 }} />
             STREAMS
           </Button>
 
@@ -221,7 +189,7 @@ export const InvestigationHeader: React.FC<InvestigationHeaderProps> = ({
             title="Inspect system audit trail"
             aria-label="Navigate to audit trail"
           >
-            <FileText size={14} style={{ marginRight: 6 }} />
+            <FileText size={13} style={{ marginRight: 5 }} />
             AUDIT
           </Button>
 
@@ -241,3 +209,5 @@ export const InvestigationHeader: React.FC<InvestigationHeaderProps> = ({
     </header>
   );
 };
+
+export default InvestigationHeader;

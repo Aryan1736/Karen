@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { 
   Radio, 
   Layers, 
   CheckCircle2, 
   Sliders, 
-  Clock, 
   Activity, 
   Zap, 
   Eye, 
   Terminal,
   FileText,
-  Compass
+  Compass,
+  ArrowRight
 } from 'lucide-react';
-import { Badge, Button, StatusIndicator, AudioVisualizerBar } from '../ui';
+import { Badge, AudioVisualizerBar } from '../ui';
 import { useNavigation } from '../../context/NavigationContext';
 import { useBackendHealth } from '../../hooks/useBackendHealth';
-import { useWebSocket } from '../../context/WebSocketContext';
+import { useWebSocketStatus } from '../../context/WebSocketContext';
 import './LandingPageView.css';
 
 export interface LandingPageViewProps {
@@ -25,24 +25,9 @@ export interface LandingPageViewProps {
 export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = '' }) => {
   const { setActiveView } = useNavigation();
   const { isOnline } = useBackendHealth();
-  const { status: wsStatus } = useWebSocket();
+  const { status: wsStatus } = useWebSocketStatus();
 
-  const [currentTime, setCurrentTime] = useState<string>(() => 
-    new Date().toISOString().substring(11, 19) + ' UTC'
-  );
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date().toISOString().substring(11, 19) + ' UTC');
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const engineIndicatorStatus = isOnline === true ? 'online' : isOnline === false ? 'offline' : 'standby';
-  const engineIndicatorLabel = isOnline === true ? 'API ONLINE' : isOnline === false ? 'API OFFLINE' : 'PROBING...';
-
-  const wsIndicatorStatus = wsStatus === 'CONNECTED' ? 'online' : (wsStatus === 'DISCONNECTED' || wsStatus === 'ERROR') ? 'offline' : 'standby';
-  const wsIndicatorLabel = `WS ${wsStatus}`;
+  const isConnected = isOnline === true && wsStatus === 'CONNECTED';
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
@@ -54,7 +39,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
 
   return (
     <div className={`landing-page ${className}`} role="region" aria-label="Tingle Landing Page">
-      {/* 1. STICKY TACTICAL NAVIGATION BAR */}
+      {/* 1. CLEAN MODERN HEADER */}
       <header className="landing-header" role="banner">
         <div className="landing-header-inner">
           <div className="landing-brand-group">
@@ -64,34 +49,40 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
               role="button"
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter') window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              title="Tingle Emergency Intelligence"
+              title="Tingle Emergency Operations"
             >
-              TINGLE
+              <span className="brand-dot" aria-hidden="true" />
+              <span className="brand-name">TINGLE</span>
             </div>
-            <div className="landing-sector-pill">
-              <span className="live-indicator-dot" />
-              <span className="sector-text">EMERGENCY INTELLIGENCE</span>
-            </div>
-            <div className="landing-status-indicators">
-              <StatusIndicator status={engineIndicatorStatus} label={engineIndicatorLabel} />
-              <StatusIndicator status={wsIndicatorStatus} label={wsIndicatorLabel} />
+
+            {/* Small letter size sync element */}
+            <div 
+              className="landing-sync-pill"
+              title={`Backend: ${isOnline ? 'Online' : 'Offline'} | WebSocket: ${wsStatus}`}
+              aria-label="System Connection Status"
+            >
+              <span className={`sync-dot ${isConnected ? 'online' : isOnline ? 'standby' : 'offline'}`} />
+              <span className="sync-text">
+                {isConnected ? 'ONLINE' : isOnline ? 'CONNECTING' : 'OFFLINE'}
+              </span>
             </div>
           </div>
 
-          <nav className="landing-nav-links" aria-label="Landing Navigation">
+          {/* Essential page navigation links only */}
+          <nav className="landing-nav-links" aria-label="Page Navigation">
             <a 
-              href="#chaos-stream" 
+              href="#signals" 
               className="landing-nav-anchor"
-              onClick={(e) => scrollToSection(e, 'chaos-stream')}
+              onClick={(e) => scrollToSection(e, 'signals')}
             >
-              Chaos Stream
+              Signals
             </a>
             <a 
-              href="#transformation" 
+              href="#correlation" 
               className="landing-nav-anchor"
-              onClick={(e) => scrollToSection(e, 'transformation')}
+              onClick={(e) => scrollToSection(e, 'correlation')}
             >
-              Transformation
+              Correlation
             </a>
             <a 
               href="#priority-matrix" 
@@ -101,46 +92,23 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
               Priority Matrix
             </a>
             <a 
-              href="#sovereignty" 
-              className="landing-nav-anchor"
-              onClick={(e) => scrollToSection(e, 'sovereignty')}
-            >
-              Human Decides
-            </a>
-            <a 
               href="#command-center" 
               className="landing-nav-anchor"
               onClick={(e) => scrollToSection(e, 'command-center')}
             >
-              Interface Preview
+              Console
             </a>
           </nav>
 
           <div className="landing-header-action">
-            <Button 
-              variant="warning" 
-              size="md"
+            <button 
+              type="button"
               className="landing-header-btn"
               onClick={() => setActiveView('command-deck')}
             >
-              ENTER COMMAND DECK
-            </Button>
-          </div>
-        </div>
-
-        {/* Tactical Telemetry Ribbon */}
-        <div className="landing-telemetry-ribbon" role="complementary" aria-label="System Telemetry">
-          <div className="telemetry-item">
-            <span className="telemetry-label">SYSTEM CLOCK:</span>
-            <span className="telemetry-val">{currentTime}</span>
-          </div>
-          <div className="telemetry-item">
-            <span className="telemetry-label">OPERATING PIPELINE:</span>
-            <span className="telemetry-val highlight">CHAOS → SIGNAL → INCIDENT → PRIORITY → ACTION</span>
-          </div>
-          <div className="telemetry-item">
-            <span className="telemetry-label">RF MONITOR:</span>
-            <span className="telemetry-val">STANDBY // NO DRILL SIMULATION</span>
+              <span>ENTER COMMAND DECK</span>
+              <ArrowRight size={14} className="btn-arrow" />
+            </button>
           </div>
         </div>
       </header>
@@ -148,12 +116,12 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
       {/* MAIN CONTENT AREA */}
       <main className="landing-main">
         {/* 2. HERO SECTION */}
-        <section className="landing-hero-section pattern-halftone" id="hero">
+        <section className="landing-hero-section" id="hero">
           <div className="landing-container landing-hero-grid">
             <div className="hero-content">
               <div className="hero-tag-badge">
                 <span className="tag-beacon" />
-                <span>TACTICAL EMERGENCY INTELLIGENCE & CORRELATION</span>
+                <span>REAL-TIME DISPATCH INTELLIGENCE</span>
               </div>
 
               <h1 className="hero-title">
@@ -162,9 +130,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
               </h1>
 
               <p className="hero-statement">
-                She hears the chaos. You see what matters. TINGLE correlates unstructured 911 audio 
-                transcripts, citizen alerts, and sensor streams into structured, explainable 
-                emergency incidents in real time.
+                She hears the chaos. You see what matters. TINGLE correlates multi-channel 
+                emergency audio, citizen alerts, and sensor streams into verified, explainable 
+                incidents in real time.
               </p>
 
               <div className="hero-cta-group">
@@ -173,129 +141,128 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
                   className="tactical-cta-btn primary"
                   onClick={() => setActiveView('command-deck')}
                 >
-                  ENTER COMMAND DECK
+                  <span>ENTER COMMAND DECK</span>
+                  <ArrowRight size={18} />
                 </button>
                 <a 
-                  href="#transformation" 
+                  href="#correlation" 
                   className="tactical-cta-btn secondary"
-                  onClick={(e) => scrollToSection(e, 'transformation')}
+                  onClick={(e) => scrollToSection(e, 'correlation')}
                 >
                   EXPLORE ARCHITECTURE
                 </a>
               </div>
             </div>
 
-            {/* Tactical Audio & Status HUD Card */}
+            {/* Live Audio & Status Card */}
             <div className="hero-hud-card">
               <div className="hud-card-header">
-                <span className="hud-title">SYS_RF_AUDIO_MONITOR</span>
-                <span className="hud-badge">{engineIndicatorLabel}</span>
+                <div className="hud-header-left">
+                  <span className="hud-live-dot" />
+                  <span className="hud-title">AUDIO INGESTION STREAM</span>
+                </div>
+                <span className="hud-badge">{isOnline ? 'MONITORING' : 'STANDBY'}</span>
               </div>
 
               <div className="hud-card-body">
                 <div className="hud-standby-screen">
-                  <div className="hud-crosshair-bg" />
                   <div className="hud-monitor-center">
-                    <Radio className="hud-icon" size={32} />
-                    <span className="hud-freq-label">FREQUENCY: 442.800 MHz</span>
-                    <span className="hud-standby-text">AUDIO MONITOR ON STANDBY</span>
+                    <Radio className="hud-icon" size={28} />
+                    <span className="hud-freq-label">CHANNEL 01 // 442.800 MHz</span>
+                    <span className="hud-standby-text">MUNICIPAL EMERGENCY DISPATCH</span>
                   </div>
                 </div>
 
                 <div className="hud-visualizer-dock">
                   <div className="visualizer-header">
-                    <span>RF SPECTRUM TELEMETRY</span>
-                    <span className="standby-tag">[ STANDBY ]</span>
+                    <span>SPECTRUM TELEMETRY</span>
+                    <span className="standby-tag">{isConnected ? '[ LIVE ]' : '[ STANDBY ]'}</span>
                   </div>
-                  <AudioVisualizerBar active={false} />
+                  <AudioVisualizerBar active={isConnected} />
                   <p className="hud-visualizer-note">
-                    Non-simulated standby state. Real-time visualizer engages when validated incident audio streams connect.
+                    Visualizer synchronizes automatically with incoming 911 dispatch audio packets.
                   </p>
                 </div>
               </div>
 
               <div className="hud-card-footer">
-                <span>CHANNEL: MUNICIPAL_TAC_01</span>
+                <span>BAND: VHF HIGH</span>
                 <span className="hud-mode-text">DISPATCH READY</span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 3. THE CHAOS STREAM SECTION */}
-        <section className="landing-section" id="chaos-stream">
+        {/* 3. THE SIGNAL STREAM SECTION */}
+        <section className="landing-section" id="signals">
           <div className="landing-container">
             <div className="section-header">
-              <div className="section-eyebrow">[PHASE 01: INCOMING NOISE]</div>
-              <h2 className="section-title">THE CHAOS STREAM</h2>
+              <div className="section-eyebrow">LIVE FEEDS</div>
+              <h2 className="section-title">THE SIGNAL STREAM</h2>
               <p className="section-desc">
-                Raw, unfiltered emergency signals flooding in simultaneously from emergency radio bands, 
-                civilian panic calls, and municipal sensors.
+                Emergency audio and reports ingested simultaneously from public safety dispatch 
+                bands, civilian distress calls, and municipal sensors.
               </p>
             </div>
 
             <div className="chaos-grid">
               {/* Card 1 */}
-              <div className="comic-card card-rotate-left">
-                <div className="comic-card-top">
-                  <span className="source-tag">SRC: 911_DISPATCH_Q4</span>
-                  <span className="timestamp-tag">14:02:11.04 UTC</span>
+              <div className="dispatch-card">
+                <div className="dispatch-card-top">
+                  <span className="source-tag">911 CALL // CAD-04</span>
+                  <span className="timestamp-tag">14:02:11 UTC</span>
                 </div>
-                <blockquote className="comic-quote">
+                <blockquote className="dispatch-quote">
                   "There's thick black smoke billowing out near 5th and Vernon! People are coughing, I can't see the crosswalk!"
                 </blockquote>
-                <div className="comic-card-bottom">
-                  <span className="confusion-badge">CONFUSION: HIGH</span>
-                  <span className="sector-tag">SECTOR: PATIA_WEST</span>
+                <div className="dispatch-card-bottom">
+                  <span className="urgency-badge critical">URGENCY: HIGH</span>
+                  <span className="sector-tag">PATIA WEST</span>
                 </div>
               </div>
 
               {/* Card 2 */}
-              <div className="comic-card card-rotate-right">
-                <div className="comic-card-top">
-                  <span className="source-tag highlight-orange">SRC: POLICE_SCANNER_B1</span>
-                  <span className="timestamp-tag">14:02:13.88 UTC</span>
+              <div className="dispatch-card">
+                <div className="dispatch-card-top">
+                  <span className="source-tag highlight-orange">RADIO SCANNER // B1</span>
+                  <span className="timestamp-tag">14:02:13 UTC</span>
                 </div>
-                <blockquote className="comic-quote">
+                <blockquote className="dispatch-quote">
                   "Multiple vehicles stalled out in the underpass! Water level rising fast, doors won't open against the current!"
                 </blockquote>
-                <div className="comic-card-bottom">
+                <div className="dispatch-card-bottom">
                   <span className="urgency-badge">URGENCY: ELEVATED</span>
-                  <span className="sector-tag">SECTOR: UNDERPASS_SECTOR</span>
+                  <span className="sector-tag">UNDERPASS 04</span>
                 </div>
               </div>
 
               {/* Card 3 */}
-              <div className="comic-card card-rotate-slight">
-                <div className="comic-card-top">
-                  <span className="source-tag highlight-cyan">SRC: CIV_MOBILE_NODE</span>
-                  <span className="timestamp-tag">14:02:15.12 UTC</span>
+              <div className="dispatch-card">
+                <div className="dispatch-card-top">
+                  <span className="source-tag highlight-cyan">CITIZEN REPORT</span>
+                  <span className="timestamp-tag">14:02:15 UTC</span>
                 </div>
-                <blockquote className="comic-quote">
+                <blockquote className="dispatch-quote">
                   "Explosion sound heard near the electrical substation! Sparks flying everywhere, pedestrians scattering!"
                 </blockquote>
-                <div className="comic-card-bottom">
-                  <span className="noise-badge">NOISE: STANDBY</span>
-                  <span className="sector-tag">SECTOR: SUBSTATION_GRID</span>
+                <div className="dispatch-card-bottom">
+                  <span className="urgency-badge info">URGENCY: MODERATE</span>
+                  <span className="sector-tag">SUBSTATION GRID</span>
                 </div>
               </div>
-            </div>
-
-            <div className="exploratory-disclaimer">
-              <span>* ARCHITECTURAL WALKTHROUGH — EXPLANATORY MULTI-SOURCE EMERGENCY SIGNAL DEMONSTRATION</span>
             </div>
           </div>
         </section>
 
-        {/* 4. THE TRANSFORMATION (SIGNATURE SECTION) */}
-        <section className="landing-section transformation-section pattern-hazard-orange" id="transformation">
+        {/* 4. THE CORRELATION SECTION */}
+        <section className="landing-section transformation-section" id="correlation">
           <div className="landing-container">
             <div className="section-header center">
-              <div className="section-eyebrow dark">[PHASE 02: SIGNAL TO STRUCTURE]</div>
-              <h2 className="section-title">THE TRANSFORMATION</h2>
+              <div className="section-eyebrow">SIGNAL FUSION</div>
+              <h2 className="section-title">INCIDENT CORRELATION</h2>
               <p className="section-desc">
-                TINGLE cuts through overlapping panic. Disparate voice fragments and emergency 
-                transcripts lock together via semantic correlation and spatiotemporal clustering.
+                Disparate voice fragments and emergency transcripts lock together into a single, 
+                coherent incident via geospatial clustering and temporal correlation.
               </p>
             </div>
 
@@ -304,7 +271,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
               <div className="fragments-stack">
                 <div className="fragment-card fragment-red">
                   <div className="fragment-meta">
-                    <span>FRAGMENT #01</span>
+                    <span>CALL FRAGMENT #01</span>
                     <span>14:02:11 UTC</span>
                   </div>
                   <p className="fragment-text">"Smoke near 5th and Vernon..."</p>
@@ -312,7 +279,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
 
                 <div className="fragment-card fragment-orange">
                   <div className="fragment-meta">
-                    <span>FRAGMENT #02</span>
+                    <span>CALL FRAGMENT #02</span>
                     <span>14:02:13 UTC</span>
                   </div>
                   <p className="fragment-text">"Water rising fast in the underpass..."</p>
@@ -320,24 +287,24 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
 
                 <div className="fragment-card fragment-cyan">
                   <div className="fragment-meta">
-                    <span>FRAGMENT #03</span>
+                    <span>CALL FRAGMENT #03</span>
                     <span>14:02:15 UTC</span>
                   </div>
                   <p className="fragment-text">"Vehicles trapped, people shouting for help..."</p>
                 </div>
 
                 <div className="fragments-conclusion">
-                  "SAME INCIDENT. INDEPENDENT WITNESSES."
+                  <span>CORROBORATED BY 3 INDEPENDENT SOURCES</span>
                 </div>
               </div>
 
               {/* Center Column: Correlation Convergence Node */}
               <div className="convergence-node">
                 <div className="bolt-icon-box">
-                  <Zap size={36} />
+                  <Zap size={32} />
                 </div>
-                <div className="node-label">SEMANTIC CORRELATION & FUSION</div>
-                <div className="node-sublabel">SPATIOTEMPORAL TRIANGULATION</div>
+                <div className="node-label">SIGNAL CORRELATION</div>
+                <div className="node-sublabel">GEOSPATIAL & TIME CLUSTERING</div>
               </div>
 
               {/* Right Column: Consolidated Incident Card */}
@@ -380,66 +347,62 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
                 </div>
               </div>
             </div>
-
-            <div className="transformation-note">
-              * Explanatory product visualization demonstrating deterministic incident fusion from multi-point emergency feeds.
-            </div>
           </div>
         </section>
 
-        {/* 5. PATTERN RECOGNITION & DETERMINISTIC LOGIC */}
+        {/* 5. TRANSPARENT DECISION SUPPORT */}
         <section className="landing-section" id="logic">
           <div className="landing-container">
             <div className="logic-grid">
               <div className="logic-narrative">
-                <div className="section-eyebrow">[DETERMINISTIC LOGIC]</div>
+                <div className="section-eyebrow">DECISION SUPPORT</div>
                 <h2 className="section-title">
                   REPORTS BECOME <br />
                   <span className="cyan-highlight">ACTIONABLE INCIDENTS</span>
                 </h2>
                 <p className="section-desc">
                   By extracting life-safety distress markers, hazard velocity, and critical infrastructure 
-                  proximity, TINGLE computes explainable priority scores without black-box hallucination.
+                  proximity, TINGLE computes explainable priority scores without black-box guessing.
                 </p>
 
                 <div className="pillars-list">
                   <div className="pillar-item">
-                    <CheckCircle2 className="pillar-icon cyan" size={24} />
+                    <CheckCircle2 className="pillar-icon cyan" size={22} />
                     <div className="pillar-details">
                       <h4 className="pillar-title">Life-Safety Extraction</h4>
                       <p className="pillar-body">
-                        Direct extraction of trapped persons, casualties, and life-threatening conditions ("help", "screaming", "submerged").
+                        Direct extraction of trapped persons, casualties, and life-threatening conditions.
                       </p>
                     </div>
                   </div>
 
                   <div className="pillar-item">
-                    <CheckCircle2 className="pillar-icon yellow" size={24} />
+                    <CheckCircle2 className="pillar-icon yellow" size={22} />
                     <div className="pillar-details">
                       <h4 className="pillar-title">Hazard Velocity Scoring</h4>
                       <p className="pillar-body">
-                        Deterministic categorization separating rapid-escalation crises (active flash flood, structural collapse) from stationary events.
+                        Categorization separating rapid-escalation crises from stationary events.
                       </p>
                     </div>
                   </div>
 
                   <div className="pillar-item">
-                    <CheckCircle2 className="pillar-icon green" size={24} />
+                    <CheckCircle2 className="pillar-icon green" size={22} />
                     <div className="pillar-details">
                       <h4 className="pillar-title">Independent Corroboration Curve</h4>
                       <p className="pillar-body">
-                        Multi-witness saturation curves prevent duplicate gaming while rewarding genuinely corroborating independent reports.
+                        Multi-witness saturation curves prevent duplicate gaming while rewarding corroborating reports.
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Simulation Architecture Card */}
+              {/* Priority Architecture Card */}
               <div className="simulation-preview-card">
                 <div className="sim-card-tag">EXPLAINABLE FACTOR BREAKDOWN</div>
                 <div className="sim-card-header">
-                  <span>DETERMINISTIC PRIORITY ENGINE</span>
+                  <span>TRANSPARENT PRIORITY ENGINE</span>
                   <span className="live-pill">v1.2</span>
                 </div>
 
@@ -483,7 +446,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
                 </div>
 
                 <div className="sim-card-footer">
-                  <span>FINAL TACTICAL TIER:</span>
+                  <span>CALCULATED TIER:</span>
                   <Badge variant="p0-critical" size="sm">P0 CRITICAL</Badge>
                 </div>
               </div>
@@ -495,10 +458,10 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
         <section className="landing-section matrix-section" id="priority-matrix">
           <div className="landing-container">
             <div className="section-header">
-              <div className="section-eyebrow">[TACTICAL HIERARCHY]</div>
+              <div className="section-eyebrow">TRIAGE HIERARCHY</div>
               <h2 className="section-title">THE PRIORITY MATRIX</h2>
               <p className="section-desc">
-                Absolute triage clarity. Every incoming emergency is categorized into deterministic 
+                Clear triage hierarchy. Every incoming incident is classified into deterministic 
                 priority tiers based on immediate threat to life and infrastructure.
               </p>
             </div>
@@ -512,7 +475,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
                 </div>
                 <h3 className="matrix-tier-title">IMMINENT THREAT</h3>
                 <p className="matrix-tier-desc">
-                  Active violence, structural collapse, life-or-death water rescue, mass casualties.
+                  Active structural collapse, life-or-death water rescue, trapped civilians, mass casualties.
                 </p>
                 <div className="matrix-card-bottom">
                   <span className="response-time">RESPONSE: IMMEDIATE</span>
@@ -522,7 +485,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
               {/* P1 High */}
               <div className="matrix-card card-p1">
                 <div className="matrix-card-top">
-                  <span className="matrix-badge p1">[ HIGH ]</span>
+                  <span className="matrix-badge p1">P1 HIGH</span>
                 </div>
                 <h3 className="matrix-tier-title">SEVERE HAZARD</h3>
                 <p className="matrix-tier-desc">
@@ -554,7 +517,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
                 </div>
                 <h3 className="matrix-tier-title">ADVISORY</h3>
                 <p className="matrix-tier-desc">
-                  General advisory reports, historical status updates, recovery requests, non-urgent citizen inquiries.
+                  General advisory reports, historical updates, non-urgent citizen inquiries.
                 </p>
                 <div className="matrix-card-bottom">
                   <span className="response-time cyan">LOGGED FOR REVIEW</span>
@@ -565,53 +528,49 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
             {/* Needs Review Callout */}
             <div className="needs-review-banner">
               <div className="nr-left">
-                <Badge variant="needs-review" size="md">NEEDS REVIEW PROTOCOL</Badge>
+                <Badge variant="needs-review" size="md">HUMAN INSPECTION QUEUE</Badge>
                 <span className="nr-text">
-                  Any report with low confidence (&lt; 0.60), missing location coordinates, or contradictory field data is automatically quarantined for mandatory human inspection.
+                  Any report with low confidence (&lt; 0.60), missing location coordinates, or contradictory field data is automatically quarantined for operator review.
                 </span>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm"
+              <button 
+                type="button"
+                className="nr-action-btn"
                 onClick={() => setActiveView('investigation')}
               >
                 OPEN INVESTIGATION
-              </Button>
+              </button>
             </div>
           </div>
         </section>
 
-        {/* 7. OPERATOR SOVEREIGNTY PROTOCOL */}
+        {/* 7. OPERATOR CONTROL & AUTHORITY */}
         <section className="landing-section" id="sovereignty">
           <div className="landing-container">
             <div className="sovereignty-box">
-              <div className="sovereignty-corner-tape">
-                OPERATOR SOVEREIGNTY PROTOCOL
-              </div>
-
               <div className="sovereignty-inner">
-                <div className="section-eyebrow dark">[HUMAN IN COMMAND]</div>
+                <div className="section-eyebrow">HUMAN IN COMMAND</div>
                 <h2 className="sovereignty-title">
-                  TINGLE RECOMMENDS. <br />
-                  <span className="sovereignty-accent">HUMANS DECIDE.</span>
+                  AUTOMATION RECOMMENDS. <br />
+                  <span className="sovereignty-accent">OPERATORS DECIDE.</span>
                 </h2>
                 <p className="sovereignty-desc">
-                  No black-box algorithms making unilateral emergency deployments. Every correlated incident 
+                  No automated system should deploy emergency units without human oversight. Every prioritized incident 
                   presents clear factor breakdowns, raw evidence playback, and instant manual override 
                   controls with mandatory audit justification.
                 </p>
 
                 <div className="sovereignty-chips">
                   <div className="sovereignty-chip green">
-                    <CheckCircle2 size={18} />
+                    <CheckCircle2 size={16} />
                     <span>EVIDENCE VERIFICATION</span>
                   </div>
                   <div className="sovereignty-chip cyan">
-                    <Sliders size={18} />
-                    <span>INSTANT HUMAN OVERRIDE</span>
+                    <Sliders size={16} />
+                    <span>INSTANT OPERATOR OVERRIDE</span>
                   </div>
                   <div className="sovereignty-chip yellow">
-                    <Activity size={18} />
+                    <Activity size={16} />
                     <span>FULL AUDIT INTEGRITY</span>
                   </div>
                 </div>
@@ -625,18 +584,17 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
           <div className="landing-container">
             <div className="section-header between">
               <div>
-                <div className="section-eyebrow">[TACTICAL OPERATING SYSTEM]</div>
+                <div className="section-eyebrow">DISPATCH CONSOLE</div>
                 <h2 className="section-title">COMMAND CENTER INTERFACE</h2>
               </div>
               <div className="preview-security-badge">
-                SECURE DISPATCH ENVIRONMENT // SECTOR PATIA
+                OPERATIONAL CONSOLE // DISPATCH READY
               </div>
             </div>
 
             <div className="command-preview-frame">
               <div className="preview-radar-canvas">
                 <div className="radar-grid" />
-                <div className="radar-sweep" />
                 <div className="radar-incident-pin pin-1">
                   <span className="pin-pulse" />
                   <span className="pin-label">INC-08802 (P0)</span>
@@ -650,11 +608,11 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
 
                 <div className="preview-floating-card">
                   <div className="floating-card-header">
-                    <span className="floating-title">ACTIVE SECTOR: PATIA_CENTRAL</span>
-                    <Badge variant="p0-critical" size="sm">HIGH ALERT</Badge>
+                    <span className="floating-title">ACTIVE SECTOR: PATIA CENTRAL</span>
+                    <Badge variant="p0-critical" size="sm">ACTIVE TRIAGE</Badge>
                   </div>
                   <p className="floating-card-body">
-                    Triangulated 3 active incidents across the municipal grid. Operational triage active.
+                    3 active incidents correlated across the municipal grid. Operational triage active.
                   </p>
                 </div>
               </div>
@@ -666,51 +624,51 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
                   className="launcher-btn primary"
                   onClick={() => setActiveView('command-deck')}
                 >
-                  <Compass size={18} />
-                  <span>LAUNCH COMMAND DECK (#deck)</span>
+                  <Compass size={16} />
+                  <span>Launch Command Deck</span>
                 </button>
                 <button 
                   type="button" 
                   className="launcher-btn"
                   onClick={() => setActiveView('incident-streams')}
                 >
-                  <Layers size={18} />
-                  <span>VIEW INCIDENT STREAMS (#streams)</span>
+                  <Layers size={16} />
+                  <span>Incident Streams</span>
                 </button>
                 <button 
                   type="button" 
                   className="launcher-btn"
                   onClick={() => setActiveView('investigation')}
                 >
-                  <Eye size={18} />
-                  <span>INVESTIGATION BOARD (#investigation)</span>
+                  <Eye size={16} />
+                  <span>Investigation Board</span>
                 </button>
                 <button 
                   type="button" 
                   className="launcher-btn"
                   onClick={() => setActiveView('audit-trail')}
                 >
-                  <Terminal size={18} />
-                  <span>AUDIT TRAIL LOGS (#audit)</span>
+                  <Terminal size={16} />
+                  <span>Audit Trail Ledger</span>
                 </button>
                 <button 
                   type="button" 
                   className="launcher-btn"
                   onClick={() => setActiveView('briefing')}
                 >
-                  <FileText size={18} />
-                  <span>INCIDENT BRIEFINGS (#briefing)</span>
+                  <FileText size={16} />
+                  <span>System Briefing</span>
                 </button>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 9. TACTICAL LAUNCH CALLOUT PANEL */}
+        {/* 9. READY CALLOUT */}
         <section className="landing-section">
           <div className="landing-container">
             <div className="tactical-launch-box">
-              <div className="launch-tag">SYSTEM READINESS</div>
+              <div className="launch-tag">OPERATIONAL READINESS</div>
               <h2 className="launch-quote">
                 "YOU HANDLE THE CRISIS. <br />
                 TINGLE HANDLES THE NOISE."
@@ -724,23 +682,41 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
                 className="tactical-launch-btn"
                 onClick={() => setActiveView('command-deck')}
               >
-                ENTER COMMAND DECK
+                <span>ENTER COMMAND DECK</span>
+                <ArrowRight size={18} />
               </button>
             </div>
           </div>
         </section>
       </main>
 
-      {/* 10. TACTICAL LANDING FOOTER */}
+      {/* 10. CLEAN & MODERN FOOTER */}
       <footer className="landing-footer" role="contentinfo">
         <div className="landing-container landing-footer-inner">
-          <div className="footer-meta">
-            <span className="footer-title">TINGLE v1.2 // EMERGENCY INTELLIGENCE & CORRELATION SYSTEM</span>
-            <span className="footer-subtitle">HUMAN-IN-THE-LOOP SOVEREIGN // DETERMINISTIC DISPATCH SUPPORT</span>
+          <div className="footer-brand-col">
+            <div className="footer-brand-title">TINGLE</div>
+            <p className="footer-tagline">
+              Real-time emergency intelligence & explainable triage decision support.
+            </p>
           </div>
-          <div className="footer-telemetry">
-            <span className="footer-time"><Clock size={12} /> {currentTime}</span>
-            <span className="footer-status"><Activity size={12} /> WS {wsStatus}</span>
+
+          <nav className="footer-nav-links" aria-label="Footer Quick Links">
+            <a href="#signals" onClick={(e) => scrollToSection(e, 'signals')}>Signals</a>
+            <a href="#correlation" onClick={(e) => scrollToSection(e, 'correlation')}>Correlation</a>
+            <a href="#priority-matrix" onClick={(e) => scrollToSection(e, 'priority-matrix')}>Priority Matrix</a>
+            <a href="#command-center" onClick={(e) => scrollToSection(e, 'command-center')}>Console</a>
+            <button 
+              type="button" 
+              className="footer-deck-btn"
+              onClick={() => setActiveView('command-deck')}
+            >
+              Launch Console
+            </button>
+          </nav>
+
+          <div className="footer-meta-col">
+            <span className="footer-status-pill">OPERATIONAL // v1.2</span>
+            <span className="footer-copy">© 2026 Tingle. All rights reserved.</span>
           </div>
         </div>
       </footer>

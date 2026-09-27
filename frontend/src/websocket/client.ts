@@ -46,6 +46,8 @@ export class TingleWebSocketClient {
   private eventListeners: Map<string, Set<EventListener<any>>> = new Map();
   private statusListeners: Set<StatusListener> = new Set();
   private isIntentionallyClosed = false;
+  private reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private reconnectAttempts = 0;
 
   constructor() {
     this.eventListeners.set('*', new Set());
@@ -69,6 +71,11 @@ export class TingleWebSocketClient {
   }
 
   public connect(): void {
+    if (this.reconnectTimeoutId) {
+      clearTimeout(this.reconnectTimeoutId);
+      this.reconnectTimeoutId = null;
+    }
+
     if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
       return;
     }
@@ -81,12 +88,14 @@ export class TingleWebSocketClient {
     try {
       this.socket = new WebSocket(url);
     } catch (err) {
-      console.error('[WebSocket] Failed to instantiate WebSocket:', err);
+      console.warn('[WebSocket] Failed to instantiate WebSocket:', err instanceof Error ? err.message : 'Unknown error');
       this.setStatus('ERROR');
+      this.scheduleReconnect();
       return;
     }
 
     this.socket.onopen = () => {
+      this.reconnectAttempts = 0;
       this.setStatus('CONNECTED');
     };
 
@@ -94,8 +103,8 @@ export class TingleWebSocketClient {
       this.handleIncomingMessage(event.data);
     };
 
-    this.socket.onerror = (event: Event) => {
-      console.warn('[WebSocket] Transport error event encountered:', event);
+    this.socket.onerror = () => {
+      // Don't dump entire Event object to prevent DevTools stutter
       this.setStatus('ERROR');
     };
 
@@ -103,14 +112,36 @@ export class TingleWebSocketClient {
       this.socket = null;
       if (!this.isIntentionallyClosed) {
         this.setStatus('DISCONNECTED');
+        this.scheduleReconnect();
       } else {
         this.setStatus('STANDBY');
       }
     };
   }
 
+  private scheduleReconnect(): void {
+    if (this.isIntentionallyClosed || this.reconnectTimeoutId) {
+      return;
+    }
+
+    // Exponential backoff: 3s, 6s, 12s, capped at 15s
+    const backoffMs = Math.min(3000 * Math.pow(1.8, this.reconnectAttempts), 15000);
+    this.reconnectAttempts++;
+
+    this.reconnectTimeoutId = setTimeout(() => {
+      this.reconnectTimeoutId = null;
+      this.connect();
+    }, backoffMs);
+  }
+
   public disconnect(): void {
     this.isIntentionallyClosed = true;
+    if (this.reconnectTimeoutId) {
+      clearTimeout(this.reconnectTimeoutId);
+      this.reconnectTimeoutId = null;
+    }
+    this.reconnectAttempts = 0;
+
     if (this.socket) {
       try {
         this.socket.close(1000, 'Client intentional disconnect');
@@ -124,7 +155,6 @@ export class TingleWebSocketClient {
 
   private handleIncomingMessage(rawPayload: unknown): void {
     if (typeof rawPayload !== 'string') {
-      console.warn('[WebSocket] Ignored non-string WebSocket message');
       return;
     }
 
@@ -132,12 +162,10 @@ export class TingleWebSocketClient {
     try {
       parsed = JSON.parse(rawPayload);
     } catch {
-      console.warn('[WebSocket] Malformed non-JSON frame safely ignored, length:', rawPayload.length);
       return;
     }
 
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      console.warn('[WebSocket] Non-object JSON frame safely ignored');
       return;
     }
 
@@ -145,13 +173,13 @@ export class TingleWebSocketClient {
     const eventName = messageObj.event;
 
     if (typeof eventName !== 'string') {
-      console.warn('[WebSocket] Frame missing string "event" key safely ignored');
       return;
     }
 
-    // Server PING heartbeat handling
+    // Server PING heartbeat handling - respond immediately with PONG and do not dispatch to UI listeners!
     if (eventName === 'PING') {
       this.sendPong();
+      return;
     }
 
     const envelope: RealtimeEvent = {
@@ -167,8 +195,8 @@ export class TingleWebSocketClient {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       try {
         this.socket.send(JSON.stringify({ type: 'PONG' }));
-      } catch (err) {
-        console.warn('[WebSocket] Failed to send PONG response:', err);
+      } catch {
+        // Ignored
       }
     }
   }
@@ -176,7 +204,7 @@ export class TingleWebSocketClient {
   private dispatchToListeners(envelope: RealtimeEvent): void {
     // Dispatch to specific event listeners
     const specificListeners = this.eventListeners.get(envelope.event);
-    if (specificListeners) {
+    if (specificListeners && specificListeners.size > 0) {
       specificListeners.forEach((listener) => {
         try {
           listener(envelope);
@@ -188,7 +216,7 @@ export class TingleWebSocketClient {
 
     // Dispatch to wildcard listeners
     const wildcardListeners = this.eventListeners.get('*');
-    if (wildcardListeners) {
+    if (wildcardListeners && wildcardListeners.size > 0) {
       wildcardListeners.forEach((listener) => {
         try {
           listener(envelope);

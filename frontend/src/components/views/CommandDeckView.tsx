@@ -107,7 +107,7 @@ export const CommandDeckView: React.FC = () => {
         <div className="filter-search-container">
           <TacticalInput
             leftIcon={<Search size={15} color="var(--color-text-muted)" />}
-            placeholder="SEARCH INCIDENTS, LOCATIONS, TAC-CHANNELS..."
+            placeholder="Search incidents, locations, channels..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="filter-search-input"
@@ -140,16 +140,16 @@ export const CommandDeckView: React.FC = () => {
 
           <div className="chip-separator"></div>
 
-          {/* Web Vectors / Tactical Layer Toggle */}
+          {/* Map Grid / Overlay Toggle */}
           <button
             type="button"
             className={`filter-layer-btn ${isWebVectorsActive ? 'active' : ''}`}
             onClick={() => setIsWebVectorsActive(!isWebVectorsActive)}
             aria-pressed={isWebVectorsActive}
-            title="Toggle tactical web vector telemetry overlay"
+            title="Toggle map grid telemetry overlay"
           >
             <Globe size={13} />
-            <span>WEB VECTORS: {isWebVectorsActive ? 'ON' : 'OFF'}</span>
+            <span>MAP GRID: {isWebVectorsActive ? 'ON' : 'OFF'}</span>
           </button>
         </div>
       </div>

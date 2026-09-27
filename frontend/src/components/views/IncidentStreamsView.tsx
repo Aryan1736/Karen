@@ -38,12 +38,12 @@ export const IncidentStreamsView: React.FC = () => {
       <div className="streams-header">
         <div className="streams-title-group">
           <Rss size={18} color="var(--color-multiverse-cyan)" />
-          <h2 className="streams-title">INCIDENT STREAMS // LIVE INGESTION CHANNELS</h2>
-          <Badge variant="neutral" size="sm">{events.length} FRAMES CAPTURED</Badge>
+          <h2 className="streams-title">LIVE INCIDENT STREAMS</h2>
+          <Badge variant="neutral" size="sm">{events.length} EVENTS RECORDED</Badge>
         </div>
         <div className="streams-status" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Badge variant={status === 'CONNECTED' ? 'p1-high' : 'neutral'} size="sm">
-            CHANNEL MONITOR: {status}
+          <Badge variant={status === 'CONNECTED' ? 'verified' : 'neutral'} size="sm">
+            STATUS: {status}
           </Badge>
           {events.length > 0 && (
             <Button variant="secondary" size="sm" onClick={clearEvents} title="Clear stream events">
@@ -83,16 +83,15 @@ export const IncidentStreamsView: React.FC = () => {
           <div className="streams-empty-container">
             <div className="streams-empty-box">
               <div className="streams-empty-icon">
-                <Radio size={48} color="var(--color-multiverse-cyan)" />
+                <Radio size={44} color="var(--color-multiverse-cyan)" />
               </div>
-              <h3 className="streams-empty-heading">Ingestion Streams Standby</h3>
+              <h3 className="streams-empty-heading">Monitoring Event Stream</h3>
               <p className="streams-empty-desc">
-                Raw incoming emergency reports, RF dispatch transcripts, and simulated sensor events will appear in this synchronized multi-channel stream.
+                Real-time incident updates, radio transcript extractions, and status changes appear live in this feed as they occur.
               </p>
               <div className="streams-meta-pills">
-                <Badge variant="neutral" size="sm">WS_STATUS: {status}</Badge>
-                <Badge variant="neutral" size="sm">RF_AUDIO: STANDBY</Badge>
-                <Badge variant="neutral" size="sm">DISPATCH_BUS: READY</Badge>
+                <Badge variant="neutral" size="sm">WEBSOCKET: {status}</Badge>
+                <Badge variant="neutral" size="sm">DISPATCH CHANNEL: ACTIVE</Badge>
               </div>
             </div>
           </div>

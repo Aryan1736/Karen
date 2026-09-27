@@ -2,13 +2,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 28px;
+  height: 26px;
   padding: 0 16px;
-  background-color: var(--color-hazard-orange);
-  color: var(--color-void-dark);
-  border-bottom: 2px solid var(--color-void-dark);
+  background-color: #16120E;
+  color: var(--color-hazard-orange);
+  border-bottom: 1px solid rgba(255, 92, 0, 0.25);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -20,39 +20,48 @@
 .sim-strip-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+}
+
+.sim-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-hazard-orange);
+  animation: pulse-dot 1.5s infinite;
+}
+
+.sim-mode-tag {
+  color: var(--color-hazard-orange);
+  font-weight: 800;
 }
 
 .sim-strip-text {
-  font-weight: 800;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--color-text-muted);
+  font-weight: 500;
 }
 
 .sim-strip-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .sim-id {
-  font-size: 10px;
+  color: var(--color-text-muted);
 }
 
 .sim-speed {
-  background-color: var(--color-void-dark);
-  color: var(--color-newsprint-white);
+  background-color: rgba(255, 92, 0, 0.15);
+  color: var(--color-hazard-orange);
+  border: 1px solid rgba(255, 92, 0, 0.3);
   padding: 1px 6px;
-  border-radius: var(--radius-none);
-  font-size: 10px;
+  font-size: 9px;
+  border-radius: 2px;
 }
 
 @media (max-width: 768px) {
   .sim-strip-right {
     display: none;
-  }
-  .sim-alert-strip {
-    padding: 0 10px;
   }
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Terminal, Radio, ShieldCheck, Activity } from 'lucide-react';
+import { Terminal, Radio, ShieldCheck, Activity, Cpu, Layers, CheckCircle2 } from 'lucide-react';
 import { Button, Badge, StatusIndicator } from '../ui';
 import { useNavigation } from '../../context/NavigationContext';
 import { useBackendHealth } from '../../hooks/useBackendHealth';
@@ -13,11 +13,11 @@ export const BriefingView: React.FC = () => {
   const engineIndicatorLabel = isOnline === true ? 'API ONLINE' : isOnline === false ? 'API OFFLINE' : 'CHECKING...';
 
   return (
-    <div className="briefing-view" role="region" aria-label="Mission Briefing">
+    <div className="briefing-view" role="region" aria-label="System Briefing">
       <div className="briefing-header">
         <div className="briefing-title-group">
-          <BookOpen size={18} color="var(--color-dispatch-yellow)" />
-          <h1 className="briefing-title">MISSION BRIEFING // OPERATING SYSTEM DOCTRINE</h1>
+          <Cpu size={18} color="var(--color-dispatch-yellow)" />
+          <h1 className="briefing-title">OPERATIONAL SYSTEM BRIEFING</h1>
         </div>
         <div className="briefing-header-actions">
           <Button 
@@ -28,45 +28,61 @@ export const BriefingView: React.FC = () => {
             aria-label="Enter Tactical Command Deck"
           >
             <Terminal size={14} style={{ marginRight: 6 }} />
-            ENTER COMMAND DECK
+            LAUNCH COMMAND DECK
           </Button>
         </div>
       </div>
 
       <div className="briefing-content">
-        {/* System Readiness Strip */}
-        <div className="briefing-telemetry-strip font-mono" role="status" aria-label="System operational status">
+        {/* System Telemetry Bar */}
+        <div className="briefing-telemetry-strip" role="status" aria-label="System operational status">
           <div className="briefing-telemetry-left">
             <Activity size={14} className="text-cyan" />
-            <span>OPERATIONAL READINESS:</span>
+            <span className="telemetry-label">SYSTEM HEALTH:</span>
             <StatusIndicator status={engineIndicatorStatus} label={engineIndicatorLabel} />
             <Badge variant="neutral" size="sm">
-              DB: {isLoading ? 'PROBING...' : (databaseStatus || 'UNKNOWN').toUpperCase()}
+              DATABASE: {isLoading ? 'PROBING...' : (databaseStatus || 'CONNECTED').toUpperCase()}
             </Badge>
           </div>
           <div className="briefing-telemetry-right">
-            <span>PLATFORM: TINGLE v0.2.0-STARK</span>
+            <span className="telemetry-meta">TINGLE // RELEASE v1.2</span>
           </div>
         </div>
 
+        {/* Hero Mission Panel */}
         <section className="briefing-hero-panel">
           <h2 className="briefing-hero-headline">
-            TINGLE EMERGENCY INTELLIGENCE CONSOLE
+            DISPATCH DECISION SUPPORT PLATFORM
           </h2>
           <p className="briefing-hero-lead">
-            An operator decision-support platform engineered to transform chaotic multi-channel crisis reports into explainable, continuously prioritized incidents. Designed for situational commanders operating under extreme cognitive load.
+            TINGLE correlates multi-channel emergency transcripts, citizen alerts, and sensor streams into verified, explainable incidents in real time. Built specifically for high-stress dispatchers and situational commanders to eliminate noise and accelerate life-saving decisions.
           </p>
 
-          <div className="pipeline-diagram" aria-label="Operational emergency pipeline">
-            <span className="pipeline-node">CHAOS</span>
-            <span className="pipeline-arrow" aria-hidden="true">→</span>
-            <span className="pipeline-node">SIGNAL</span>
-            <span className="pipeline-arrow" aria-hidden="true">→</span>
-            <span className="pipeline-node">INCIDENT</span>
-            <span className="pipeline-arrow" aria-hidden="true">→</span>
-            <span className="pipeline-node active-accent">PRIORITY</span>
-            <span className="pipeline-arrow" aria-hidden="true">→</span>
-            <span className="pipeline-node">ACTION</span>
+          {/* Quick Capability Feature Row (replaces cheesy pipeline diagram) */}
+          <div className="briefing-feature-row">
+            <div className="briefing-feature-item">
+              <CheckCircle2 size={16} className="feature-icon green" />
+              <div className="feature-text">
+                <strong>Multi-Source Fusion</strong>
+                <span>Correlates 911 calls, radio bands & sensor alerts</span>
+              </div>
+            </div>
+
+            <div className="briefing-feature-item">
+              <CheckCircle2 size={16} className="feature-icon yellow" />
+              <div className="feature-text">
+                <strong>Explainable Priority</strong>
+                <span>Scored by life-safety, velocity & corroboration</span>
+              </div>
+            </div>
+
+            <div className="briefing-feature-item">
+              <CheckCircle2 size={16} className="feature-icon cyan" />
+              <div className="feature-text">
+                <strong>Operator Final Authority</strong>
+                <span>Complete manual override with immutable audit logging</span>
+              </div>
+            </div>
           </div>
 
           <div className="briefing-hero-actions">
@@ -76,7 +92,7 @@ export const BriefingView: React.FC = () => {
               size="md" 
               onClick={() => setActiveView('command-deck')}
             >
-              LAUNCH COMMAND DECK
+              OPEN COMMAND DECK
             </Button>
             <Button 
               type="button"
@@ -99,25 +115,35 @@ export const BriefingView: React.FC = () => {
           </div>
         </section>
 
-        <section className="briefing-pillars-grid" aria-label="Operating system core pillars">
+        {/* Core Architecture Pillars */}
+        <section className="briefing-pillars-grid" aria-label="System core architecture pillars">
           <div className="pillar-card">
-            <h3 className="pillar-title">DETERMINISTIC PRIORITY</h3>
+            <div className="pillar-card-icon">
+              <Layers size={20} color="var(--color-dispatch-yellow)" />
+            </div>
+            <h3 className="pillar-title">TRANSPARENT FACTOR ATTRIBUTION</h3>
             <p className="pillar-desc">
-              AI components extract features and compute semantic embeddings; deterministic formulas compute bounded priority scores with full factor explainability.
+              Every incident priority score is deterministically derived from verified signals: life-safety threats, hazard velocity, and independent witness corroboration.
             </p>
           </div>
 
           <div className="pillar-card">
-            <h3 className="pillar-title">NO HALLUCINATION</h3>
+            <div className="pillar-card-icon">
+              <ShieldCheck size={20} color="var(--color-system-green)" />
+            </div>
+            <h3 className="pillar-title">GEOSPATIAL VERIFICATION</h3>
             <p className="pillar-desc">
-              Unverified locations remain approximate or unplotted. Coordinates are never fabricated to place pins on the cartographic map.
+              Unverified locations remain approximate and flag needs-review status. Coordinates are never hallucinated, ensuring responders are dispatched with validated precision.
             </p>
           </div>
 
           <div className="pillar-card">
-            <h3 className="pillar-title">SOVEREIGN HUMAN REVIEW</h3>
+            <div className="pillar-card-icon">
+              <Terminal size={20} color="var(--color-multiverse-cyan)" />
+            </div>
+            <h3 className="pillar-title">OPERATOR COMMAND AUTHORITY</h3>
             <p className="pillar-desc">
-              The human dispatcher retains absolute command. Every modification is logged to an immutable audit ledger while preserving raw ML telemetry.
+              The human dispatcher holds ultimate operational authority. Any algorithmic triage can be overridden instantly with mandatory recorded justification.
             </p>
           </div>
         </section>

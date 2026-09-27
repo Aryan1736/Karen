@@ -1,21 +1,19 @@
 import React from 'react';
-import { Badge } from '../ui';
 import './SimulationStrip.css';
 
 export const SimulationStrip: React.FC = () => {
   return (
-    <aside className="sim-alert-strip" aria-label="Drill & Simulation Banner">
+    <aside className="sim-alert-strip" aria-label="Simulation Environment">
       <div className="sim-strip-left">
-        <Badge variant="simulation" size="sm" showBeacon beaconColor="var(--color-void-dark)">
-          MODE: SIM-LIVE
-        </Badge>
+        <span className="sim-indicator-dot" />
+        <span className="sim-mode-tag">LIVE SIMULATION</span>
         <span className="sim-strip-text">
-          DRILL RUNBOOK READY // TINGLE OPERATOR DECISION SUPPORT CONSOLE
+          Municipal Dispatch Triage Environment
         </span>
       </div>
       <div className="sim-strip-right">
-        <span className="sim-id">SYSTEM: TINGLE v0.2.0-STARK</span>
-        <span className="sim-speed">SPEED: 1.0X</span>
+        <span className="sim-id">v1.2</span>
+        <span className="sim-speed">1.0X REALTIME</span>
       </div>
     </aside>
   );

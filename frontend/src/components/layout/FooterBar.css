@@ -1,28 +1,67 @@
+/**
+ * TINGLE — Executive Console Footer
+ * Minimalist, Balanced, and Functional
+ */
+
 .footer-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 30px;
-  padding: 0 16px;
-  background-color: var(--color-surface-container-lowest);
-  border-top: 2px solid var(--color-void-dark);
+  height: 28px;
+  padding: 0 20px;
+  background-color: rgba(10, 11, 14, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: var(--font-body);
   font-size: 11px;
-  font-family: var(--font-mono);
-  font-weight: 600;
   color: var(--color-text-muted);
   flex-shrink: 0;
+  z-index: 20;
   user-select: none;
 }
 
-.footer-left, .footer-right {
+.footer-left, 
+.footer-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
 }
 
-@media (max-width: 768px) {
-  .footer-left span:nth-child(2),
-  .footer-left span:nth-child(3) {
-    display: none;
-  }
+.footer-brand {
+  font-weight: 700;
+  color: var(--color-newsprint-white);
+  letter-spacing: 0.08em;
+  font-size: 11px;
+}
+
+.footer-muted {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.footer-dot {
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 8px;
+}
+
+.footer-version {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-secondary);
+}
+
+.footer-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-system-green);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.footer-status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--color-system-green);
+  box-shadow: 0 0 5px var(--color-system-green);
 }

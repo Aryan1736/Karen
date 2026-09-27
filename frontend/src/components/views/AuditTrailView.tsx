@@ -30,7 +30,7 @@ export const AuditTrailView: React.FC = () => {
       <div className="audit-header">
         <div className="audit-title-group">
           <ShieldCheck size={18} color="var(--color-system-green)" />
-          <h1 className="audit-title">HUMAN SOVEREIGN REVIEW // AUDIT LEDGER</h1>
+          <h1 className="audit-title">OPERATOR OVERRIDE & AUDIT LEDGER</h1>
           <Badge variant={overriddenIncidents.length > 0 ? 'p0-critical' : 'p2-medium'} size="sm">
             {overriddenIncidents.length} ACTIVE {overriddenIncidents.length === 1 ? 'OVERRIDE' : 'OVERRIDES'}
           </Badge>
@@ -81,7 +81,7 @@ export const AuditTrailView: React.FC = () => {
             <div className="audit-ledger-banner">
               <ShieldAlert size={16} color="var(--color-p0-critical)" />
               <span className="font-mono text-xs">
-                SHOWING {overriddenIncidents.length} INCIDENT{overriddenIncidents.length > 1 ? 'S' : ''} MUTATED BY SOVEREIGN OPERATORS // LOCKED AGAINST ML AUTONOMOUS OVERWRITE
+                SHOWING {overriddenIncidents.length} INCIDENT{overriddenIncidents.length > 1 ? 'S' : ''} WITH ACTIVE OPERATOR OVERRIDES • IMMUTABLE AUDIT LOG
               </span>
             </div>
 
