@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigation, NavigationView } from '../../context/NavigationContext';
+import { useNavigation } from '../../context/NavigationContext';
 import { useBackendHealth } from '../../hooks/useBackendHealth';
 import { useWebSocketStatus } from '../../context/WebSocketContext';
 import './LandingPageView.css';
@@ -131,8 +131,6 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
   const [selectedIncidentId, setSelectedIncidentId] = useState<string>('INC-08802');
   const selectedIncident = RADAR_INCIDENTS.find(inc => inc.id === selectedIncidentId) || RADAR_INCIDENTS[0];
 
-  // Console preview module selector
-  const [activeConsoleTab, setActiveConsoleTab] = useState<NavigationView>('command-deck');
 
   // Track minimal scroll progress percentage smoothly
   useEffect(() => {
@@ -237,9 +235,6 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
             </a>
             <a href="#radar" className="landing-nav-anchor" onClick={(e) => scrollToSection(e, 'radar')}>
               Radar Grid
-            </a>
-            <a href="#command-center" className="landing-nav-anchor" onClick={(e) => scrollToSection(e, 'command-center')}>
-              Console
             </a>
           </nav>
         </div>
@@ -922,96 +917,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
         </section>
 
         {/* ==========================================================================
-            9. COMMAND CENTER INTERFACE PREVIEW
-            ========================================================================== */}
-        <section className="landing-section preview-section reveal-on-scroll" id="command-center">
-          <div className="landing-container">
-            <div className="section-header between">
-              <div>
-                <div className="brush-eyebrow">DISPATCH CONSOLE</div>
-                <h2 className="section-title">COMMAND CENTER INTERFACE</h2>
-              </div>
-              <div className="preview-security-badge">
-                OPERATIONAL CONSOLE // DISPATCH READY
-              </div>
-            </div>
-
-            <div className="command-preview-frame">
-              {/* Interactive View Selector Tabs */}
-              <div className="preview-module-tabs">
-                {[
-                  { id: 'command-deck', label: 'Command Deck' },
-                  { id: 'incident-streams', label: 'Incident Streams' },
-                  { id: 'investigation', label: 'Investigation Board' },
-                  { id: 'audit-trail', label: 'Audit Ledger' },
-                  { id: 'briefing', label: 'System Briefing' }
-                ].map((tab) => {
-                  const isActive = activeConsoleTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      className={`module-tab-btn ${isActive ? 'active' : ''}`}
-                      onClick={() => setActiveConsoleTab(tab.id as NavigationView)}
-                    >
-                      <span>{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Viewport Preview Area */}
-              <div className="preview-radar-canvas">
-                <div className="radar-grid" />
-                <div className="preview-sweep-cone" aria-hidden="true" />
-                <div className="radar-incident-pin pin-1">
-                  <span className="pin-pulse" />
-                  <span className="pin-label">INC-08802 (P0)</span>
-                </div>
-                <div className="radar-incident-pin pin-2">
-                  <span className="pin-label">INC-08799 (P1)</span>
-                </div>
-                <div className="radar-incident-pin pin-3">
-                  <span className="pin-label">INC-08794 (P2)</span>
-                </div>
-
-                <div className="preview-floating-card">
-                  <div className="floating-card-header">
-                    <span className="floating-title">
-                      MODULE: {activeConsoleTab.toUpperCase().replace('-', ' ')}
-                    </span>
-                    <span className="floating-badge">ACTIVE TRIAGE</span>
-                  </div>
-                  <p className="floating-card-body">
-                    {activeConsoleTab === 'command-deck' && 'Real-time multi-band dispatch matrix with geospatial incident triangulation.'}
-                    {activeConsoleTab === 'incident-streams' && 'Live incoming audio packet visualizer, STT transcription, and APCO 10-code parser.'}
-                    {activeConsoleTab === 'investigation' && 'Human-in-the-loop quarantine queue for resolving low-confidence distress signals.'}
-                    {activeConsoleTab === 'audit-trail' && 'Immutable cryptographic log of all operator override decisions and dispatches.'}
-                    {activeConsoleTab === 'briefing' && 'Situational tactical handover briefing generated directly from correlated feeds.'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Clean Single Launch Action */}
-              <div className="preview-launcher-rail">
-                <span className="launcher-rail-info">
-                  SELECTED MODULE READY FOR OPERATOR SESSION
-                </span>
-                <button 
-                  type="button" 
-                  className="launcher-direct-btn"
-                  onClick={() => setActiveView(activeConsoleTab)}
-                >
-                  <span>LAUNCH {activeConsoleTab.toUpperCase().replace('-', ' ')}</span>
-                  <span>→</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ==========================================================================
-            10. READY CALLOUT
+            9. READY CALLOUT
             ========================================================================== */}
         <section className="landing-section reveal-on-scroll">
           <div className="landing-container">
@@ -1039,7 +945,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
       </main>
 
       {/* ==========================================================================
-          11. CLEAN, MINIMAL & MODERN FOOTER (NO REDUNDANT BUTTONS)
+          10. CLEAN, MINIMAL & MODERN FOOTER (NO REDUNDANT BUTTONS)
           ========================================================================== */}
       <footer className="landing-footer" role="contentinfo">
         <div className="landing-container landing-footer-inner">
@@ -1055,7 +961,6 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ className = ''
             <a href="#correlation" onClick={(e) => scrollToSection(e, 'correlation')}>Correlation</a>
             <a href="#priority-matrix" onClick={(e) => scrollToSection(e, 'priority-matrix')}>Priority Matrix</a>
             <a href="#radar" onClick={(e) => scrollToSection(e, 'radar')}>Radar Grid</a>
-            <a href="#command-center" onClick={(e) => scrollToSection(e, 'command-center')}>Console</a>
           </nav>
 
           <div className="footer-meta-col">
