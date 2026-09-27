@@ -274,8 +274,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           <span className="hud-divider">|</span>
           <span className="map-hud-grid">
             {selectedHasCoords 
-              ? `FOCUS: ${selectedIncident.location.latitude!.toFixed(4)}° N, ${Math.abs(selectedIncident.location.longitude!).toFixed(4)}° W`
-              : `GRID REF: ${DEFAULT_MAP_CENTER.lat.toFixed(4)}° N, ${Math.abs(DEFAULT_MAP_CENTER.lng).toFixed(4)}° W`}
+              ? `FOCUS: ${Math.abs(selectedIncident.location.latitude!).toFixed(4)}° ${selectedIncident.location.latitude! >= 0 ? 'N' : 'S'}, ${Math.abs(selectedIncident.location.longitude!).toFixed(4)}° ${selectedIncident.location.longitude! >= 0 ? 'E' : 'W'}`
+              : `GRID REF: ${DEFAULT_MAP_CENTER.lat.toFixed(4)}° N, ${DEFAULT_MAP_CENTER.lng.toFixed(4)}° E`}
           </span>
           <span className="hud-divider">|</span>
           <span className="map-hud-sync">
@@ -309,12 +309,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
         {/* Tactical Coordinate Grid Overlay (Latitude & Longitude Gridlines inspired by reference) */}
         <div className="tactical-grid-overlay" aria-hidden="true">
-          <div className="grid-lat-line lat-1"><span className="grid-coord-label">40° 48' N</span></div>
-          <div className="grid-lat-line lat-2"><span className="grid-coord-label">40° 45' N</span></div>
-          <div className="grid-lat-line lat-3"><span className="grid-coord-label">40° 42' N</span></div>
-          <div className="grid-lng-line lng-1"><span className="grid-coord-label-v">74° 02' W</span></div>
-          <div className="grid-lng-line lng-2"><span className="grid-coord-label-v">73° 59' W</span></div>
-          <div className="grid-lng-line lng-3"><span className="grid-coord-label-v">73° 56' W</span></div>
+          <div className="grid-lat-line lat-1"><span className="grid-coord-label">28° 38' N</span></div>
+          <div className="grid-lat-line lat-2"><span className="grid-coord-label">20° 35' N</span></div>
+          <div className="grid-lat-line lat-3"><span className="grid-coord-label">12° 58' N</span></div>
+          <div className="grid-lng-line lng-1"><span className="grid-coord-label-v">72° 50' E</span></div>
+          <div className="grid-lng-line lng-2"><span className="grid-coord-label-v">78° 57' E</span></div>
+          <div className="grid-lng-line lng-3"><span className="grid-coord-label-v">85° 10' E</span></div>
 
           {/* Perimeter Coordinate Degree Ticks */}
           <div className="grid-ticks top-ticks" />

@@ -10,11 +10,11 @@
  */
 
 export const DEFAULT_MAP_CENTER = {
-  lat: 40.7505,
-  lng: -73.9934,
+  lat: 20.5937,
+  lng: 78.9629,
 };
 
-export const DEFAULT_MAP_ZOOM = 13;
+export const DEFAULT_MAP_ZOOM = 5;
 
 /**
  * Esri World Dark Gray Canvas tile layer configuration
