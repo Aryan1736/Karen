@@ -1,0 +1,1131 @@
+[
+  {
+    "event_id": "evt-flood-001",
+    "delay_seconds": 0.0,
+    "dispatch": {
+      "report_id": "rep-fld-001",
+      "text": "Heavy rain causing water logging starting near Rasulgarh square. Drainage appears blocked.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:00:00Z",
+      "location_hint": {
+        "raw_text": "Rasulgarh square",
+        "latitude": 20.2961,
+        "longitude": 85.8245,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-001",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": "twitter_public",
+        "phase": "T0",
+        "batch_index": 0
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "INITIAL",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": false,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Early waterlogging advisory without life threat."
+    }
+  },
+  {
+    "event_id": "evt-flood-002",
+    "delay_seconds": 20.0,
+    "dispatch": {
+      "report_id": "rep-fld-002",
+      "text": "Vehicles moving very slowly near Rasulgarh flyover, rain getting heavier by the minute.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:00:20Z",
+      "location_hint": {
+        "raw_text": "Rasulgarh flyover",
+        "latitude": 20.2965,
+        "longitude": 85.824,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-002",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": "citizen_sms",
+        "phase": "T+20s",
+        "batch_index": 1
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "CORROBORATING",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Traffic slowdown confirmation."
+    }
+  },
+  {
+    "event_id": "evt-flood-003",
+    "delay_seconds": 25.0,
+    "dispatch": {
+      "report_id": "rep-fld-003",
+      "text": "Water level rising rapidly on service road under railway bridge near Rasulgarh, 2 feet water.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:00:45Z",
+      "location_hint": {
+        "raw_text": "service road under railway bridge Rasulgarh",
+        "latitude": 20.2958,
+        "longitude": 85.8248,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-003",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": "police_radio",
+        "phase": "T+45s",
+        "batch_index": 2
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "MEDIUM",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "CORROBORATING",
+      "expected_direction": "ESCALATE",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Rapid water accumulation, approaching hazard threshold."
+    }
+  },
+  {
+    "event_id": "evt-flood-004",
+    "delay_seconds": 30.0,
+    "dispatch": {
+      "report_id": "rep-fld-004",
+      "text": "URGENT: White Maruti van stuck under Rasulgarh underpass! Water reaching window level, 4 people trapped inside screaming for help!",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:01:15Z",
+      "location_hint": {
+        "raw_text": "Rasulgarh underpass",
+        "latitude": 20.296,
+        "longitude": 85.8245,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-004",
+        "reporter_id": null,
+        "caller_id": "sim-caller-001",
+        "channel": "emergency_hotline",
+        "phase": "T+75s",
+        "batch_index": 3
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "CRITICAL",
+      "expected_people_at_risk": true,
+      "expected_people_count": 4,
+      "relation_type": "CORROBORATING",
+      "expected_direction": "ESCALATE_TO_TOP",
+      "expected_needs_review": false,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Critical life-safety trigger: 4 passengers trapped in submerged vehicle."
+    }
+  },
+  {
+    "event_id": "evt-flood-005",
+    "delay_seconds": 20.0,
+    "dispatch": {
+      "report_id": "rep-fld-005",
+      "text": "4 passengers trapped in submerged white van at Rasulgarh railway bridge, water rising fast please send rescue boats!",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:01:35Z",
+      "location_hint": {
+        "raw_text": "Rasulgarh railway bridge",
+        "latitude": 20.2959,
+        "longitude": 85.8246,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-005",
+        "reporter_id": null,
+        "caller_id": "sim-caller-002",
+        "channel": "citizen_call",
+        "phase": "T+95s",
+        "batch_index": 4
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "CRITICAL",
+      "expected_people_at_risk": true,
+      "expected_people_count": 4,
+      "relation_type": "CORROBORATING",
+      "expected_direction": "ESCALATE_TO_TOP",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Independent witness #1 corroborating trapped passengers."
+    }
+  },
+  {
+    "event_id": "evt-flood-006",
+    "delay_seconds": 15.0,
+    "dispatch": {
+      "report_id": "rep-fld-006",
+      "text": "Eyewitness at Rasulgarh: Van completely underwater, people banging on glass from inside! Rescue needed immediately!",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:01:50Z",
+      "location_hint": {
+        "raw_text": "Rasulgarh",
+        "latitude": 20.2961,
+        "longitude": 85.8245,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-006",
+        "reporter_id": "sim-source-001",
+        "caller_id": null,
+        "channel": "twitter_public",
+        "phase": "T+110s",
+        "batch_index": 5
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "CRITICAL",
+      "expected_people_at_risk": true,
+      "expected_people_count": 4,
+      "relation_type": "CORROBORATING",
+      "expected_direction": "ESCALATE_TO_TOP",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Independent witness #2 confirming active distress."
+    }
+  },
+  {
+    "event_id": "evt-flood-007",
+    "delay_seconds": 15.0,
+    "dispatch": {
+      "report_id": "rep-fld-007",
+      "text": "Rasulgarh underpass is a deathtrap right now, family of 4 stuck in drowning vehicle, need emergency response!",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:02:05Z",
+      "location_hint": {
+        "raw_text": "Rasulgarh underpass",
+        "latitude": 20.296,
+        "longitude": 85.8245,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-007",
+        "reporter_id": null,
+        "caller_id": "sim-caller-003",
+        "channel": "citizen_call",
+        "phase": "T+125s",
+        "batch_index": 6
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "CRITICAL",
+      "expected_people_at_risk": true,
+      "expected_people_count": 4,
+      "relation_type": "CORROBORATING",
+      "expected_direction": "ESCALATE_TO_TOP",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Independent witness #3 confirming family trapped."
+    }
+  },
+  {
+    "event_id": "evt-flood-008",
+    "delay_seconds": 15.0,
+    "dispatch": {
+      "report_id": "rep-fld-008",
+      "text": "RT @sim_eyewitness_bbsr: URGENT: White Maruti van stuck under Rasulgarh underpass! Water reaching window level, 4 people trapped inside screaming for help!",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:02:20Z",
+      "location_hint": {
+        "raw_text": "Rasulgarh underpass",
+        "latitude": 20.296,
+        "longitude": 85.8245,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-008",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": "twitter_retweet",
+        "phase": "T+140s",
+        "batch_index": 7
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "CRITICAL",
+      "expected_people_at_risk": true,
+      "expected_people_count": 4,
+      "relation_type": "DUPLICATE",
+      "expected_direction": "STABLE",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Near-verbatim retweet; must NOT increment independent source count."
+    }
+  },
+  {
+    "event_id": "evt-flood-009",
+    "delay_seconds": 10.0,
+    "dispatch": {
+      "report_id": "rep-fld-009",
+      "text": "White Maruti van stuck under Rasulgarh underpass! Water reaching window level, 4 people trapped inside screaming for help!",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:02:30Z",
+      "location_hint": {
+        "raw_text": "Rasulgarh underpass",
+        "latitude": 20.296,
+        "longitude": 85.8245,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-009",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": "whatsapp_forward",
+        "phase": "T+150s",
+        "batch_index": 8
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "CRITICAL",
+      "expected_people_at_risk": true,
+      "expected_people_count": 4,
+      "relation_type": "DUPLICATE",
+      "expected_direction": "STABLE",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Exact duplicate forward; deduplication engine must fuse without score surge."
+    }
+  },
+  {
+    "event_id": "evt-flood-010",
+    "delay_seconds": 15.0,
+    "dispatch": {
+      "report_id": "rep-fld-010",
+      "text": "I heard someone say 10 people drowned at Rasulgarh underpass already!",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:02:45Z",
+      "location_hint": {
+        "raw_text": "Rasulgarh underpass",
+        "latitude": 20.296,
+        "longitude": 85.8245,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-010",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": "twitter_public",
+        "phase": "T+165s",
+        "batch_index": 9
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "CRITICAL",
+      "expected_people_at_risk": true,
+      "expected_people_count": null,
+      "relation_type": "UNCERTAIN",
+      "expected_direction": "STABLE",
+      "expected_needs_review": true,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Conflicting casualty rumor; requires operator review flag without corrupting ground truth."
+    }
+  },
+  {
+    "event_id": "evt-flood-011",
+    "delay_seconds": 15.0,
+    "dispatch": {
+      "report_id": "rep-fld-011",
+      "text": "Massive traffic gridlock stretching 2 km from Vani Vihar toward Rasulgarh due to underpass flooding.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:03:00Z",
+      "location_hint": {
+        "raw_text": "Vani Vihar toward Rasulgarh",
+        "latitude": 20.3015,
+        "longitude": 85.831,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-011",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": "traffic_police",
+        "phase": "T+180s",
+        "batch_index": 10
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "MEDIUM",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "RELATED",
+      "expected_direction": "STABLE",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Secondary traffic consequence linked to flood."
+    }
+  },
+  {
+    "event_id": "evt-flood-012",
+    "delay_seconds": 20.0,
+    "dispatch": {
+      "report_id": "rep-fld-012",
+      "text": "Electric transformer sparking near floodwater at Rasulgarh market junction, power cut across block.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:03:20Z",
+      "location_hint": {
+        "raw_text": "Rasulgarh market junction",
+        "latitude": 20.297,
+        "longitude": 85.825,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-012",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": "citizen_call",
+        "phase": "T+200s",
+        "batch_index": 11
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "UTILITY_INFRASTRUCTURE_FAILURE",
+      "expected_urgency": "MEDIUM",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "RELATED",
+      "expected_direction": "STABLE",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Related utility hazard in flood zone."
+    }
+  },
+  {
+    "event_id": "evt-flood-013",
+    "delay_seconds": 20.0,
+    "dispatch": {
+      "report_id": "rep-fld-013",
+      "text": "Electrical pole collapsed into rising flood water near trapped van, rescue team needs electricity shutdown immediately!",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:03:40Z",
+      "location_hint": {
+        "raw_text": "near trapped van Rasulgarh underpass",
+        "latitude": 20.296,
+        "longitude": 85.8245,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-013",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": "fire_dispatch",
+        "phase": "T+220s",
+        "batch_index": 12
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-flood-rasulgarh-01",
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "CRITICAL",
+      "expected_people_at_risk": true,
+      "expected_people_count": 4,
+      "relation_type": "CORROBORATING",
+      "expected_direction": "ESCALATE_TO_TOP",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Cascading electrical threat to trapped victims."
+    }
+  },
+  {
+    "event_id": "evt-flood-014",
+    "delay_seconds": 20.0,
+    "dispatch": {
+      "report_id": "rep-fld-014",
+      "text": "Best monsoon pakoras available at Master Canteen stall today, enjoy the rain everyone!",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:04:00Z",
+      "location_hint": {
+        "raw_text": "Master Canteen stall",
+        "latitude": 20.266,
+        "longitude": 85.843,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-014",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": "twitter_public",
+        "phase": "T+240s",
+        "batch_index": 13
+      }
+    },
+    "ground_truth": {
+      "incident_group": null,
+      "expected_incident_type": null,
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "NOISE",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": false,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Irrelevant social media noise."
+    }
+  },
+  {
+    "event_id": "evt-flood-015",
+    "delay_seconds": 20.0,
+    "dispatch": {
+      "report_id": "rep-fld-015",
+      "text": "Anyone know if colleges in Patia are closed tomorrow because of rain?",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T18:04:20Z",
+      "location_hint": {
+        "raw_text": "Patia",
+        "latitude": 20.354,
+        "longitude": 85.818,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "flood_rasulgarh",
+        "event_id": "evt-flood-015",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": "student_query",
+        "phase": "T+260s",
+        "batch_index": 14
+      }
+    },
+    "ground_truth": {
+      "incident_group": null,
+      "expected_incident_type": null,
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "NOISE",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": false,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "General weather query noise."
+    }
+  },
+  {
+    "event_id": "evt-hn-001",
+    "delay_seconds": 0.0,
+    "dispatch": {
+      "report_id": "rep-hn-001",
+      "text": "Annual scheduled fire alarm drill happening at Block C commercial tower at 3 PM, no emergency, do not panic.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T19:00:00Z",
+      "location_hint": {
+        "raw_text": "Block C commercial tower",
+        "latitude": 20.301,
+        "longitude": 85.82,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "mixed_hard_negatives",
+        "event_id": "evt-hn-001",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": null,
+        "phase": "drill_notice",
+        "batch_index": 0
+      }
+    },
+    "ground_truth": {
+      "incident_group": null,
+      "expected_incident_type": null,
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "NOISE",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": true,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Hard negative: Scheduled fire drill; must not trigger real fire dispatch."
+    }
+  },
+  {
+    "event_id": "evt-hn-002",
+    "delay_seconds": 15.0,
+    "dispatch": {
+      "report_id": "rep-hn-002",
+      "text": "This traffic on Cuttack road is absolute murder, I am literally dying laughing at this bus driver cutting across three lanes!",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T19:00:15Z",
+      "location_hint": {
+        "raw_text": "Cuttack road",
+        "latitude": 20.27,
+        "longitude": 85.85,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "mixed_hard_negatives",
+        "event_id": "evt-hn-002",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": null,
+        "phase": "slang_test",
+        "batch_index": 1
+      }
+    },
+    "ground_truth": {
+      "incident_group": null,
+      "expected_incident_type": null,
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "NOISE",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": false,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Hard negative: 'murder' and 'dying' used colloquially; zero casualties."
+    }
+  },
+  {
+    "event_id": "evt-hn-003",
+    "delay_seconds": 20.0,
+    "dispatch": {
+      "report_id": "rep-hn-003",
+      "text": "Testing high-power fog and smoke machines at the open-air auditorium for tonight's cultural festival.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T19:00:35Z",
+      "location_hint": {
+        "raw_text": "open-air auditorium",
+        "latitude": 20.315,
+        "longitude": 85.83,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "mixed_hard_negatives",
+        "event_id": "evt-hn-003",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": null,
+        "phase": "stage_effects",
+        "batch_index": 2
+      }
+    },
+    "ground_truth": {
+      "incident_group": null,
+      "expected_incident_type": null,
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "NOISE",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": false,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Hard negative: Artificial fog/smoke test; zero fire hazard."
+    }
+  },
+  {
+    "event_id": "evt-hn-004",
+    "delay_seconds": 25.0,
+    "dispatch": {
+      "report_id": "rep-hn-004",
+      "text": "Someone in WhatsApp group said there might have been a cylinder blast near Patia, but I looked outside and saw nothing at all.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T19:01:00Z",
+      "location_hint": {
+        "raw_text": "near Patia",
+        "latitude": 20.354,
+        "longitude": 85.818,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "mixed_hard_negatives",
+        "event_id": "evt-hn-004",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": null,
+        "phase": "unverified_rumor",
+        "batch_index": 3
+      }
+    },
+    "ground_truth": {
+      "incident_group": null,
+      "expected_incident_type": null,
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": null,
+      "relation_type": "UNCERTAIN",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": true,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Hard negative: Hearsay rumor without eyewitness corroboration; requires operator review."
+    }
+  },
+  {
+    "event_id": "evt-hn-005",
+    "delay_seconds": 20.0,
+    "dispatch": {
+      "report_id": "rep-hn-005",
+      "text": "Our cricket team just exploded on the scoreboard, killing the competition in today's tournament match!",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T19:01:20Z",
+      "location_hint": null,
+      "metadata": {
+        "scenario_id": "mixed_hard_negatives",
+        "event_id": "evt-hn-005",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": null,
+        "phase": "metaphor_test",
+        "batch_index": 4
+      }
+    },
+    "ground_truth": {
+      "incident_group": null,
+      "expected_incident_type": null,
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "NOISE",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Hard negative: Sports metaphor ('exploded', 'killing'); zero crisis relevance."
+    }
+  },
+  {
+    "event_id": "evt-hn-006",
+    "delay_seconds": 15.0,
+    "dispatch": {
+      "report_id": "rep-hn-006",
+      "text": "Is it raining heavily in Bhubaneswar right now? Planning to drive down from Puri this evening.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T19:01:35Z",
+      "location_hint": {
+        "raw_text": "Bhubaneswar",
+        "latitude": 20.296,
+        "longitude": 85.8245,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "mixed_hard_negatives",
+        "event_id": "evt-hn-006",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": null,
+        "phase": "weather_query",
+        "batch_index": 5
+      }
+    },
+    "ground_truth": {
+      "incident_group": null,
+      "expected_incident_type": null,
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "NOISE",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Hard negative: Weather inquiry; zero hazard."
+    }
+  },
+  {
+    "event_id": "evt-hn-007",
+    "delay_seconds": 25.0,
+    "dispatch": {
+      "report_id": "rep-hn-007",
+      "text": "Small grease fire on stovetop in Unit 4 kitchen, extinguished with wet blanket, minor smoke in corridor.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T19:02:00Z",
+      "location_hint": {
+        "raw_text": "Unit 4 kitchen",
+        "latitude": 20.285,
+        "longitude": 85.815,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "mixed_hard_negatives",
+        "event_id": "evt-hn-007",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": null,
+        "phase": "minor_fire",
+        "batch_index": 6
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-minor-fire-01",
+      "expected_incident_type": "FIRE_WILDFIRE_EXPLOSION",
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "INITIAL",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Genuine fire hazard, but already contained; correctly classified as LOW urgency."
+    }
+  },
+  {
+    "event_id": "evt-hn-008",
+    "delay_seconds": 20.0,
+    "dispatch": {
+      "report_id": "rep-hn-008",
+      "text": "Downed live electric wire sparking across street after tree branch fell near Forest Park road, vehicles turning around.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T19:02:20Z",
+      "location_hint": {
+        "raw_text": "Forest Park road",
+        "latitude": 20.255,
+        "longitude": 85.828,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "mixed_hard_negatives",
+        "event_id": "evt-hn-008",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": null,
+        "phase": "utility_wire",
+        "batch_index": 7
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-utility-wire-01",
+      "expected_incident_type": "UTILITY_INFRASTRUCTURE_FAILURE",
+      "expected_urgency": "MEDIUM",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "INITIAL",
+      "expected_direction": "ESCALATE",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Live electrical wire hazard; requires public works/utility response."
+    }
+  },
+  {
+    "event_id": "evt-hn-009",
+    "delay_seconds": 15.0,
+    "dispatch": {
+      "report_id": "rep-hn-009",
+      "text": "Minor water puddle about 6 inches deep near Baramunda bus stand, buses passing through normally.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T19:02:35Z",
+      "location_hint": {
+        "raw_text": "Baramunda bus stand",
+        "latitude": 20.278,
+        "longitude": 85.795,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "mixed_hard_negatives",
+        "event_id": "evt-hn-009",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": null,
+        "phase": "minor_water",
+        "batch_index": 8
+      }
+    },
+    "ground_truth": {
+      "incident_group": null,
+      "expected_incident_type": "FLOOD_FLASH_FLOOD",
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "INITIAL",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Minor water logging without life risk; must stay in LOW tier."
+    }
+  },
+  {
+    "event_id": "evt-hn-010",
+    "delay_seconds": 20.0,
+    "dispatch": {
+      "report_id": "rep-hn-010",
+      "text": "Zombie apocalypse spotted near Big Bazaar square, send the military lol!",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T19:02:55Z",
+      "location_hint": {
+        "raw_text": "Big Bazaar square",
+        "latitude": 20.288,
+        "longitude": 85.835,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "mixed_hard_negatives",
+        "event_id": "evt-hn-010",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": null,
+        "phase": "hoax_test",
+        "batch_index": 9
+      }
+    },
+    "ground_truth": {
+      "incident_group": null,
+      "expected_incident_type": null,
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "NOISE",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": true,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Spam/hoax text; must be flagged for review or marked FALSE_REPORT."
+    }
+  },
+  {
+    "event_id": "evt-hn-011",
+    "delay_seconds": 20.0,
+    "dispatch": {
+      "report_id": "rep-hn-011",
+      "text": "Road has been cleared and debris removed from yesterday's storm near Airport road, traffic restored.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T19:03:15Z",
+      "location_hint": {
+        "raw_text": "Airport road",
+        "latitude": 20.252,
+        "longitude": 85.818,
+        "precision": "approximate"
+      },
+      "metadata": {
+        "scenario_id": "mixed_hard_negatives",
+        "event_id": "evt-hn-011",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": null,
+        "phase": "past_recovery",
+        "batch_index": 10
+      }
+    },
+    "ground_truth": {
+      "incident_group": null,
+      "expected_incident_type": null,
+      "expected_urgency": "LOW",
+      "expected_people_at_risk": false,
+      "expected_people_count": 0,
+      "relation_type": "NOISE",
+      "expected_direction": "LOW_PRIORITY",
+      "expected_needs_review": null,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Historical recovery notice; no active response needed."
+    }
+  },
+  {
+    "event_id": "evt-hn-012",
+    "delay_seconds": 25.0,
+    "dispatch": {
+      "report_id": "rep-hn-012",
+      "text": "Strong smell of ammonia or toxic chemical in the air somewhere in industrial area, eyes stinging slightly.",
+      "source": "simulator",
+      "is_synthetic": true,
+      "reported_at": "2026-09-26T19:03:40Z",
+      "location_hint": {
+        "raw_text": "somewhere in industrial area",
+        "latitude": null,
+        "longitude": null,
+        "precision": "unknown"
+      },
+      "metadata": {
+        "scenario_id": "mixed_hard_negatives",
+        "event_id": "evt-hn-012",
+        "reporter_id": null,
+        "caller_id": null,
+        "channel": null,
+        "phase": "unlocated_hazard",
+        "batch_index": 11
+      }
+    },
+    "ground_truth": {
+      "incident_group": "bbsr-chem-unlocated-01",
+      "expected_incident_type": "FIRE_WILDFIRE_EXPLOSION",
+      "expected_urgency": "MEDIUM",
+      "expected_people_at_risk": false,
+      "expected_people_count": null,
+      "relation_type": "INITIAL",
+      "expected_direction": "ESCALATE",
+      "expected_needs_review": true,
+      "expected_location_text": null,
+      "expected_latitude": null,
+      "expected_longitude": null,
+      "expected_required_response": null,
+      "expected_actionable": null,
+      "notes": "Unlocated chemical hazard; coordinates must remain null without hallucination."
+    }
+  }
+]
