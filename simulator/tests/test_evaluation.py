@@ -1600,3 +1600,46 @@ def test_final_scorecard_limitations_and_markdown():
     assert "Baseline / Target" not in md
     assert "diagnostic_spearman_rho" not in md
     assert "- **Spearman**: NOT_EVALUATED" in md
+
+
+def test_final_scorecard_factual_reconciliation():
+    """
+    Verify Phase 8.1 factual reconciliation:
+    - In-process REAL_CORRELATION diagnostic: Precision 1.0, Recall 0.3077, F1 0.4706, Rand 0.8462
+    - Direct REAL_ML: report critical recall 1/4 = 0.2500
+    - Real E2E clustering: TP 78, FP 28, FN 0, TN 245
+    - Priority / Ranking: focal 85.35 CRITICAL, 1/1 recall, Spearman NOT_EVALUATED
+    - No stale >=75 CRITICAL threshold
+    """
+    from evaluation.final_scorecard import build_final_scorecard
+
+    sc = build_final_scorecard()
+
+    # REAL_CORRELATION diagnostic comparison in Clustering
+    diag = sc.clustering.diagnostic_in_process_comparison
+    assert diag["execution_scope"] == "IN_PROCESS_ENGINE_REPLAY"
+    assert diag["pairwise_precision"] == 1.0000
+    assert diag["pairwise_recall"] == 0.3077
+    assert diag["pairwise_f1"] == 0.4706
+    assert diag["rand_index"] == 0.8462
+
+    # Direct REAL_ML Critical recall
+    assert sc.direct_ml.report_critical_recall == 0.2500
+
+    # REAL_E2E clustering
+    assert sc.clustering.tp == 78
+    assert sc.clustering.fp == 28
+    assert sc.clustering.fn == 0
+    assert sc.clustering.tn == 245
+    assert sc.clustering.precision == 0.7358
+    assert sc.clustering.recall == 1.0000
+    assert sc.clustering.f1 == 0.8478
+    assert sc.clustering.rand_index == 0.9202
+
+    # Priority / Triage
+    assert sc.priority_triage.backend_critical_threshold == 80.0
+    assert sc.priority_triage.focal_score == 85.35
+    assert sc.priority_triage.focal_level == "CRITICAL"
+    assert sc.priority_triage.incident_critical_recall == 1.0000
+    assert sc.priority_triage.meaningful_ranking_sample is False
+    assert sc.priority_triage.spearman_rank_correlation is None

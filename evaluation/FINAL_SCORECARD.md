@@ -138,4 +138,3 @@
 - High-concurrency parallel ingestion (SafeHttpTransport evaluated sequential burst up to 19.55 req/s)
 - Multi-lingual or audio/image modality reports (text-only English dispatch evaluated)
 - Long-term historical correlation drift across days/weeks
-

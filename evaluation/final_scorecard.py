@@ -435,7 +435,6 @@ class RealSystemScorecard:
         lines.append("## 11. NOT_EVALUATED")
         for item in self.not_evaluated_items:
             lines.append(f"- {item}")
-        lines.append("")
 
         return "\n".join(lines)
 
