@@ -205,23 +205,6 @@ export const IncidentQueueRail: React.FC<IncidentQueueRailProps> = ({
           </div>
         )}
       </div>
-
-      {/* Karen Operational Log / Assistant Briefing Footer */}
-      <div className="rail-log-footer">
-        <div className="log-footer-header">
-          <div className="log-pulse-dot"></div>
-          <span className="log-footer-title">KAREN OPERATIONAL LOG</span>
-        </div>
-        <div className="log-footer-body">
-          {selectedIncident?.priority?.explanation 
-            ? `Active focus on ${selectedIncident.incident_id}: ${selectedIncident.priority.explanation}`
-            : 'All incoming emergency audio and text dispatches are deterministically correlated and mapped. Unmapped items remain in safety hold.'}
-        </div>
-        <div className="log-footer-meta">
-          <span>AI ETHICAL SAFEGUARD: STRICT HUMAN-IN-LOOP</span>
-          <span className="safeguard-ready-tag">READY</span>
-        </div>
-      </div>
     </aside>
   );
 };

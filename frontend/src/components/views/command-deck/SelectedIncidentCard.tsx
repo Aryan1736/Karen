@@ -76,7 +76,9 @@ export const SelectedIncidentCard: React.FC<SelectedIncidentCardProps> = ({
           <Badge variant={badgeVariant} size="sm" showBeacon={incident.priority?.level === 'CRITICAL'}>
             {isReview ? 'NEEDS REVIEW' : `${incident.priority?.level || 'PRIORITY'} P${incident.priority?.level === 'CRITICAL' ? '0' : incident.priority?.level === 'HIGH' ? '1' : incident.priority?.level === 'MEDIUM' ? '2' : '3'}`}
           </Badge>
-          <span className="tape-id-badge">{incident.incident_id}</span>
+          <span className="tape-id-badge" title={incident.incident_id}>
+            {incident.incident_id.length > 14 ? `#${incident.incident_id.substring(4, 12)}` : incident.incident_id}
+          </span>
           <span className="tape-score-badge">
             SCORE: {Math.round(incident.priority?.score ?? 0)}
           </span>
@@ -110,28 +112,16 @@ export const SelectedIncidentCard: React.FC<SelectedIncidentCardProps> = ({
       <div className="deep-card-gauge-box">
         <ConfidenceGauge 
           value={incident.ml_confidence?.overall}
-          label="KAREN CORRELATION CONFIDENCE"
+          label="TRIAGE CONFIDENCE"
           color={isReview ? 'magenta' : badgeVariant === 'p0-critical' ? 'cyan' : 'yellow'}
         />
-
-        {/* Real Rationale Quote from Priority Engine */}
-        {incident.priority?.explanation ? (
-          <div className="deep-card-rationale">
-            <span className="rationale-tag">KAREN ENGINE:</span>
-            <span className="rationale-text">"{incident.priority.explanation}"</span>
-          </div>
-        ) : (
-          <div className="deep-card-rationale-fallback">
-            Prioritized via multi-source feature analysis and verified risk factor matrix.
-          </div>
-        )}
       </div>
 
       {/* Corroboration & Witness Signal Feeds */}
       <div className="deep-card-corroboration">
         <div className="corrob-header">
           <Layers size={12} color="var(--color-text-muted)" />
-          <span>SIGNAL CORROBORATION // {incident.corroboration?.report_count ?? 1} DISPATCHES ({incident.corroboration?.independent_source_count ?? 1} INDEPENDENT)</span>
+          <span>VERIFIED REPORTS: {incident.corroboration?.report_count ?? 1} DISPATCH ({incident.corroboration?.independent_source_count ?? 1} INDEPENDENT)</span>
         </div>
         {incident.corroboration?.explanation && (
           <div className="corrob-note">
@@ -151,7 +141,7 @@ export const SelectedIncidentCard: React.FC<SelectedIncidentCardProps> = ({
 
       {/* Recommended Taskforce Units */}
       <div className="deep-card-taskforce">
-        <div className="taskforce-title">RECOMMENDED TASKFORCE UNITS:</div>
+        <div className="taskforce-title">RECOMMENDED TASKFORCE:</div>
         <div className="taskforce-tags">
           {incident.required_response && incident.required_response.length > 0 ? (
             incident.required_response.map((unit) => (
@@ -168,7 +158,7 @@ export const SelectedIncidentCard: React.FC<SelectedIncidentCardProps> = ({
           <span>
             {incident.people_at_risk?.count != null
               ? `ESTIMATED POPULATION AT RISK: ~${incident.people_at_risk.count}`
-              : 'POPULATION AT RISK: UNASSESSED'}
+              : 'POPULATION RISK: UNASSESSED'}
           </span>
         </div>
       </div>

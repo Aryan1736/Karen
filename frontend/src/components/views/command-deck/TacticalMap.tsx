@@ -6,10 +6,17 @@ import {
   RotateCcw, 
   ChevronDown, 
   ChevronUp,
-  Layers
+  Send,
+  X,
+  Radio,
+  CheckCircle2,
+  Activity,
+  PlusCircle
 } from 'lucide-react';
-import { Incident } from '../../../types/incident';
+import { Incident, ReportSource } from '../../../types/incident';
 import { useWebSocketStatus } from '../../../context/WebSocketContext';
+import { useNavigation } from '../../../context/NavigationContext';
+import { submitReport } from '../../../api/reports';
 import { 
   DEFAULT_MAP_CENTER, 
   DEFAULT_MAP_ZOOM, 
@@ -25,6 +32,7 @@ export interface TacticalMapProps {
   incidents: Incident[];
   selectedIncidentId: string | null;
   onSelectIncident: (incidentId: string) => void;
+  onRefreshIncidents?: () => void;
   className?: string;
 }
 
@@ -32,15 +40,29 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   incidents,
   selectedIncidentId,
   onSelectIncident,
+  onRefreshIncidents,
   className = '',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [isUnmappedDrawerOpen, setIsUnmappedDrawerOpen] = useState(false);
+  const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+
+  // Report Sighting Form State
+  const [reportText, setReportText] = useState('');
+  const [reportLocation, setReportLocation] = useState('');
+  const [reportSource, setReportSource] = useState<ReportSource>('manual');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
   const [currentZoom, setCurrentZoom] = useState(DEFAULT_MAP_ZOOM);
   const [mapCenter, setMapCenter] = useState(DEFAULT_MAP_CENTER);
   const [tacticalToast, setTacticalToast] = useState<string | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
+  
   const { status: wsStatus } = useWebSocketStatus();
+  const { setActiveView, navigateToIncident } = useNavigation();
 
   const triggerToast = useCallback((msg: string) => {
     if (toastTimeoutRef.current) {
@@ -58,9 +80,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const leafletCirclesGroupRef = useRef<L.LayerGroup | null>(null);
 
   // Partition real data into mapped vs unmapped strictly without fabricating coordinates
-  const { mappedIncidents, unmappedIncidents } = useMemo(() => {
+  const { mappedIncidents, unmappedIncidents, criticalIncidents } = useMemo(() => {
     const mapped: Incident[] = [];
     const unmapped: Incident[] = [];
+    const critical: Incident[] = [];
 
     incidents.forEach((inc) => {
       const lat = inc.location?.latitude;
@@ -70,9 +93,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       } else {
         unmapped.push(inc);
       }
+      if (inc.priority?.level === 'CRITICAL') {
+        critical.push(inc);
+      }
     });
 
-    return { mappedIncidents: mapped, unmappedIncidents: unmapped };
+    return { mappedIncidents: mapped, unmappedIncidents: unmapped, criticalIncidents: critical };
   }, [incidents]);
 
   // =========================================================================
@@ -180,7 +206,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             <span class="marker-badge-score">${score}</span>
           </div>
           <div class="marker-label-tag">
-            <span>${incident.incident_id}</span>
+            <span>${incident.incident_id.length > 14 ? incident.incident_id.substring(4, 12) : incident.incident_id}</span>
             ${isApprox ? '<span class="marker-approx-pip">[APPROX]</span>' : ''}
           </div>
         </div>
@@ -230,7 +256,23 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     } else {
       map.setView([DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng], DEFAULT_MAP_ZOOM, { animate: true });
     }
-  }, [mappedIncidents]);
+    triggerToast('view reset to all active incidents');
+  }, [mappedIncidents, triggerToast]);
+
+  const handleFocusCritical = useCallback(() => {
+    const map = leafletMapRef.current;
+    if (!map) return;
+    if (criticalIncidents.length > 0) {
+      const crit = criticalIncidents[0];
+      if (crit.location?.latitude != null && crit.location?.longitude != null) {
+        onSelectIncident(crit.incident_id);
+        map.setView([crit.location.latitude, crit.location.longitude], 15, { animate: true });
+        triggerToast(`focusing critical incident #${crit.incident_id.substring(4, 12)}`);
+        return;
+      }
+    }
+    handleResetView();
+  }, [criticalIncidents, onSelectIncident, handleResetView, triggerToast]);
 
   const handleZoomIn = () => {
     leafletMapRef.current?.zoomIn();
@@ -255,12 +297,43 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     if (!map) return;
     if (selectedIncident && selectedIncident.location?.latitude != null && selectedIncident.location?.longitude != null) {
       map.setView([selectedIncident.location.latitude, selectedIncident.location.longitude], 14, { animate: true });
-      triggerToast('centering to your neighborhood');
+      triggerToast('centering to incident location');
     } else {
       map.setView([DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng], DEFAULT_MAP_ZOOM, { animate: true });
-      triggerToast('centering to your neighborhood');
+      triggerToast('centering to headquarters');
     }
   }, [selectedIncident, triggerToast]);
+
+  // Handle report submission
+  const handleSubmitReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportText.trim()) return;
+
+    try {
+      setIsSubmitting(true);
+      await submitReport({
+        text: reportText.trim(),
+        source: reportSource,
+        is_synthetic: false,
+        reported_at: new Date().toISOString(),
+        location_hint: reportLocation.trim() ? { raw_text: reportLocation.trim() } : undefined,
+      });
+
+      setSubmitSuccess(true);
+      triggerToast('Sighting ingested into triage engine');
+      setTimeout(() => {
+        setSubmitSuccess(false);
+        setIsReportModalOpen(false);
+        setReportText('');
+        setReportLocation('');
+        onRefreshIncidents?.();
+      }, 1200);
+    } catch (err) {
+      triggerToast('Error dispatching report');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className={`tactical-map-pane ${className}`} role="region" aria-label="Tactical Cartographic Map">
@@ -285,11 +358,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </div>
 
         <div className="map-hud-right">
-          <div className="map-layer-tag">
-            <Layers size={11} style={{ marginRight: 4 }} />
-            ENGINE: LEAFLET TACTICAL
-          </div>
-
           <button 
             type="button" 
             className="hud-btn-reset" 
@@ -329,6 +397,193 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           <div className="hud-corner-bracket bottom-right" />
         </div>
 
+        {/* Circular Menu Toggle Button (Reference Image 2) */}
+        <button
+          type="button"
+          className={`spider-menu-toggle-btn ${isNavDrawerOpen ? 'active' : ''}`}
+          onClick={() => setIsNavDrawerOpen(!isNavDrawerOpen)}
+          title={isNavDrawerOpen ? 'Close Menu' : 'Open Tactical Menu'}
+          aria-expanded={isNavDrawerOpen}
+          aria-label="Toggle tactical navigation drawer"
+        >
+          {isNavDrawerOpen ? (
+            <div className="spider-menu-icon close-icon">
+              <span className="close-bar bar-1" />
+              <span className="close-bar bar-2" />
+            </div>
+          ) : (
+            <div className="spider-menu-icon hamburger-icon">
+              <span className="burger-bar" />
+              <span className="burger-bar" />
+              <span className="burger-bar" />
+            </div>
+          )}
+        </button>
+
+        {/* Left Quick Severity Tab Pills (Reference Image 2) */}
+        <div className="spider-rail-tabs" aria-label="Quick priority triggers">
+          <button
+            type="button"
+            className="spider-rail-tab tab-active"
+            onClick={handleResetView}
+            title={`Fit all active incidents (${mappedIncidents.length})`}
+          >
+            <span className="spider-tab-icon">🌐</span>
+          </button>
+          <button
+            type="button"
+            className={`spider-rail-tab tab-critical ${criticalIncidents.length > 0 ? 'pulse' : ''}`}
+            onClick={handleFocusCritical}
+            title={`Focus critical P0 incident (${criticalIncidents.length} active)`}
+          >
+            <span className="spider-tab-icon">🚨</span>
+          </button>
+        </div>
+
+        {/* Slide-Out Navigation Drawer Navbar (Reference Image 3) */}
+        <div className={`spider-slide-drawer ${isNavDrawerOpen ? 'open' : ''}`} aria-hidden={!isNavDrawerOpen}>
+          <div className="drawer-header">
+            <button
+              type="button"
+              className="drawer-close-circle-btn"
+              onClick={() => setIsNavDrawerOpen(false)}
+              title="Close Menu"
+              aria-label="Close Menu"
+            >
+              <div className="spider-menu-icon close-icon">
+                <span className="close-bar bar-1" />
+                <span className="close-bar bar-2" />
+              </div>
+            </button>
+            <span className="drawer-header-title">TACTICAL OPS</span>
+          </div>
+
+          <nav className="drawer-nav-list" aria-label="Tactical Navigation Drawer">
+            <button
+              type="button"
+              className="drawer-nav-item"
+              onClick={() => {
+                setIsNavDrawerOpen(false);
+                setIsActivityModalOpen(true);
+              }}
+            >
+              <span>ACTIVITY LOG</span>
+            </button>
+            <div className="drawer-divider-dotted" />
+
+            <button
+              type="button"
+              className="drawer-nav-item"
+              onClick={() => {
+                setIsNavDrawerOpen(false);
+                setIsReportModalOpen(true);
+              }}
+            >
+              <span>REPORT SIGHTINGS</span>
+            </button>
+            <div className="drawer-divider-dotted" />
+
+            <button
+              type="button"
+              className="drawer-nav-item"
+              onClick={() => {
+                setIsNavDrawerOpen(false);
+                setActiveView('incident-streams');
+              }}
+            >
+              <span>LIVE STREAMS</span>
+            </button>
+            <div className="drawer-divider-dotted" />
+
+            <button
+              type="button"
+              className="drawer-nav-item"
+              onClick={() => {
+                setIsNavDrawerOpen(false);
+                if (selectedIncidentId) {
+                  navigateToIncident(selectedIncidentId);
+                } else {
+                  setActiveView('investigation');
+                }
+              }}
+            >
+              <span>INVESTIGATION & EVIDENCE</span>
+            </button>
+            <div className="drawer-divider-dotted" />
+
+            <button
+              type="button"
+              className="drawer-nav-item"
+              onClick={() => {
+                setIsNavDrawerOpen(false);
+                setActiveView('audit-trail');
+              }}
+            >
+              <span>AUDIT LEDGER</span>
+            </button>
+            <div className="drawer-divider-dotted" />
+
+            <button
+              type="button"
+              className="drawer-nav-item"
+              onClick={() => {
+                setIsNavDrawerOpen(false);
+                setActiveView('briefing');
+              }}
+            >
+              <span>SYSTEM BRIEFING</span>
+            </button>
+            <div className="drawer-divider-dotted" />
+
+            <button
+              type="button"
+              className="drawer-nav-item drawer-nav-action"
+              onClick={() => {
+                setIsNavDrawerOpen(false);
+                handleResetView();
+              }}
+            >
+              <span>RESET MAP VIEW</span>
+            </button>
+          </nav>
+
+          {/* Drawer Footer: Telemetry tucked away from main screen */}
+          <div className="drawer-footer-telemetry">
+            <div className="drawer-telemetry-heading">SYSTEM TELEMETRY</div>
+            <div className="drawer-telemetry-row">
+              <span className="tel-label">ACTIVE QUEUE</span>
+              <span className="tel-value">{incidents.length} INCIDENTS</span>
+            </div>
+            <div className="drawer-telemetry-row">
+              <span className="tel-label">GEO-LOCKED</span>
+              <span className="tel-value tel-cyan">{mappedIncidents.length} VERIFIED</span>
+            </div>
+            <div className="drawer-telemetry-row">
+              <span className="tel-label">UNMAPPED</span>
+              <span className={`tel-value ${unmappedIncidents.length > 0 ? 'tel-orange' : 'tel-green'}`}>
+                {unmappedIncidents.length} HELD
+              </span>
+            </div>
+            <div className="drawer-telemetry-row">
+              <span className="tel-label">SYNC STREAM</span>
+              <span className="tel-value tel-green">WS {wsStatus}</span>
+            </div>
+            <div className="drawer-telemetry-row">
+              <span className="tel-label">LOCATION HONESTY</span>
+              <span className="tel-value tel-green">ENFORCED</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Drawer Backdrop Overlay */}
+        {isNavDrawerOpen && (
+          <div 
+            className="spider-drawer-backdrop" 
+            onClick={() => setIsNavDrawerOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
         {/* Top-Right Tactical Zoom & Readout Dock */}
         <div className="map-zoom-dock">
           <button 
@@ -362,46 +617,42 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           onCenterView={handleCenterView}
         />
 
-        {/* Tactical Centering Toast Capsule (Reference Design) */}
+        {/* Tactical Centering Toast Capsule */}
         {tacticalToast && (
           <div className="tactical-hud-toast" role="status" aria-live="polite">
             <span className="toast-text">{tacticalToast}</span>
           </div>
         )}
 
-        {/* Bottom-Left: Strict Location Honesty Drawer (Unmapped Incidents) */}
-        <div className={`unmapped-drawer ${isUnmappedDrawerOpen ? 'open' : 'collapsed'}`}>
-          <div 
-            className="unmapped-drawer-header" 
-            onClick={() => setIsUnmappedDrawerOpen(!isUnmappedDrawerOpen)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setIsUnmappedDrawerOpen(!isUnmappedDrawerOpen);
-              }
-            }}
-            aria-expanded={isUnmappedDrawerOpen}
-            aria-label="Toggle unmapped reports drawer"
-          >
-            <div className="unmapped-header-title">
-              <AlertTriangle size={13} color="var(--color-p0-critical)" />
-              <span>UNMAPPED REPORTS ({unmappedIncidents.length})</span>
+        {/* Bottom-Left: Strict Location Honesty Drawer (Only shown when unmapped incidents exist) */}
+        {unmappedIncidents.length > 0 && (
+          <div className={`unmapped-drawer ${isUnmappedDrawerOpen ? 'open' : 'collapsed'}`}>
+            <div 
+              className="unmapped-drawer-header" 
+              onClick={() => setIsUnmappedDrawerOpen(!isUnmappedDrawerOpen)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setIsUnmappedDrawerOpen(!isUnmappedDrawerOpen);
+                }
+              }}
+              aria-expanded={isUnmappedDrawerOpen}
+              aria-label="Toggle unmapped reports drawer"
+            >
+              <div className="unmapped-header-title">
+                <AlertTriangle size={13} color="var(--color-p0-critical)" />
+                <span>UNMAPPED REPORTS ({unmappedIncidents.length})</span>
+              </div>
+              <div className="unmapped-header-ctrl">
+                <span className="unmapped-held-pill">{unmappedIncidents.length} HELD</span>
+                {isUnmappedDrawerOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+              </div>
             </div>
-            <div className="unmapped-header-ctrl">
-              <span className="unmapped-held-pill">{unmappedIncidents.length} HELD</span>
-              {isUnmappedDrawerOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-            </div>
-          </div>
 
-          {isUnmappedDrawerOpen && (
-            <div className="unmapped-drawer-body">
-              {unmappedIncidents.length === 0 ? (
-                <div className="unmapped-empty-note">
-                  ALL INCIDENTS HAVE VERIFIED GPS COORDINATES
-                </div>
-              ) : (
+            {isUnmappedDrawerOpen && (
+              <div className="unmapped-drawer-body">
                 <div className="unmapped-items-list">
                   {unmappedIncidents.map((incident) => {
                     const isSelected = selectedIncidentId === incident.incident_id;
@@ -428,18 +679,18 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                             {incident.location?.text || incident.incident_type?.replace(/_/g, ' ') || 'Unverified Location'}
                           </span>
                         </div>
-                        <span className="unmapped-id">{incident.incident_id}</span>
+                        <span className="unmapped-id">#{incident.incident_id.substring(4, 12)}</span>
                       </div>
                     );
                   })}
                 </div>
-              )}
-              <div className="unmapped-safety-notice">
-                <span>STRICT POLICY: NO FAKE / HALLUCINATED MAP PINS</span>
+                <div className="unmapped-safety-notice">
+                  <span>LOCATION HONESTY: NO FAKE MAP PINS</span>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Bottom-Center Tactical Map Legend */}
         <div className="map-legend-dock" aria-label="Map Legend">
@@ -466,26 +717,186 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </div>
       </div>
 
-      {/* Map Sub-Bar: Live Operational Telemetry Readout */}
-      <div className="map-telemetry-bar">
-        <div className="map-telemetry-left">
-          <span className="telemetry-synthesis-label">
-            <span className="telemetry-pulse-dot" />
-            GRID TELEMETRY:
-          </span>
-          <span className="telemetry-synthesis-val">
-            {incidents.length} TOTAL QUEUE // {mappedIncidents.length} GEO-LOCKED // {unmappedIncidents.length} UNMAPPED
-          </span>
-          <span className="hud-divider">/</span>
-          <span className="telemetry-ws-val">
-            WS: {wsStatus}
-          </span>
+      {/* REPORT SIGHTINGS MODAL */}
+      {isReportModalOpen && (
+        <div className="tactical-modal-backdrop" onClick={() => setIsReportModalOpen(false)}>
+          <div 
+            className="tactical-modal-card" 
+            onClick={(e) => e.stopPropagation()} 
+            role="dialog" 
+            aria-label="Report Sighting"
+          >
+            <div className="tactical-modal-header">
+              <div className="modal-title-wrap">
+                <PlusCircle size={16} color="var(--color-dispatch-yellow)" />
+                <span className="modal-title">REPORT SIGHTING // DISPATCH</span>
+              </div>
+              <button 
+                type="button" 
+                className="modal-close-btn" 
+                onClick={() => setIsReportModalOpen(false)}
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {submitSuccess ? (
+              <div className="modal-success-banner">
+                <CheckCircle2 size={24} color="var(--color-system-green)" />
+                <span>Sighting dispatched to triage pipeline successfully.</span>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitReport} className="modal-form">
+                <div className="modal-field">
+                  <label className="modal-label">INCIDENT SIGHTING DESCRIPTION *</label>
+                  <textarea
+                    className="modal-textarea"
+                    placeholder="Describe observed hazard (e.g. Structure collapsed near market square, citizens calling for help)..."
+                    value={reportText}
+                    onChange={(e) => setReportText(e.target.value)}
+                    required
+                    rows={3}
+                  />
+                </div>
+
+                <div className="modal-field">
+                  <label className="modal-label">LOCATION ESTIMATE</label>
+                  <input
+                    type="text"
+                    className="modal-input"
+                    placeholder="e.g. Rasulgarh underpass, Bhubaneswar"
+                    value={reportLocation}
+                    onChange={(e) => setReportLocation(e.target.value)}
+                  />
+                </div>
+
+                <div className="modal-field">
+                  <label className="modal-label">SOURCE CHANNEL</label>
+                  <select
+                    className="modal-select"
+                    value={reportSource}
+                    onChange={(e) => setReportSource(e.target.value as ReportSource)}
+                  >
+                    <option value="manual">EYEWITNESS / FIELD DISPATCH</option>
+                    <option value="simulator">INCIDENT SIMULATOR</option>
+                    <option value="other">RADAR & REMOTE SENSOR</option>
+                  </select>
+                </div>
+
+                <div className="modal-actions">
+                  <button 
+                    type="button" 
+                    className="modal-btn-cancel" 
+                    onClick={() => setIsReportModalOpen(false)}
+                  >
+                    CANCEL
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="modal-btn-submit" 
+                    disabled={isSubmitting || !reportText.trim()}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Radio size={14} className="rotating" />
+                        <span>DISPATCHING...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send size={14} />
+                        <span>DISPATCH REPORT</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
-        <div className="map-telemetry-right">
-          <span>SAFEGUARD: STRICT LOCATION HONESTY</span>
-          <span className="telemetry-ok-tag">[ACTIVE]</span>
+      )}
+
+      {/* ACTIVITY LOG & TRIAGE BREAKDOWN MODAL */}
+      {isActivityModalOpen && (
+        <div className="tactical-modal-backdrop" onClick={() => setIsActivityModalOpen(false)}>
+          <div 
+            className="tactical-modal-card activity-log-card" 
+            onClick={(e) => e.stopPropagation()} 
+            role="dialog" 
+            aria-label="Activity Log"
+          >
+            <div className="tactical-modal-header">
+              <div className="modal-title-wrap">
+                <Activity size={16} color="var(--color-multiverse-cyan)" />
+                <span className="modal-title">OPERATIONAL ACTIVITY LOG</span>
+              </div>
+              <button 
+                type="button" 
+                className="modal-close-btn" 
+                onClick={() => setIsActivityModalOpen(false)}
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="activity-modal-body">
+              {selectedIncident ? (
+                <div className="activity-incident-detail">
+                  <div className="detail-header-tape">
+                    <span className="detail-id">{selectedIncident.incident_id}</span>
+                    <span className="detail-prio">{selectedIncident.priority?.level || 'PRIORITY'} ({Math.round(selectedIncident.priority?.score ?? 0)} PTS)</span>
+                  </div>
+
+                  <h3 className="detail-headline">
+                    {selectedIncident.incident_type?.replace(/_/g, ' ') || 'UNCLASSIFIED HAZARD'}
+                  </h3>
+
+                  <div className="triage-factors-grid">
+                    <div className="factor-box">
+                      <span className="factor-label">URGENCY FACTOR</span>
+                      <span className="factor-val">{selectedIncident.priority?.level === 'CRITICAL' ? 'LIFE SAFETY (+35)' : 'TACTICAL MONITOR'}</span>
+                    </div>
+                    <div className="factor-box">
+                      <span className="factor-label">CORROBORATION</span>
+                      <span className="factor-val">{selectedIncident.corroboration?.report_count ?? 1} DISPATCHES</span>
+                    </div>
+                    <div className="factor-box">
+                      <span className="factor-label">PEOPLE AT RISK</span>
+                      <span className="factor-val">{selectedIncident.people_at_risk?.count != null ? `~${selectedIncident.people_at_risk.count} CIVILIANS` : 'UNASSESSED'}</span>
+                    </div>
+                    <div className="factor-box">
+                      <span className="factor-label">STATUS</span>
+                      <span className="factor-val tel-cyan">{selectedIncident.status}</span>
+                    </div>
+                  </div>
+
+                  <div className="activity-explanation-box">
+                    <span className="explanation-label">TRIAGE SYNTHESIS:</span>
+                    <p className="explanation-text">
+                      {selectedIncident.priority?.explanation || 'Incident prioritized according to multi-source risk weights and emergency responder protocols.'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="activity-empty-state">
+                  Select an incident to view deep triage breakdown and audit history.
+                </div>
+              )}
+            </div>
+
+            <div className="modal-actions">
+              <button 
+                type="button" 
+                className="modal-btn-submit" 
+                onClick={() => setIsActivityModalOpen(false)}
+              >
+                CLOSE
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

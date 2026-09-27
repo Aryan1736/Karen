@@ -5,8 +5,7 @@ import { useIncidents } from '../../hooks/useIncidents';
 import { TacticalInput } from '../ui';
 import { 
   TacticalMap, 
-  IncidentQueueRail, 
-  TacticalCommandBar 
+  IncidentQueueRail 
 } from './command-deck';
 import './CommandDeckView.css';
 
@@ -161,6 +160,7 @@ export const CommandDeckView: React.FC = () => {
           incidents={incidents}
           selectedIncidentId={activeSelectedIncident?.incident_id ?? null}
           onSelectIncident={handleSelectIncident}
+          onRefreshIncidents={() => refetch()}
           className="deck-map-pane"
         />
 
@@ -179,9 +179,6 @@ export const CommandDeckView: React.FC = () => {
           className="deck-queue-pane"
         />
       </main>
-
-      {/* Bottom Command Bar: Audio Monitor & Quick Controls */}
-      <TacticalCommandBar />
     </div>
   );
 };
