@@ -1468,3 +1468,135 @@ def test_buffer_capacity_overflow_hermetic():
     assert res["size_at_capacity"] == 5
     assert res["overflow_raised"] is True
     assert res["policy"] == "reject_and_raise_BufferOverflowError"
+
+
+# =============================================================================
+# 13. Phase 7 Real System Scorecard Hermetic Tests
+# =============================================================================
+
+def test_final_scorecard_build_and_serialization():
+    """
+    Verify build_final_scorecard produces deterministic output,
+    valid data structures, and serializes cleanly to dict and JSON.
+    """
+    from evaluation.final_scorecard import build_final_scorecard, RealSystemScorecard
+    # Also verify backward-compat shim import
+    from simulator.evaluation.final_scorecard import build_final_scorecard as shim_builder
+
+    sc1 = build_final_scorecard()
+    sc2 = shim_builder()
+
+    assert isinstance(sc1, RealSystemScorecard)
+    assert sc1.head_commit == "312a3f1"
+    assert sc1.branch == "feature/evaluation-integration"
+
+    d1 = sc1.to_dict()
+    d2 = sc2.to_dict()
+    assert d1 == d2
+
+    # Verify JSON serialization
+    json_str = sc1.to_json()
+    assert isinstance(json_str, str)
+    parsed = json.loads(json_str)
+    assert parsed["head_commit"] == "312a3f1"
+    assert "direct_ml" in parsed
+    assert "clustering" in parsed
+    assert "relationships" in parsed
+    assert "priority_triage" in parsed
+    assert "resilience" in parsed
+
+
+def test_final_scorecard_provenance_and_no_invented_overall_score():
+    """
+    Verify strict provenance tracking, zero invented overall score,
+    and zero invented pass/fail thresholds.
+    """
+    from evaluation.final_scorecard import build_final_scorecard
+
+    sc = build_final_scorecard()
+    assert sc.invented_thresholds is False
+    assert "NONE_DEFINED" in sc.overall_score_formula
+    assert "zero invented" in sc.overall_score_formula.lower()
+
+    # Verify no overall 0-100 score exists
+    d = sc.to_dict()
+    assert "overall_score" not in d
+    assert "system_score" not in d
+    assert "hackathon_score" not in d
+
+    # Verify explicit provenances
+    assert sc.direct_ml.is_real_system_result is True
+    assert sc.direct_ml.execution_scope == "DIRECT_IN_PROCESS_INFERENCE"
+    assert sc.persisted_e2e_ml.is_real_system_result is True
+    assert sc.persisted_e2e_ml.execution_scope == "LIVE_HTTP_POSTGRES_WEBSOCKET"
+    assert sc.clustering.is_real_system_result is True
+    assert sc.clustering.execution_scope == "LIVE_HTTP_POSTGRES_WEBSOCKET"
+
+
+def test_final_scorecard_not_evaluated_preservation():
+    """
+    Verify NOT_EVALUATED preservation for ranking and explicit un-evaluated items.
+    """
+    from evaluation.final_scorecard import build_final_scorecard
+
+    sc = build_final_scorecard()
+    assert sc.priority_triage.spearman_rank_correlation is None
+    assert sc.priority_triage.meaningful_ranking_sample is False
+    assert sc.priority_triage.incident_critical_recall == 1.0
+
+    # Ensure explicit NOT_EVALUATED list is present and covers key items
+    assert len(sc.not_evaluated_items) >= 4
+    not_eval_text = " ".join(sc.not_evaluated_items).lower()
+    assert "ranking" in not_eval_text
+    assert "database outage" in not_eval_text
+
+
+def test_final_scorecard_limitations_and_markdown():
+    """
+    Verify known limitations are comprehensive and markdown generation renders cleanly
+    without arbitrary targets or unsupported diagnostic values.
+    """
+    from evaluation.final_scorecard import build_final_scorecard
+
+    sc = build_final_scorecard()
+    assert len(sc.known_limitations) >= 8
+
+    lim_text = " ".join(sc.known_limitations).lower()
+    assert "over-fusion" in lim_text
+    assert "false positives" in lim_text
+    assert "corroborating" in lim_text
+    assert "cold first inference" in lim_text
+
+    # Over-fusion ID verification
+    assert sc.clustering.total_over_fused_hard_negatives == 3
+    assert sc.clustering.focal_absorbed_hard_negative_ids == ["rep-hn-001", "rep-hn-006"]
+    assert sc.clustering.distractor_fused_hard_negative_ids == ["rep-hn-004"]
+    assert "rep-hn-002" not in sc.clustering.focal_absorbed_hard_negative_ids
+    assert "rep-hn-003" not in sc.clustering.focal_absorbed_hard_negative_ids
+    assert "rep-hn-008" not in sc.clustering.focal_absorbed_hard_negative_ids
+
+    # Direct ML metrics isolation
+    assert not hasattr(sc.direct_ml, "location_precision_accuracy")
+    assert not hasattr(sc.direct_ml, "casualty_count_mae")
+    assert sc.direct_ml.warm_count == 26
+    assert sc.direct_ml.warm_p50_ms == 23.42
+    assert sc.direct_ml.warm_max_ms == 41.21
+
+    md = sc.to_markdown()
+    assert "# Phase 7 — Real System Scorecard" in md
+    assert "## 1. Provenance" in md
+    assert "## 2. Direct REAL_ML" in md
+    assert "## 3. Persisted REAL_E2E ML" in md
+    assert "## 4. Clustering" in md
+    assert "## 5. Relationship Classification" in md
+    assert "## 6. Priority / Triage" in md
+    assert "## 7. Live Reliability" in md
+    assert "## 8. Resilience" in md
+    assert "## 9. Latency" in md
+    assert "## 10. Known Limitations" in md
+    assert "## 11. NOT_EVALUATED" in md
+
+    # Ensure no arbitrary Baseline / Target column exists
+    assert "Baseline / Target" not in md
+    assert "diagnostic_spearman_rho" not in md
+    assert "- **Spearman**: NOT_EVALUATED" in md

@@ -68,6 +68,18 @@ from evaluation.evaluate_resilience import (
     execute_live_surge,
     generate_surge_events,
 )
+from evaluation.final_scorecard import (
+    ClusteringEvaluationMetrics,
+    DirectMLMetrics,
+    LatencyProfileSummary,
+    LiveReliabilityMetrics,
+    PersistedE2EMLMetrics,
+    PriorityTriageMetrics,
+    RealSystemScorecard,
+    RelationshipClassificationMetrics,
+    ResilienceFaultMetrics,
+    build_final_scorecard,
+)
 from typing import Any
 
 
@@ -117,4 +129,14 @@ __all__ = [
     "generate_markdown_scorecard",
     "run_full_benchmark",
     "verify_embedding_contract",
+    "ClusteringEvaluationMetrics",
+    "DirectMLMetrics",
+    "LatencyProfileSummary",
+    "LiveReliabilityMetrics",
+    "PersistedE2EMLMetrics",
+    "PriorityTriageMetrics",
+    "RealSystemScorecard",
+    "RelationshipClassificationMetrics",
+    "ResilienceFaultMetrics",
+    "build_final_scorecard",
 ]
