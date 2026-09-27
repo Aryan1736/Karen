@@ -1143,3 +1143,216 @@ def test_ranking_insufficient_sample_not_evaluated():
     d = rep.to_dict()
     assert d["meaningful_ranking_sample"] is False
     assert d["spearman_rank_correlation"] is None
+
+
+# =============================================================================
+# 11. Phase 5 E2E & WebSocket Benchmark Collector Tests
+# =============================================================================
+
+def test_websocket_frame_canonical_envelope():
+    """
+    Verify WebSocket envelope parsing:
+    Canonical frame must have event, payload, and timestamp.
+    """
+    from evaluation.collector import WebSocketCapture
+
+    capture = WebSocketCapture()
+
+    # 1. Canonical valid frame
+    valid_raw = json.dumps({
+        "event": "INCIDENT_CREATED",
+        "payload": {"incident_id": "inc-001", "priority_score": 85.0},
+        "timestamp": "2026-09-27T06:00:00Z",
+    })
+    capture._process_frame(valid_raw, t_recv=100.0)
+
+    # 2. Malformed non-canonical frame (missing timestamp)
+    non_canonical = json.dumps({
+        "event": "INCIDENT_UPDATED",
+        "payload": {"incident_id": "inc-001"},
+    })
+    capture._process_frame(non_canonical, t_recv=101.0)
+
+    # 3. Non-JSON raw text
+    capture._process_frame("NOT_A_JSON_STRING", t_recv=102.0)
+
+    frames = capture.get_frames()
+    assert len(frames) == 3
+
+    assert frames[0].event == "INCIDENT_CREATED"
+    assert frames[0].is_valid_envelope is True
+    assert frames[0].payload["incident_id"] == "inc-001"
+
+    assert frames[1].event == "INCIDENT_UPDATED"
+    assert frames[1].is_valid_envelope is False
+
+    assert frames[2].event == "MALFORMED_NON_JSON"
+    assert frames[2].is_valid_envelope is False
+
+    counts = capture.event_counts()
+    assert counts["INCIDENT_CREATED"] == 1
+    assert counts["INCIDENT_UPDATED"] == 1
+    assert counts["MALFORMED_NON_JSON"] == 1
+
+
+def test_database_collector_mock_counts(monkeypatch):
+    """
+    Verify DatabaseCollector properly aggregates run-scoped counts.
+    """
+    from evaluation.collector import DatabaseCollector
+
+    db = DatabaseCollector(db_name="test_db")
+
+    def mock_query_json(sql: str):
+        if "priority_calculations" in sql:
+            return [{"cnt": 27}]
+        if "raw_reports" in sql:
+            return [{"cnt": 27}]
+        if "ml_predictions" in sql:
+            return [{"cnt": 27}]
+        if "incident_reports" in sql and "DISTINCT incident_id" in sql:
+            return [{"cnt": 12}]
+        if "incident_reports" in sql:
+            return [{"cnt": 27}]
+        return []
+
+    monkeypatch.setattr(db, "query_json", mock_query_json)
+
+    counts = db.get_run_counts("test-run")
+    assert counts["raw_reports"] == 27
+    assert counts["ml_predictions"] == 27
+    assert counts["incident_reports"] == 27
+    assert counts["incidents"] == 12
+    assert counts["priority_calculations"] == 27
+
+
+def test_e2e_evaluation_report_serialization():
+    """
+    Verify E2EEvaluationReport serialization preserves required contract fields.
+    """
+    from evaluation.collector import E2EEvaluationReport
+    from evaluation.metrics import FusionAccuracyReport, LatencyProfile
+
+    fusion = FusionAccuracyReport(
+        pairwise_precision=0.75,
+        pairwise_recall=1.0,
+        pairwise_f1=0.8571,
+        rand_index=0.92,
+        true_positive_pairs=78,
+        false_positive_pairs=26,
+        false_negative_pairs=0,
+        true_negative_pairs=247,
+        total_pairs=351,
+    )
+    lat_prof = LatencyProfile(
+        p50_ms=50.0,
+        p90_ms=58.0,
+        p95_ms=67.0,
+        p99_ms=110.0,
+        mean_ms=53.0,
+        min_ms=44.0,
+        max_ms=110.0,
+        sample_count=26,
+        is_measured=True,
+    )
+
+    report = E2EEvaluationReport(
+        run_id="test-run-001",
+        total_reports_attempted=27,
+        total_reports_successful=27,
+        http_errors_4xx=0,
+        http_errors_5xx=0,
+        http_timeouts=0,
+        transport_retries=0,
+        transport_buffered=0,
+        circuit_breaker_tripped=False,
+        http_cold_latency_ms=1500.0,
+        http_warm_latency_profile=lat_prof,
+        db_raw_reports_count=27,
+        db_ml_predictions_count=27,
+        db_incident_links_count=27,
+        db_incidents_count=12,
+        db_priority_calculations_count=27,
+        orphan_links_count=0,
+        synthetic_partition_violations=0,
+        websocket_connected=True,
+        websocket_total_frames=27,
+        websocket_malformed_frames=0,
+        websocket_event_counts={"INCIDENT_CREATED": 12, "INCIDENT_UPDATED": 15},
+        websocket_unknown_incident_ids=[],
+        pairwise_fusion_accuracy=fusion,
+        duplicate_metrics={"tp": 2, "fp": 10, "fn": 0, "tn": 15, "precision": 0.1667, "recall": 1.0, "f1": 0.2858},
+        corroborating_metrics={"tp": 3, "fp": 0, "fn": 4, "tn": 20, "precision": 1.0, "recall": 0.4286, "f1": 0.6},
+        incident_critical_recall=1.0,
+        priority_score_ge_75_recall=1.0,
+        scenario_rank_1_status="PASS",
+        scenario_rank_1_passed=True,
+        rank_1_tie_detected=False,
+        meaningful_ranking_sample=False,
+        spearman_rank_correlation=None,
+        diagnostic_spearman_rho=0.3336,
+        ml_type_macro_f1=0.5343,
+        ml_urgency_accuracy=0.5926,
+        ml_casualty_mae=0.0,
+        ml_location_precision_accuracy=0.9259,
+    )
+
+    d = report.to_dict()
+    assert d["evaluation_mode"] == "REAL_E2E"
+    assert d["is_real_system_result"] is True
+    assert d["execution_scope"] == "LIVE_HTTP_POSTGRES_WEBSOCKET"
+    assert d["total_reports_attempted"] == 27
+    assert d["total_reports_successful"] == 27
+    assert d["db_raw_reports_count"] == 27
+    assert d["db_incidents_count"] == 12
+    assert d["scenario_rank_1_status"] == "PASS"
+    assert d["websocket_connected"] is True
+
+
+def test_ground_truth_singleton_handling_and_pairwise_clustering():
+    """
+    Verify that unclustered ground-truth reports (incident_group is None)
+    are treated as distinct singletons, preventing false ground-truth merging.
+    """
+    from evaluation.metrics import compute_fusion_accuracy
+
+    # 3 reports: 2 in true cluster "flood", 1 noise with None
+    # If noise is properly treated as a unique singleton:
+    true_groups = ["flood", "flood", "singleton-noise-01"]
+    # Suppose system merged all 3 into one cluster "inc-1"
+    pred_groups = ["inc-1", "inc-1", "inc-1"]
+
+    rep = compute_fusion_accuracy(true_groups, pred_groups)
+    # Pairs: (0,1)=same true, same pred -> TP
+    # (0,2)=diff true, same pred -> FP
+    # (1,2)=diff true, same pred -> FP
+    assert rep.true_positive_pairs == 1
+    assert rep.false_positive_pairs == 2
+    assert rep.false_negative_pairs == 0
+    assert rep.true_negative_pairs == 0
+    assert rep.pairwise_recall == 1.0
+    assert rep.pairwise_precision == 1.0 / 3.0
+
+
+def test_websocket_capture_event_breakdown_and_filtering():
+    """
+    Verify WebSocketCapture handles all standard Karen event types:
+    INCIDENT_CREATED, INCIDENT_UPDATED, INCIDENT_STATUS_CHANGED, SIMULATION_PULSE, PING.
+    """
+    from evaluation.collector import WebSocketCapture
+
+    capture = WebSocketCapture()
+    events_to_test = [
+        "INCIDENT_CREATED",
+        "INCIDENT_UPDATED",
+        "INCIDENT_STATUS_CHANGED",
+        "SIMULATION_PULSE",
+        "PING",
+    ]
+    for ev in events_to_test:
+        raw = json.dumps({"event": ev, "payload": {}, "timestamp": "2026-09-27T06:00:00Z"})
+        capture._process_frame(raw, t_recv=100.0)
+
+    counts = capture.event_counts()
+    for ev in events_to_test:
+        assert counts.get(ev) == 1

@@ -48,6 +48,13 @@ from evaluation.evaluate_correlation import (
     evaluate_real_correlation,
     verify_embedding_contract,
 )
+from evaluation.collector import (
+    CapturedWebSocketFrame,
+    DatabaseCollector,
+    E2EEvaluationReport,
+    WebSocketCapture,
+    run_full_e2e_benchmark,
+)
 from typing import Any
 
 
