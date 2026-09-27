@@ -1356,3 +1356,115 @@ def test_websocket_capture_event_breakdown_and_filtering():
     counts = capture.event_counts()
     for ev in events_to_test:
         assert counts.get(ev) == 1
+
+
+# =============================================================================
+# 12. Phase 6 Surge & Resilience Hermetic Tests
+# =============================================================================
+
+def test_generate_surge_events_contract():
+    """
+    Verify generate_surge_events produces valid ScenarioEvents adhering to
+    strict safety contracts: is_synthetic=True, source='simulator', zero GT leakage.
+    """
+    from evaluation.evaluate_resilience import generate_surge_events
+    from simulator.models import verify_no_ground_truth_leakage
+
+    events = generate_surge_events(run_id="test-p6", count=20)
+    assert len(events) == 20
+
+    seen_ids = set()
+    for ev in events:
+        assert ev.dispatch.report_id.startswith("test-p6-rep-")
+        assert ev.dispatch.is_synthetic is True
+        assert ev.dispatch.source == "simulator"
+        assert len(ev.dispatch.text) >= 3
+        assert ev.dispatch.location_hint is not None
+
+        # Verify zero ground-truth leakage in public payload
+        pub = ev.public_payload()
+        verify_no_ground_truth_leakage(pub)
+        assert "ground_truth" not in pub
+
+        seen_ids.add(ev.dispatch.report_id)
+
+    assert len(seen_ids) == 20
+
+
+def test_controlled_429_hermetic():
+    """
+    Verify execute_controlled_429_test runs hermetically and confirms
+    Retry-After backoff and eventual success.
+    """
+    from evaluation.evaluate_resilience import execute_controlled_429_test
+
+    res = execute_controlled_429_test()
+    assert res["call_count"] == 2
+    assert res["final_status_code"] == 201
+    assert res["success"] is True
+    assert res["retries"] == 1
+    assert res["buffered"] is False
+
+
+def test_controlled_5xx_hermetic():
+    """
+    Verify execute_controlled_5xx_test runs hermetically and verifies both
+    transient retry recovery and exhausted retry buffering.
+    """
+    from evaluation.evaluate_resilience import execute_controlled_5xx_test
+
+    res = execute_controlled_5xx_test()
+    assert res["transient_calls"] == 3
+    assert res["transient_success"] is True
+    assert res["transient_retries"] == 2
+    assert res["exhausted_calls"] == 3
+    assert res["exhausted_success"] is False
+    assert res["exhausted_retries"] == 2
+    assert res["exhausted_buffered"] is True
+    assert res["buffer_size_after_exhaustion"] == 1
+
+
+def test_circuit_breaker_hermetic():
+    """
+    Verify execute_circuit_breaker_test exercises exact state machine transitions:
+    CLOSED -> OPEN -> HALF_OPEN -> CLOSED and HALF_OPEN -> OPEN.
+    """
+    from evaluation.evaluate_resilience import execute_circuit_breaker_test
+
+    res = execute_circuit_breaker_test()
+    assert res["state_after_4_failures"] == "CLOSED"
+    assert res["state_after_5_failures"] == "OPEN"
+    assert res["can_attempt_while_open"] is False
+    assert res["state_after_timeout"] == "HALF_OPEN"
+    assert res["probe_permitted"] is True
+    assert res["probe_second_throttled"] is True
+    assert res["state_after_probe_1"] == "HALF_OPEN"
+    assert res["state_after_probe_2"] == "CLOSED"
+    assert res["state_after_half_open_failure"] == "OPEN"
+
+
+def test_fifo_buffer_order_hermetic():
+    """
+    Verify execute_fifo_buffer_test verifies zero data loss and exact FIFO order preservation.
+    """
+    from evaluation.evaluate_resilience import execute_fifo_buffer_test
+
+    res = execute_fifo_buffer_test()
+    assert res["order_preserved"] is True
+    assert res["buffer_size_before"] == 4
+    assert res["buffer_size_after"] == 0
+    assert res["flush_all_succeeded"] is True
+
+
+def test_buffer_capacity_overflow_hermetic():
+    """
+    Verify execute_buffer_capacity_test raises BufferOverflowError at capacity + 1.
+    """
+    from evaluation.evaluate_resilience import execute_buffer_capacity_test
+
+    res = execute_buffer_capacity_test()
+    assert res["configured_capacity"] == 5
+    assert res["size_at_cap_minus_1"] == 4
+    assert res["size_at_capacity"] == 5
+    assert res["overflow_raised"] is True
+    assert res["policy"] == "reject_and_raise_BufferOverflowError"

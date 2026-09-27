@@ -55,6 +55,19 @@ from evaluation.collector import (
     WebSocketCapture,
     run_full_e2e_benchmark,
 )
+from evaluation.evaluate_resilience import (
+    LiveSurgeReport,
+    execute_buffer_capacity_test,
+    execute_circuit_breaker_test,
+    execute_controlled_422_test,
+    execute_controlled_429_test,
+    execute_controlled_5xx_test,
+    execute_fifo_buffer_test,
+    execute_idempotency_test,
+    execute_live_interruption_test,
+    execute_live_surge,
+    generate_surge_events,
+)
 from typing import Any
 
 
