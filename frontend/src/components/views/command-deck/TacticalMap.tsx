@@ -38,7 +38,19 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [isUnmappedDrawerOpen, setIsUnmappedDrawerOpen] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(DEFAULT_MAP_ZOOM);
   const [mapCenter, setMapCenter] = useState(DEFAULT_MAP_CENTER);
+  const [tacticalToast, setTacticalToast] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<number | null>(null);
   const { status: wsStatus } = useWebSocketStatus();
+
+  const triggerToast = useCallback((msg: string) => {
+    if (toastTimeoutRef.current) {
+      window.clearTimeout(toastTimeoutRef.current);
+    }
+    setTacticalToast(msg);
+    toastTimeoutRef.current = window.setTimeout(() => {
+      setTacticalToast(null);
+    }, 2600);
+  }, []);
 
   // Leaflet instance and layer group refs
   const leafletMapRef = useRef<L.Map | null>(null);
@@ -231,17 +243,24 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const selectedIncident = incidents.find((i) => i.incident_id === selectedIncidentId);
   const selectedHasCoords = selectedIncident && selectedIncident.location?.latitude != null && selectedIncident.location?.longitude != null;
 
-  const handleFocusSelected = useCallback(() => {
+  const handleGlobalView = useCallback(() => {
+    const map = leafletMapRef.current;
+    if (!map) return;
+    map.setView([20, 0], 2, { animate: true });
+    triggerToast('centering to global view');
+  }, [triggerToast]);
+
+  const handleCenterView = useCallback(() => {
     const map = leafletMapRef.current;
     if (!map) return;
     if (selectedIncident && selectedIncident.location?.latitude != null && selectedIncident.location?.longitude != null) {
-      map.setView([selectedIncident.location.latitude, selectedIncident.location.longitude], 15, { animate: true });
-    } else if (mappedIncidents.length > 0) {
-      const p0 = mappedIncidents.find((i) => i.priority?.level === 'CRITICAL') || mappedIncidents[0];
-      map.setView([p0.location.latitude!, p0.location.longitude!], 15, { animate: true });
-      onSelectIncident(p0.incident_id);
+      map.setView([selectedIncident.location.latitude, selectedIncident.location.longitude], 14, { animate: true });
+      triggerToast('centering to your neighborhood');
+    } else {
+      map.setView([DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng], DEFAULT_MAP_ZOOM, { animate: true });
+      triggerToast('centering to your neighborhood');
     }
-  }, [selectedIncident, mappedIncidents, onSelectIncident]);
+  }, [selectedIncident, triggerToast]);
 
   return (
     <div className={`tactical-map-pane ${className}`} role="region" aria-label="Tactical Cartographic Map">
@@ -339,9 +358,16 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           selectedIncidentId={selectedIncidentId}
           mapCenter={mapCenter}
           onSelectIncident={onSelectIncident}
-          onFitAll={handleResetView}
-          onFocusSelected={handleFocusSelected}
+          onGlobalView={handleGlobalView}
+          onCenterView={handleCenterView}
         />
+
+        {/* Tactical Centering Toast Capsule (Reference Design) */}
+        {tacticalToast && (
+          <div className="tactical-hud-toast" role="status" aria-live="polite">
+            <span className="toast-text">{tacticalToast}</span>
+          </div>
+        )}
 
         {/* Bottom-Left: Strict Location Honesty Drawer (Unmapped Incidents) */}
         <div className={`unmapped-drawer ${isUnmappedDrawerOpen ? 'open' : 'collapsed'}`}>

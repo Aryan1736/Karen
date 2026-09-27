@@ -8,8 +8,8 @@ export interface TacticalRadarWidgetProps {
   selectedIncidentId: string | null;
   mapCenter: { lat: number; lng: number };
   onSelectIncident: (id: string) => void;
-  onFitAll: () => void;
-  onFocusSelected: () => void;
+  onGlobalView: () => void;
+  onCenterView: () => void;
   className?: string;
 }
 
@@ -57,8 +57,8 @@ export const TacticalRadarWidget: React.FC<TacticalRadarWidgetProps> = ({
   selectedIncidentId,
   mapCenter,
   onSelectIncident,
-  onFitAll,
-  onFocusSelected,
+  onGlobalView,
+  onCenterView,
   className = '',
 }) => {
   // SVG Geometry constants
@@ -346,28 +346,24 @@ export const TacticalRadarWidget: React.FC<TacticalRadarWidgetProps> = ({
         </svg>
 
         {/* Tactical Perimeter Action Buttons directly from Reference Image */}
-        {/* 1. Globe Button on Right Edge (Fit All Incidents) */}
+        {/* 1. Globe Button on Right Edge (Switch to Global View) */}
         <button
           type="button"
           className="radar-edge-btn btn-globe"
-          onClick={onFitAll}
-          title="Fit all active incidents in view (Reset View)"
-          aria-label="Fit all incidents"
+          onClick={onGlobalView}
+          title="Switch to global view"
+          aria-label="Switch to global view"
         >
           <Globe size={13} className="radar-btn-icon" />
         </button>
 
-        {/* 2. Target Button on Lower-Right Edge (Focus Selected / Threat Lock) */}
+        {/* 2. Target Button on Lower-Right Edge (Switch to Center / Neighborhood View) */}
         <button
           type="button"
           className={`radar-edge-btn btn-target ${selectedTelemetry ? 'locked' : ''}`}
-          onClick={onFocusSelected}
-          title={
-            selectedIncident
-              ? `Lock on ${selectedIncident.incident_id}`
-              : 'Focus active priority sector'
-          }
-          aria-label="Target lock on incident"
+          onClick={onCenterView}
+          title="Switch to center view (neighborhood)"
+          aria-label="Switch to center view"
         >
           <Crosshair size={13} className="radar-btn-icon" />
         </button>
