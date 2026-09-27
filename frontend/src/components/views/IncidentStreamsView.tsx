@@ -189,6 +189,88 @@ function parseStreamEvent(evt: RealtimeEvent, isLatest: boolean, index: number):
   };
 }
 
+const INITIAL_DEMO_EVENTS: RealtimeEvent[] = [
+  {
+    event: 'INCIDENT_UPDATED',
+    timestamp: '2026-09-27T01:53:38Z',
+    payload: {
+      incident_id: 'inc-78f90e68-a88d-4751-ae3b-920945c13060',
+      incident_type: 'STRUCTURAL_COLLAPSE',
+      previous_priority_score: 55.0,
+      new_priority_score: 60.2,
+      new_priority_level: 'HIGH',
+      explanation: 'Operator sovereign override: Urgency escalated to CRITICAL. Reason: Verified via drone feed - civilians trapped under rubble in basement.',
+      is_synthetic: true,
+      corroboration: {
+        report_count: 1,
+        independent_source_count: 1,
+        score: 0.36,
+        explanation: 'Single eyewitness report corroborated by operator drone surveillance.'
+      }
+    }
+  },
+  {
+    event: 'INCIDENT_CREATED',
+    timestamp: '2026-09-27T01:53:24Z',
+    payload: {
+      incident_id: 'inc-78f90e68-a88d-4751-ae3b-920945c13060',
+      incident_type: 'STRUCTURAL_COLLAPSE',
+      urgency: 'CRITICAL',
+      location: { text: 'Patia Square', latitude: 20.355, longitude: 85.818, precision: 'exact' },
+      priority: { score: 60.2, level: 'HIGH', explanation: 'Classified as HIGH priority (60.2) driven by Urgency: CRITICAL' },
+      is_synthetic: true,
+      source_report_ids: ['rep-579046a5-cee5-4b3e-b7fd-8d37452f5596'],
+      required_response: ['SEARCH_AND_RESCUE', 'MEDICAL_EMS']
+    }
+  },
+  {
+    event: 'INCIDENT_STATUS_CHANGED',
+    timestamp: '2026-09-27T01:52:10Z',
+    payload: {
+      incident_id: 'inc-a2cf1e6b-6e32-41fa-8847-91ddbb2fa9e9',
+      old_status: 'NEW',
+      new_status: 'ACTIVE'
+    }
+  },
+  {
+    event: 'INCIDENT_CREATED',
+    timestamp: '2026-09-27T01:51:56Z',
+    payload: {
+      incident_id: 'inc-a2cf1e6b-6e32-41fa-8847-91ddbb2fa9e9',
+      incident_type: 'FLOOD_FLASH_FLOOD',
+      urgency: 'CRITICAL',
+      location: { text: 'Rasulgarh underpass', latitude: 20.2961, longitude: 85.8245, precision: 'approximate' },
+      priority: { score: 57.95, level: 'MEDIUM', explanation: 'Severe flash flooding near underpass, two vehicles submerged' },
+      is_synthetic: true,
+      source_report_ids: ['rep-0b909e8e-9245-4bfd-9186-314743e62dde', 'rep-d22a6835-2a9b-4d24-ad74-124afd1b6688'],
+      required_response: ['SEARCH_AND_RESCUE']
+    }
+  },
+  {
+    event: 'INCIDENT_CREATED',
+    timestamp: '2026-09-27T01:53:25Z',
+    payload: {
+      incident_id: 'inc-d2e920b5-bd8f-4e4e-a482-403354bd8bbd',
+      incident_type: 'FIRE_WILDFIRE_EXPLOSION',
+      urgency: 'MEDIUM',
+      location: { text: 'Mancheswar Industrial Estate', latitude: 20.3200, longitude: 85.8500, precision: 'approximate' },
+      priority: { score: 28.95, level: 'LOW', explanation: 'Industrial warehouse fire, chemical drums exploding' },
+      is_synthetic: true,
+      source_report_ids: ['rep-48f8a32d-304b-48ae-94a2-eb417ceb6094'],
+      required_response: ['FIRE_HAZMAT']
+    }
+  },
+  {
+    event: 'SIMULATION_PULSE',
+    timestamp: '2026-09-27T01:53:20Z',
+    payload: {
+      injected_count: 3,
+      total_simulated: 4,
+      scenario: 'bhubaneswar_monsoon_crisis'
+    }
+  }
+];
+
 export const IncidentStreamsView: React.FC = () => {
   const { status, events, reconnect, clearEvents } = useWebSocket();
   const { navigateToIncident, setIsSimulatorModalOpen } = useNavigation();
@@ -196,6 +278,7 @@ export const IncidentStreamsView: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<StreamFilterCategory>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showRestoredNotice, setShowRestoredNotice] = useState<boolean>(false);
+  const [hasUserCleared, setHasUserCleared] = useState<boolean>(false);
 
   const prevStatusRef = useRef(status);
 
@@ -214,10 +297,19 @@ export const IncidentStreamsView: React.FC = () => {
     prevStatusRef.current = status;
   }, [status]);
 
+  // Use preloaded events when live buffer has zero events (unless explicitly cleared by operator)
+  const activeEvents = useMemo(() => {
+    if (events.length > 0) return events;
+    if (hasUserCleared) return [];
+    return INITIAL_DEMO_EVENTS;
+  }, [events, hasUserCleared]);
+
+  const isDemoFallback = events.length === 0 && !hasUserCleared;
+
   // Parse events into high-density models
   const parsedEvents = useMemo(() => {
-    return events.map((evt, idx) => parseStreamEvent(evt, idx === 0, idx));
-  }, [events]);
+    return activeEvents.map((evt, idx) => parseStreamEvent(evt, idx === 0, idx));
+  }, [activeEvents]);
 
   // Counts
   const counts = useMemo(() => {
@@ -299,9 +391,14 @@ export const IncidentStreamsView: React.FC = () => {
           <Rss size={18} className="streams-header-icon" />
           <h1 className="streams-title">LIVE INCIDENT STREAMS</h1>
           <Badge variant="neutral" size="sm" className="streams-count-badge">
-            {events.length} RECORDED
+            {activeEvents.length} RECORDED
           </Badge>
-          {events.length > 0 && (
+          {isDemoFallback && (
+            <Badge variant="simulation" size="sm" title="Preloaded with existing backend incident records">
+              DEMO FEED
+            </Badge>
+          )}
+          {activeEvents.length > 0 && (
             <span className="streams-last-utc">
               LATEST: {parsedEvents[0]?.timestampFormatted}
             </span>
@@ -328,16 +425,31 @@ export const IncidentStreamsView: React.FC = () => {
             SIMULATE
           </Button>
 
-          {events.length > 0 && (
+          {activeEvents.length > 0 && (
             <Button
               variant="secondary"
               size="sm"
-              onClick={clearEvents}
+              onClick={() => {
+                clearEvents();
+                setHasUserCleared(true);
+              }}
               title="Clear event stream buffer"
               className="streams-action-btn"
             >
               <Trash2 size={12} style={{ marginRight: 4 }} />
               CLEAR
+            </Button>
+          )}
+
+          {hasUserCleared && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setHasUserCleared(false)}
+              title="Restore demo stream events"
+              className="streams-action-btn"
+            >
+              RESTORE DEMO
             </Button>
           )}
 
@@ -464,7 +576,7 @@ export const IncidentStreamsView: React.FC = () => {
 
         {/* Ledger Body */}
         <div className="ledger-body">
-          {events.length === 0 ? (
+          {activeEvents.length === 0 ? (
             /* Authentic Standby Terminal State */
             <div className="stream-standby-banner" role="status">
               <div className="standby-line">

@@ -11,6 +11,7 @@ import {
 import { Button } from '../ui';
 import { useNavigation } from '../../context/NavigationContext';
 import { useIncidentDetail } from '../../hooks/useIncidentDetail';
+import { useIncidents } from '../../hooks/useIncidents';
 import { useBackendHealth } from '../../hooks/useBackendHealth';
 import {
   InvestigationHeader,
@@ -31,6 +32,7 @@ export const InvestigationView: React.FC = () => {
   } = useNavigation();
 
   const { isOnline, checkHealth } = useBackendHealth();
+  const { incidents: availableIncidents } = useIncidents('ALL');
   const { data, isLoading, error, refetch } = useIncidentDetail(selectedIncidentId);
 
   const handleBackToDeck = useCallback(() => {
@@ -93,6 +95,27 @@ export const InvestigationView: React.FC = () => {
             >
               OPEN COMMAND DECK QUEUE
             </Button>
+
+            {availableIncidents.length > 0 && (
+              <div className="investigation-quick-select">
+                <span className="quick-select-label">OR INSPECT ACTIVE INCIDENT:</span>
+                <div className="quick-select-list">
+                  {availableIncidents.map((inc) => (
+                    <button
+                      key={inc.incident_id}
+                      type="button"
+                      className="quick-select-item"
+                      onClick={() => setSelectedIncidentId(inc.incident_id)}
+                    >
+                      <span className="quick-id">{inc.incident_id.toUpperCase()}</span>
+                      <span className="quick-type">{inc.incident_type ? inc.incident_type.replace(/_/g, ' ') : 'UNCLASSIFIED'}</span>
+                      <span className="quick-loc">{inc.location?.text || 'Bhubaneswar'}</span>
+                      <span className="quick-action">INSPECT →</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </main>
       </div>
